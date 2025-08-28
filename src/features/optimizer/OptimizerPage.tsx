@@ -13,8 +13,11 @@ export function OptimizerPage() {
   });
 
   return (
-    <main className="min-h-screen bg-base-300 text-base-content">
-      {/* your layout */}
-    </main>
+    <>
+    {/* your layout */}
+      <p>test</p>
+    </>
+      
+    
   )
 }
