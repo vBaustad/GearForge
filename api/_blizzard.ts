@@ -1,5 +1,3 @@
-import "dotenv/config"; // load .env at import time
-
 const REGION  = process.env.BLIZZARD_API_REGION  || "eu";
 const LOCALE  = process.env.BLIZZARD_LOCALE      || "en_GB";
 const CLIENT_ID     = process.env.BLIZZARD_CLIENT_ID;
@@ -12,6 +10,7 @@ if (!CLIENT_ID || !CLIENT_SECRET) {
 let tokenCache: { token: string; expiresAt: number } = { token: "", expiresAt: 0 };
 
 type OAuthTokenResponse = { access_token: string; expires_in: number };
+type ItemMedia = { assets?: Array<{ key: string; value: string }> };
 
 async function getAccessToken(): Promise<string> {
   const now = Date.now();
@@ -36,7 +35,6 @@ async function getAccessToken(): Promise<string> {
   return tokenCache.token;
 }
 
-// simple in-memory cache (1 week)
 const iconCache = new Map<number, { iconUrl: string; iconName?: string; expiresAt: number }>();
 
 export async function getItemIcon(itemId: number): Promise<{ iconUrl: string; iconName?: string }> {
@@ -48,11 +46,8 @@ export async function getItemIcon(itemId: number): Promise<{ iconUrl: string; ic
   const url = `https://${REGION}.api.blizzard.com/data/wow/media/item/${itemId}?namespace=static-${REGION}&locale=${LOCALE}`;
 
   const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-  if (!res.ok) {
-    throw new Error(`Item media failed: ${res.status} ${await res.text()}`);
-  }
+  if (!res.ok) throw new Error(`Item media failed: ${res.status} ${await res.text()}`);
 
-  type ItemMedia = { assets?: Array<{ key: string; value: string }> };
   const json = (await res.json()) as ItemMedia;
   const iconAsset = json.assets?.find(a => a.key === "icon");
   if (!iconAsset?.value) throw new Error(`No icon asset for item ${itemId}`);
