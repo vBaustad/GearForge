@@ -1,7 +1,7 @@
 import { tracks } from "./tracks";
 import type { ParsedItem, ItemState, TrackKey } from "../types/simc";
 import { normalizeSlot } from "./slotMap";
-import { findUpgradeByBonusIds, toTrackKey } from "../data/UpgradeIndex";
+import { findUpgradeByBonusIds, toTrackKey } from "../data/upgradeIndex"
 
 /** Find the track that contains this ilvl (exact match preferred). */
 export function inferTrackFromIlvl(ilvl: number): TrackKey | null {
