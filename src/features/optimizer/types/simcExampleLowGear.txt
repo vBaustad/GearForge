@@ -1,0 +1,87 @@
+# Klistremerke - Protection - 2025-09-01 00:20 - EU/Stormscale
+# SimC Addon 11.2.0-alpha06
+# WoW 11.2.0.62876, TOC 110200
+# Requires SimulationCraft 1000-01 or newer
+
+warrior="Klistremerke"
+level=80
+race=undead
+region=eu
+server=stormscale
+role=tank
+professions=enchanting=1/
+spec=protection
+# loot_spec=protection
+
+talents=CkEArbixk/ZKwTdpZGVHeylmLkBAAAgxMMzMzMzMbmZWGMGjGzyYGGLjZmhtZmxMwwAAAAAAALDAwM2AMwCYxImBwsEmNmxM
+
+# Saved Loadout: M+
+# talents=CkEArbixk/ZKwTdpZGVHeylmLwAAAAwMzMjZmxMzDsMzFMLzCPgBGzyMDMwMDb8ADDMMAAAAAAwiBAYW2AAAAAAAAA
+# Saved Loadout: M+
+# talents=CkEArbixk/ZKwTdpZGVHeylmLwAAAAwYGmZmZmZmNzMLDGjhxsMmhxyYmZYbmZMDMMAAAAAAwyAAMjNADsAWMwMAmFY2YGzA
+
+# Soaring Behemoth's Greathelm (681)
+head=,id=221146,bonus_id=12290/10389/6652/12921/12239/10383/3173/10255
+# Malleable Pendant (675)
+neck=,id=215131,gem_id=213743/213494,bonus_id=11295/11296/4785/10879/10396/9627/8790/12051,crafted_stats=49/40,crafting_quality=5
+# Shoulderplates of Bloodshed (694)
+shoulder=,id=171621,bonus_id=12350/7756/12239/10383/11374/10255
+# Reshii Wraps (720)
+back=,id=235499,enchant_id=7402,gem_id=238039,bonus_id=12400/9883/12262
+# Living Weapon's Bulwark (691)
+chest=,id=237613,bonus_id=12293/10354/12229/6652/12676/1501/10255
+# Precious's Ribbon (1)
+shirt=,id=52019
+# Renowned Guild Tabard (1)
+tabard=,id=69210
+# Discarded Nutrient Shackles (684)
+wrist=,id=237545,enchant_id=7384,bonus_id=43/12921/12239/10354/12291/1494/10255
+# Living Weapon's Crushers (691)
+hands=,id=237611,bonus_id=12230/12293/10389/6652/12675/1501/10255
+# Dredger's Developed Greatbelt (675)
+waist=,id=222473,bonus_id=11297/11298/9627/8790/12051/10876,crafted_stats=36/32,crafting_quality=5
+# Wastelander Brute's Greaves (681)
+legs=,id=243528,enchant_id=7595,bonus_id=6652/12239/12286/3210/10255
+# Greaves of the Iron Army (681)
+feet=,id=156327,enchant_id=7417,bonus_id=7756/12290/12239/10383/11386/10255
+# Malleable Band (675)
+finger1=,id=215130,enchant_id=7345,gem_id=213494/213455,bonus_id=11295/11296/4785/10879/10396/9627/8790/12051,crafted_stats=40/36,crafting_quality=5
+# Malleable Band (675)
+finger2=,id=215130,enchant_id=7345,gem_id=213470/213455,bonus_id=11295/11296/4785/10879/10396/9627/8790/12051,crafted_stats=36/40,crafting_quality=5
+# Veiling Mana Shroud (665)
+trinket1=,id=240213,bonus_id=11311/40/12277/3194/10254
+# Shadowguard's Twisted Harvester (665)
+trinket2=,id=246824,bonus_id=12277/6652/11215/1527/10254
+# Ironclaw Sword (675)
+main_hand=,id=222466,bonus_id=11297/11298/9627/8790/12051,crafted_stats=32/49,crafting_quality=5
+# Starlit Safeguard (681)
+off_hand=,id=242493,bonus_id=12290/10389/6652/10383/3173/10255
+
+### Gear from Bags
+#
+# Gem-Woven Cloak of the Aurora (658)
+# back=,id=224664,bonus_id=12275/6652/12244/1709/3187/10254
+#
+# Experimental Goresilk Chestguard (681)
+# chest=,id=221161,enchant_id=7363,bonus_id=12290/10389/6652/12239/10383/3173/10255
+#
+# Handguards of the Enclave (681)
+# hands=,id=155970,bonus_id=7756/12290/12239/10383/11386/10255
+#
+# Arathi Templar's Claymore (642)
+# main_hand=,id=241033,bonus_id=12265/6652/10844/1504
+#
+# Lotrafen, Spear of the Damned (691)
+# main_hand=,id=156215,enchant_id=7442,bonus_id=7756/10384/12293/11396/10255
+
+### Additional Character Info
+#
+# catalyst_currencies=3269:2/2813:8/3116:8
+#
+# upgrade_currencies=c:3284:87/c:2122:1/c:3288:50/c:3286:135/c:3008:482/i:231756:1/i:224072:4/i:231769:1
+#
+# slot_high_watermarks=0:681:704/1:675:704/2:694:704/3:691:704/4:675:704/5:681:704/6:681:704/7:684:720/8:691:704/9:675:704/10:665:704/11:720:730/12:642:701/13:10:710/14:675:675/15:552:610/16:681:720
+#
+# upgrade_achievements=19326/19397/19398/19577/19578/19579/40107/40115/40118/40942/40943/41886/41887/41888
+
+# Checksum: 59ed14c7

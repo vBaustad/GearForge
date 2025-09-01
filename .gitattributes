@@ -1,0 +1,8 @@
+# Auto-normalize text files to LF in the repo
+* text=auto eol=lf
+
+# Explicit common text types
+*.{js,ts,tsx,jsx,css,scss,html,md,json,yml,yaml} text eol=lf
+
+# Binary (don’t touch)
+*.{png,jpg,jpeg,gif,webp,ico,woff,woff2,eot,ttf,otf} binary

@@ -1,2 +1,12 @@
 /* src/app/index.css */
 @import "tailwindcss";
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: #2e3036;
+  color: #f0f2f7;
+}
