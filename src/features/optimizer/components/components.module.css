@@ -1,46 +1,87 @@
 /* ──────────────────────────────────────────────────────────────
-   Crest Bar (feature-level; still used by some components)
+   Crest Bar
 ────────────────────────────────────────────────────────────── */
 .crestBar {
   margin-top: 10px;
+  margin-bottom: 10px;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   justify-content: center;
 }
-.crestPill,
-.crestTotalPill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: #1f2126;
+.crestPill, .crestTotalPill {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 10px; border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(0,0,0,0.06)), #1f2126;
   border: 1px solid #2a2c31;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.03);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.03), 0 6px 12px rgba(0,0,0,.18);
 }
-.crestPillTier,
-.crestTotalLabel { font-weight: 700; letter-spacing: .2px; }
-.crestPillValue,
-.crestTotalValue {
-  font-variant-numeric: tabular-nums;
-  background: #2a2c31;
-  border: 1px solid #3a3c42;
-  padding: 2px 8px;
-  border-radius: 999px;
-  color: var(--accent-2);
-  font-size: 12px;
+.crestPillTier, .crestTotalLabel { font-weight: 700; letter-spacing: .2px; }
+.crestPillValue, .crestTotalValue {
+  font-variant-numeric: tabular-nums; background: #2a2c31; border: 1px solid #3a3c42;
+  padding: 2px 8px; border-radius: 999px; color: var(--accent-2); font-size: 12px;
 }
 .crestTotalsRow { display: flex; flex-wrap: wrap; gap: 8px; }
 
 /* ──────────────────────────────────────────────────────────────
-   Generic card (used by PlansSummary / NarrativePlan)
+   Generic card
 ────────────────────────────────────────────────────────────── */
 .card {
-  background: var(--panel-2);
-  border: 1px solid #24262b;
-  border-radius: 8px;
-  padding: 12px;
+  --card-bg: var(--panel-2);
+  background:
+    radial-gradient(120% 100% at 10% 0%, rgba(255,255,255,0.04), transparent 40%),
+    linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.02)),
+    var(--card-bg);
+  border: 1px solid #24262b; border-radius: 12px; padding: 12px;
+  box-shadow: inset 0 1px 0 rgba(0,0,0,0.12), 0 4px 10px rgba(0,0,0,0.18);
+}
+/* ──────────────────────────────────────────────────────────────
+   Card title
+────────────────────────────────────────────────────────────── */
+.cardTitle {
+  /* layout */
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  /* type */
+  margin: 0 0 10px;
+  font-weight: 800;
+  font-size: 13.5px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+
+  /* color */
+  color: #e6e8ec; /* or var(--ink) if you have it */
+}
+
+/* small accent dot on the left */
+.cardTitle::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--accent-2, #ffb300);
+  box-shadow:
+    0 0 0 3px rgba(255,179,0,.12),
+    0 0 16px rgba(255,179,0,.20);
+}
+
+/* faint divider that fills the remaining space */
+.cardTitle::after {
+  content: "";
+  flex: 1 1 auto;
+  height: 1px;
+  margin-left: 6px;
+  background: linear-gradient(90deg, rgba(255,255,255,.06), transparent);
+  border-radius: 1px;
+}
+
+/* Optional: a subtler variant if you need it elsewhere */
+.cardTitle--subtle {
+  font-size: 12px;
+  letter-spacing: .04em;
+  color: var(--ink-dim, #a6abb5);
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -48,138 +89,304 @@
 ────────────────────────────────────────────────────────────── */
 .recList { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .recRow {
-  display: grid;
-  grid-template-columns: 110px 1fr auto auto;
-  gap: 10px;
-  align-items: center;
-  background: #1f2126;
-  border: 1px solid #2a2c31;
-  border-radius: 8px;
-  padding: 8px 10px;
+  position: relative; display: grid; grid-template-columns: 110px 1fr auto auto;
+  gap: 10px; align-items: center;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.06)), #1f2126;
+  border: 1px solid #2a2c31; border-radius: 10px; padding: 10px 12px;
+  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+  box-shadow: inset 0 1px 0 rgba(0,0,0,0.10), 0 6px 14px rgba(0,0,0,0.22);
 }
-.slot { color: var(--ink-dim); }
-.itemName { font-weight: 600; }
-.meta { color: var(--ink-dim); }
+.recRow:hover {
+  transform: translateY(-1px);
+  border-color: #34363c;
+  box-shadow: inset 0 1px 0 rgba(0,0,0,0.08), 0 10px 20px rgba(0,0,0,0.28);
+}
+.recRow:focus-within {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ring), 0 10px 20px rgba(0,0,0,0.28);
+}
+.slot { color: var(--ink-dim); font-weight: 700; letter-spacing: .02em; opacity: .9; }
+.itemName { font-weight: 700; }
+.meta { color: var(--ink-dim); font-size: 12px; display: inline-flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 
 /* ──────────────────────────────────────────────────────────────
-   Paperdoll
+   Paperdoll container
 ────────────────────────────────────────────────────────────── */
 .paperdoll {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr);
   gap: 8px 16px;
-  background: var(--panel);
-  border: 1px solid #1f2024;
-  border-radius: 8px;
-  padding: 12px;
-  margin-bottom: 16px;
+  background: radial-gradient(120% 100% at 10% 0%, rgba(255,255,255,0.03), transparent 40%), var(--panel);
+  border: 1px solid #1f2024; border-radius: 12px; padding: 12px; margin-bottom: 16px;
+  box-shadow: inset 0 1px 0 rgba(0,0,0,0.10), 0 6px 14px rgba(0,0,0,0.20);
+  grid-auto-flow: row dense;
 }
-.paperdoll > .slotCard:nth-last-child(2),
-.paperdoll > .slotCard:last-child { grid-column: 1 / -1; }
 
+/* ──────────────────────────────────────────────────────────────
+   Slot cards
+────────────────────────────────────────────────────────────── */
 .slotCard {
-  display: grid;
-  grid-template-columns: 72px 1fr;  /* 1: label, 2: content */
-  align-items: center;
-  gap: 10px;
-  background: var(--panel-2);
-  border: 1px solid #24262b;
-  border-radius: 8px;
-  padding: 8px 10px;
+  position: relative; display: grid; grid-template-columns: 72px 1fr;
+  align-items: center; gap: 10px;
+  --card-bg: var(--panel-2);
+  background:
+    radial-gradient(120% 100% at 10% 0%, rgba(255,255,255,0.04), transparent 40%),
+    linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.02)),
+    var(--card-bg);
+  border: 1px solid #2b2924; border-radius: 12px; padding: 10px 12px;
+  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease, background .2s ease;
+  box-shadow: inset 0 1px 0 rgba(0,0,0,0.12), 0 4px 10px rgba(0,0,0,0.18);
 }
-.slotLabel { font-weight: 700; color: var(--ink-dim); }
+.slotCard::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+  border-radius: 12px 0 0 12px; background: var(--rarity, #9ca3af); opacity: .9;
+}
+.slotCard:hover { transform: translateY(-1px); border-color: #35322a; box-shadow: inset 0 1px 0 rgba(0,0,0,0.10), 0 8px 18px rgba(0,0,0,0.28); }
+.slotCard:focus-within { outline: none; box-shadow: 0 0 0 2px var(--ring,#4c7ef3), 0 8px 18px rgba(0,0,0,0.28); }
+.slotCard[data-has-upgrade="true"] {
+  background: radial-gradient(150% 120% at 0% 0%, rgba(255,179,0,0.08), transparent 45%),
+              linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.02)), var(--card-bg);
+  border-color: #3a2b00;
+}
+.slotCard[data-crafted="true"] { border-style: dashed; border-color: #38404a; opacity: .95; }
+.slotLabel { font-weight: 800; color: var(--ink-dim); text-transform: uppercase; letter-spacing: .03em; opacity: .85; }
 
-/* The content row is a single link (icon + text). Keep layout + reset link styles. */
+/* ─ row layout: [icon spans 2 rows] [name+ilvl] / [sub-row (upgrade or crafted)] */
 .slotItem {
   grid-column: 2 / -1;
   display: grid;
-  grid-template-columns: 40px 1fr;
-  gap: 10px;
+  grid-template-columns: 56px minmax(0,1fr);
+  grid-template-rows: auto auto;           /* two rows */
+  column-gap: 10px; row-gap: 4px;
   align-items: center;
+  text-decoration: none; color: inherit;
+  border-radius: 8px; width: 100%;
+}
+.slotItem:link, .slotItem:visited { color: inherit; }
+.slotItem:hover .itemName { text-decoration: underline; }
+.slotItem:focus-visible { outline: none; box-shadow: 0 0 0 4px var(--ring); border-radius: 8px; }
 
-  text-decoration: none;     /* don’t underline the whole row */
-  color: inherit;
+.slotIcon { grid-row: 1 / span 2; align-self: center; }
+
+.nameRow {
+  grid-column: 2;
+  grid-row: 1;
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto;
+  align-items: center;
+  gap: 6px;
 }
-.slotItem:link,
-.slotItem:visited { color: inherit; }
-.slotItem:hover .itemName { text-decoration: underline; } /* optional hover cue */
-.slotItem:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 4px var(--ring);
-  border-radius: 8px;
+
+.nameRow.isSolo {
+  grid-row: 1 / span 2;
+  align-items: center;
 }
+
+.nameRow.isSolo .itemRight { align-self: center; }
+.nameRow.isSolo .itemName { font-size: 13.5px; }
 
 .itemText { min-width: 0; }
 .itemName {
-  font-weight: 600;
+  font-weight: 800;
+  font-size: 14px; /* NEW: was inherit; now a touch smaller */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-.itemMeta { color: var(--ink-dim); font-size: 12px; }
-.itemId { margin-left: 8px; opacity: .8; }
-
-/* Empty slot cell occupies the content column */
-.slotEmpty {
-  grid-column: 2 / -1;
-  color: var(--ink-dim);
-  opacity: .6;
+  color: color-mix(in srgb, var(--rarity, #d1d5db) 74%, #e5e7eb 26%);
+  text-shadow: 0 1px 0 rgba(0,0,0,0.35);
 }
 
-/* Badges appear below the content column (not under the label) */
-.planBadges,
-.planBadge,
-.planBadgeGood {
-  grid-column: 2 / -1;
-}
+.itemRight { justify-self: end; }
 
-/* Optional wrapper if you show multiple badges */
-.planBadges {
-  margin-top: 6px;
+.subRow {
+  grid-column: 2;
+  grid-row: 2;
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  align-items: center;
+  gap: 8px;
 }
 
-/* Plan badges */
-.planBadge,
-.planBadgeGood {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  line-height: 1;
-  font-size: 12px;
-  border-radius: 999px;
-  border: 1px solid #2a2c31;
-  background: #1f2126;
+/* Pills (right of name) */
+.ilvlPill, .upgradePill {
+  display: inline-flex; align-items: center; height: 22px; padding: 0 10px;
+  border-radius: 8px; font-size: 12px; font-weight: 800; letter-spacing: .02em;
+  line-height: 22px; white-space: nowrap; border: 1px solid transparent;
+}
+.ilvlPill {
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.06)), #1f2126;
+  border-color: #3a3c42; color: #e5e7eb;
+}
+.upgradePill {
+  background: linear-gradient(180deg, rgba(255,179,0,.18), rgba(255,179,0,.02)), rgba(255,179,0,.10);
+  border-color: #3a2b00; color: var(--accent-2);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+}
+.upgradeDelta { font-variant-numeric: tabular-nums; }
+
+/* Second-line variants */
+.upgradePillSecondary {
+  display: inline-flex; align-items: center; height: 22px; padding: 0 10px;
+  border-radius: 8px; font-size: 12px; font-weight: 700;
+  background: linear-gradient(180deg, rgba(255,179,0,.16), rgba(255,179,0,.02)), rgba(255,179,0,.08);
+  border: 1px solid #3a2b00; color: var(--accent-2);
+}
+.craftedPill {
+  display: inline-flex; align-items: center; height: 22px; padding: 0 10px;
+  border-radius: 8px; font-size: 12px; font-weight: 700;
+  background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.06)), #1f2126;
+  border: 1px solid #2a2c31; color: var(--ink-dim);
+}
+
+/* fallback badges kept for legacy pieces, but typically unused now */
+.planBadges, .planBadge, .planBadgeGood { grid-column: 2 / -1; }
+.planBadges { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
+.planBadge, .planBadgeGood {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; line-height: 1;
+  font-size: 12px; border-radius: 999px; border: 1px solid #2a2c31;
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.06)), #1f2126;
 }
 .planBadge { color: var(--ink-dim); }
 .planBadgeGood {
-  background: rgba(255,179,0,.10);
-  border-color: #3a2b00;
-  color: var(--accent-2);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+  background: linear-gradient(180deg, rgba(255,179,0,.18), rgba(255,179,0,.02)), rgba(255,179,0,.10);
+  border-color: #3a2b00; color: var(--accent-2); box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+}
+.noLabel .planBadge, .noLabel .planBadgeGood, .noLabel .planBadges { grid-column: 1 / -1; }
+
+/* Chips (kept) */
+.chip { display: inline-flex; align-items: center; gap: 6px; height: 20px; padding: 0 8px;
+  border-radius: 999px; border: 1px solid color-mix(in srgb, var(--rarity,#9ca3af) 30%, #2b2924);
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.06)), #161719;
+  color: #d1d5db; font-size: 11px; letter-spacing: .02em;
+}
+.chip.track.explorer  { --rarity: #7f8c8d; }
+.chip.track.adventurer{ --rarity: #1eff00; }
+.chip.track.veteran   { --rarity: #0070dd; }
+.chip.track.champion  { --rarity: #a335ee; }
+.chip.track.hero      { --rarity: #ff8000; }
+.chip.track.myth      { --rarity: #e6cc80; }
+
+/* Rarity tokens */
+.slotCard[data-rarity="poor"]      { --rarity: #9d9d9d; }
+.slotCard[data-rarity="common"]    { --rarity: #ffffff; }
+.slotCard[data-rarity="uncommon"]  { --rarity: #1eff00; }
+.slotCard[data-rarity="rare"]      { --rarity: #0070dd; }
+.slotCard[data-rarity="epic"]      { --rarity: #a335ee; }
+.slotCard[data-rarity="legendary"] { --rarity: #ff8000; }
+.slotCard[data-rarity="artifact"]  { --rarity: #e6cc80; }
+.slotCard[data-rarity="heirloom"]  { --rarity: #00ccff; }
+
+/* Sheen */
+.slotCard:hover::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.06) 35%, transparent 70%);
+  mask: linear-gradient(#000, transparent 65%); opacity: .65; border-radius: inherit;
 }
 
-/* Generic badge (shared) */
-.badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 8px;
-  line-height: 1;
-  font-size: 12px;
-  border-radius: 999px;
-  background: #1f2126;
-  border: 1px solid #2a2c31;
-  color: var(--accent-2);
-}
+/* Columns & weapons row */
+.colLeft  { grid-column: 1; }
+.colRight { grid-column: 2; }
+.noLabel  { grid-template-columns: 1fr; }
+.noLabel .slotItem { grid-column: 1 / -1; }
 
-/* ──────────────────────────────────────────────────────────────
-   Responsive (feature-specific)
-────────────────────────────────────────────────────────────── */
-@media (max-width: 640px) {
+.weaponsRow {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(290px, 360px));
+  justify-content: center; align-items: stretch;
+  gap: 12px; margin: 6px auto 0;
+}
+.weaponSlot { width: 100%; max-width: 360px; }
+
+/* Responsive */
+@media (max-width: 700px) {
   .paperdoll { grid-template-columns: 1fr; }
   .recRow { grid-template-columns: 1fr; row-gap: 6px; }
+  .colLeft, .colRight { grid-column: 1; }
+  .weaponsRow { grid-template-columns: minmax(0, 1fr); }
+  .weaponSlot { max-width: none; }
+}
+/* ── Compact sizing ─────────────────────────────────────────── */
+.slotItem {
+  grid-template-columns: 44px minmax(0,1fr);
+  grid-template-rows: auto auto; /* ensure a 2-row track exists */
+  gap: 8px;
+  align-items: center;
+}
+
+.itemName { font-size: 12.5px; }
+
+
+/* ── Darker surfaces so cards separate from page ───────────── */
+.paperdoll {
+  /* darken panel a bit */
+  background:
+    radial-gradient(120% 100% at 10% 0%, rgba(255,255,255,0.02), transparent 40%),
+    color-mix(in srgb, var(--panel) 70%, #0b0e12 30%);
+  border-color: #14161a;
+}
+
+.slotCard {
+  /* darker card bg with subtle inner glow */
+  --card-bg: color-mix(in srgb, var(--panel-2) 60%, #0b0e12 40%);
+  background:
+    radial-gradient(120% 100% at 10% 0%, rgba(255,255,255,0.03), transparent 40%),
+    linear-gradient(180deg, rgba(255,255,255,0.015), rgba(0,0,0,0.02)),
+    var(--card-bg);
+  border-color: #25262b;
+  padding: 8px 10px; /* slightly tighter to match smaller icon */
+}
+
+/* ── Pills: keep ilvl subtle, make upgrades pop ─────────────── */
+.ilvlPill {
+  height: 22px;
+  padding: 0 8px;
+  background: rgba(20,22,26,.9);
+  border: 1px solid #33363d;
+}
+
+.upgradePill,
+.upgradePillSecondary {
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid #5a4300; /* stronger border */
+  background:
+    linear-gradient(180deg, rgba(255,189,40,.35), rgba(255,189,40,.08)),
+    #1a1400;                  /* deeper base for contrast */
+  box-shadow:
+    0 0 0 1px rgba(255,189,40,.15) inset,
+    0 6px 16px rgba(255,189,40,.18); /* gentle glow */
+}
+
+.upgradePillSecondary {
+  height: 20px;               /* second row chip can be slightly smaller */
+  padding: 0 8px;
+}
+
+.upgradeDelta {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: #ffe3a3;             /* brighter text for readability */
+}
+
+/* Crafted note should still be readable on darker bg */
+.craftedPill {
+  height: 20px;
+  padding: 2px 8px;
+  font-size: 11px;
+  border: 1px solid #2a2c31;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.05), rgba(0,0,0,0.06)),
+    #181a1e;
+  color: var(--ink-dim);
+}
+
+/* Keep the rarity accent bar visible on darker cards */
+.slotCard::before { opacity: 1; }
+
+/* Optional: make rec rows match the darker look (if you use them elsewhere) */
+.recRow {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.06)),
+    color-mix(in srgb, var(--panel-2) 55%, #0b0e12 45%);
+  border-color: #25262b;
 }

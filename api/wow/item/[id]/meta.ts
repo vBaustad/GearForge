@@ -5,15 +5,12 @@ const LOCALE  = process.env.BLIZZARD_LOCALE      ?? "en_GB";
 const CLIENT_ID     = process.env.BLIZZARD_CLIENT_ID!;
 const CLIENT_SECRET = process.env.BLIZZARD_CLIENT_SECRET!;
 
-// base64 for Edge (no Buffer)
 const b64 = (s: string) => btoa(unescape(encodeURIComponent(s)));
 
-// --- token cache (edge-global) ---
 let tokenCache: { token: string; exp: number } = { token: "", exp: 0 };
 async function getAccessToken(): Promise<string> {
   const now = Date.now();
   if (tokenCache.token && now < tokenCache.exp - 60_000) return tokenCache.token;
-
   const res = await fetch(`https://${REGION}.battle.net/oauth/token`, {
     method: "POST",
     headers: {
@@ -28,22 +25,28 @@ async function getAccessToken(): Promise<string> {
   return tokenCache.token;
 }
 
-// --- per-item cache (edge-global) ---
-const iconCache = new Map<number, { url: string; name?: string; exp: number }>();
+type RarityToken =
+  | "poor" | "common" | "uncommon" | "rare" | "epic"
+  | "legendary" | "artifact" | "heirloom";
+const toRarityToken = (q?: string): RarityToken | undefined => {
+  const t = q?.toLowerCase();
+  if (!t) return undefined;
+  return ["poor","common","uncommon","rare","epic","legendary","artifact","heirloom"]
+    .includes(t) ? (t as RarityToken) : undefined;
+};
+
+const metaCache = new Map<number, { iconUrl: string; iconName?: string; rarity?: RarityToken; exp: number }>();
 
 export default async function handler(req: Request): Promise<Response> {
   const parts = new URL(req.url).pathname.split("/");
   const idStr = parts[parts.length - 2];
   const id = Number(idStr);
-  if (!Number.isFinite(id)) {
-    return new Response(JSON.stringify({ error: "Invalid id" }), { status: 400 });
-  }
+  if (!Number.isFinite(id)) return new Response(JSON.stringify({ error: "Invalid id" }), { status: 400 });
 
-  // serve from cache if warm
   const now = Date.now();
-  const hit = iconCache.get(id);
+  const hit = metaCache.get(id);
   if (hit && now < hit.exp) {
-    return new Response(JSON.stringify({ iconUrl: hit.url, iconName: hit.name }), {
+    return new Response(JSON.stringify({ iconUrl: hit.iconUrl, iconName: hit.iconName, rarity: hit.rarity }), {
       status: 200,
       headers: { "content-type": "application/json", "cache-control": "s-maxage=604800, stale-while-revalidate=86400" },
     });
@@ -51,17 +54,27 @@ export default async function handler(req: Request): Promise<Response> {
 
   try {
     const token = await getAccessToken();
-    const api = `https://${REGION}.api.blizzard.com/data/wow/media/item/${id}?namespace=static-${REGION}&locale=${LOCALE}`;
-    const r = await fetch(api, { headers: { Authorization: `Bearer ${token}` } });
-    if (!r.ok) {
-      return new Response(JSON.stringify({ error: `Item media failed: ${r.status} ${await r.text()}` }), { status: 500 });
-    }
-    const data = (await r.json()) as { assets?: Array<{ key: string; value: string }> };
-    const icon = data.assets?.find(a => a.key === "icon")?.value;
+
+    const mediaUrl = `https://${REGION}.api.blizzard.com/data/wow/media/item/${id}?namespace=static-${REGION}&locale=${LOCALE}`;
+    const itemUrl  = `https://${REGION}.api.blizzard.com/data/wow/item/${id}?namespace=static-${REGION}&locale=${LOCALE}`;
+
+    const [mediaRes, itemRes] = await Promise.all([
+      fetch(mediaUrl, { headers: { Authorization: `Bearer ${token}` } }),
+      fetch(itemUrl,  { headers: { Authorization: `Bearer ${token}` } }),
+    ]);
+    if (!mediaRes.ok) return new Response(JSON.stringify({ error: `Item media failed: ${mediaRes.status} ${await mediaRes.text()}` }), { status: 500 });
+    if (!itemRes.ok)  return new Response(JSON.stringify({ error: `Item data failed: ${itemRes.status} ${await itemRes.text()}` }), { status: 500 });
+
+    const mediaJson = (await mediaRes.json()) as { assets?: Array<{ key: string; value: string }> };
+    const itemJson  = (await itemRes.json())  as { quality?: { type?: string } };
+
+    const icon = mediaJson.assets?.find(a => a.key === "icon")?.value;
     if (!icon) return new Response(JSON.stringify({ error: `No icon asset for item ${id}` }), { status: 404 });
 
-    const body = { iconUrl: icon, iconName: icon.split("/").pop()?.replace(".jpg", "") };
-    iconCache.set(id, { url: icon, name: body.iconName, exp: now + 7 * 24 * 3600 * 1000 });
+    const rarity = toRarityToken(itemJson.quality?.type);
+    const body = { iconUrl: icon, iconName: icon.split("/").pop()?.replace(".jpg", ""), rarity };
+
+    metaCache.set(id, { ...body, exp: now + 7 * 24 * 3600 * 1000 });
 
     return new Response(JSON.stringify(body), {
       status: 200,

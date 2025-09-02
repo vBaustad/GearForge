@@ -1,0 +1,80 @@
+# Sykkeltyven - Restoration - 2025-09-02 13:36 - EU/Stormscale
+# SimC Addon 11.2.0-alpha06
+# WoW 11.2.0.62876, TOC 110200
+# Requires SimulationCraft 1000-01 or newer
+
+shaman="Sykkeltyven"
+level=80
+race=dwarf
+region=eu
+server=stormscale
+role=attack
+professions=tailoring=55/enchanting=1
+spec=restoration
+# loot_spec=restoration
+
+talents=CgQAL+iDLHPJSLC+6fqMJ8tubCAAAAAGAAAAAjZmZZmtZmZMWsNWMgFYBmxmGbDIzE2YmZWsM2mZmZystYmZaMDzshlZGDGDzyYAAwA
+
+# Saved Loadout: totemic raid
+# talents=CgQAL+iDLHPJSLC+6fqMJ8tubCAAAAAGAAAAAjZmZZmtZmZMWsNWMgFYBmxGjtBwMwGzMzilx2MzMDz2iZmxYGmZDLzMGMGmlxAAgB
+
+# Sanitized Scraphood (629)
+head=,id=228859,bonus_id=6652/12176/11965/10353/11971/1478/10255
+# Reshii Magi's Pendant (655)
+neck=,id=246064,bonus_id=12274/11311/6652/10395/10878/3184/10254
+# Reshii Skirmisher's Pauldrons (655)
+shoulder=,id=239469,bonus_id=12274/11311/6652/3184/10254
+# Reshii Wraps (730)
+back=,id=235499,bonus_id=12401/9893
+# Nightfall Shadowalker's Chainmail (642)
+chest=,id=237453,bonus_id=12265/6652/10844/1504
+# Guild Tabard (1)
+tabard=,id=5976
+# Nightfall Shadowalker's Bracers (642)
+wrist=,id=237460,bonus_id=12265/6652/12921/10844/1504
+# Reshii Skirmisher's Gauntlets (655)
+hands=,id=239466,bonus_id=12274/11311/6652/3184/10254
+# Colossal Lifetether (671)
+waist=,id=237522,bonus_id=6652/12365/12239/10353/12283/1481/10255
+# Gale Sovereign's Pantaloons (623)
+legs=,id=229261,bonus_id=11969/11961/43/12178/1472/10255
+# Reshii Skirmisher's Boots (655)
+feet=,id=239465,bonus_id=12274/11311/6652/3184/10254
+# Signet of Repose (632)
+finger1=,id=239009,bonus_id=6652/8812/11972/11311/10394/10878/12090/10067/10255
+# Malleable Band (590)
+finger2=,id=215130,bonus_id=11295/11296/4785/10878/10394/9627/8793/11142,crafted_stats=49/32,crafting_quality=5
+# Depleted K'areshi Battery (655)
+trinket1=,id=240172,bonus_id=12274/11311/6652/3184/10254
+# Automatic Footbomb Dispenser (671)
+trinket2=,id=242867,bonus_id=12283/40/11215/1533/10255
+# Mandibular Bonewhacker (688)
+main_hand=,id=242470,bonus_id=12292/6652/10384/11215/3180/10255
+# Ward of the Weaving-Beast (671)
+off_hand=,id=237723,bonus_id=6652/10353/12283/1481/10255
+
+### Gear from Bags
+#
+# Vestments of the Forgotten Reservoir (616)
+# chest=,id=212014,bonus_id=10263/10355/10373/6652/1517/10255
+#
+# Pyremail Wristguards (600)
+# wrist=,id=231405,bonus_id=6652/10877/10376/10272/12093/10383/1488/10255
+#
+# Unmelting Ironworker Clasp (597)
+# waist=,id=223307,bonus_id=10273/10377/10876/1669/10255
+#
+# Brilliant Beacon (671)
+# off_hand=,id=211041,bonus_id=12283/6652/11215/1576/10255
+
+### Additional Character Info
+#
+# catalyst_currencies=3269:2/2813:8/3116:8
+#
+# upgrade_currencies=c:3284:65/c:3286:15/c:3008:428/i:228338:1/i:224072:1/i:211296:1/i:231769:1
+#
+# slot_high_watermarks=0:629:704/1:655:704/2:655:704/3:642:704/4:671:704/5:623:704/6:655:704/7:642:720/8:655:704/9:590:704/10:655:704/11:730:730/12:270:701/13:619:710/14:619:675/15:610:610/16:671:720
+#
+# upgrade_achievements=19326/19397/19398/19577/19578/19579/40107/40115/40118/40942/40943/41886/41887/41888
+
+# Checksum: 9fe052d4

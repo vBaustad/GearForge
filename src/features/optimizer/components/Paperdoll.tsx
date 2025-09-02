@@ -6,11 +6,16 @@ import type { ParsedItem, SlotKey, ItemPlan, Crest } from "../types/simc";
 import { ItemIcon } from "./ItemIcon";
 import { WowheadLink } from "./WowheadLink";
 import { refreshWowheadTooltips } from "./WowheadProvider";
+import { useItemMeta } from "../hooks/useItemMeta";
 
 type ItemBySlot = Partial<Record<SlotKey, ParsedItem>>;
 type PlanBySlot = Partial<Record<SlotKey, ItemPlan>>;
 
-// Typed entries helper for Partial<Record<Crest, number>>
+type RarityToken =
+  | "poor" | "common" | "uncommon" | "rare" | "epic"
+  | "legendary" | "artifact" | "heirloom";
+
+/** Typed entries helper for Partial<Record<Crest, number>> */
 function crestTotalsEntries(
   totals: Partial<Record<Crest, number>> | undefined
 ): [Crest, number][] {
@@ -35,16 +40,71 @@ function crestTotalsText(plan?: ItemPlan) {
   return parts.join(" · ");
 }
 
+/** Numeric quality (0–7) → rarity token (fallback path) */
+function qualityToToken(q: number): RarityToken | undefined {
+  switch (q) {
+    case 0: return "poor";
+    case 1: return "common";
+    case 2: return "uncommon";
+    case 3: return "rare";
+    case 4: return "epic";
+    case 5: return "legendary";
+    case 6: return "artifact";
+    case 7: return "heirloom";
+    default: return undefined;
+  }
+}
+
+/** Fallback: try to derive rarity from ParsedItem if server meta is missing */
+function getRarityToken(item?: ParsedItem): RarityToken | undefined {
+  if (!item) return undefined;
+
+  const textFields = item as unknown as {
+    rarity?: unknown; qualityText?: unknown; qualityName?: unknown;
+  };
+  const text =
+    (typeof textFields.rarity === "string" && textFields.rarity) ||
+    (typeof textFields.qualityText === "string" && textFields.qualityText) ||
+    (typeof textFields.qualityName === "string" && textFields.qualityName) ||
+    undefined;
+
+  if (typeof text === "string") {
+    const t = text.trim().toLowerCase();
+    const allowed: ReadonlyArray<RarityToken> = [
+      "poor","common","uncommon","rare","epic","legendary","artifact","heirloom",
+    ];
+    return (allowed as readonly string[]).includes(t) ? (t as RarityToken) : undefined;
+  }
+
+  const numFields = item as unknown as {
+    quality?: unknown; itemQuality?: unknown; qualityId?: unknown;
+  };
+  const q =
+    (typeof numFields.quality === "number" && numFields.quality) ||
+    (typeof numFields.itemQuality === "number" && numFields.itemQuality) ||
+    (typeof numFields.qualityId === "number" && numFields.qualityId) ||
+    undefined;
+
+  return typeof q === "number" ? qualityToToken(q) : undefined;
+}
+
 function SlotCard({
   slot,
   item,
   plan,
+  className,
+  showLabel = false,
 }: {
   slot: SlotKey;
   item?: ParsedItem;
   plan?: ItemPlan;
+  className?: string;
+  showLabel?: boolean;
 }) {
-  const hasUpgrade = !!plan && plan.toRank > plan.fromRank;
+  const hasUpgrade = !!plan && typeof plan.toRank === "number" && typeof plan.fromRank === "number" && plan.toRank > plan.fromRank;
+  const hasSecondary = (hasUpgrade && !!plan) || !!item?.crafted;
+
+  const meta = useItemMeta(item?.id);
 
   // refresh Wowhead tooltips when the item changes
   useEffect(() => {
@@ -52,54 +112,86 @@ function SlotCard({
   }, [item?.id, item?.ilvl, (item?.bonusIds ?? []).join(":")]);
 
   const nameText = item?.name ?? (item?.id ? `#${item.id}` : "—");
+  const rarity: RarityToken | undefined = meta?.rarity ?? getRarityToken(item);
+
+  // Right-side pill: upgrade (preferred) or ilvl
+  const RightPill = () => {
+    const isUpgrade = hasUpgrade && !!plan;
+    const displayIlvl =
+      isUpgrade && plan ? plan.toIlvl : (typeof item?.ilvl === "number" ? item.ilvl : undefined);
+
+    return (
+      <div className={isUpgrade ? styles.upgradePill : styles.ilvlPill}>
+        <span className={styles.upgradeDelta}>
+          {typeof displayIlvl === "number" ? `ilvl ${displayIlvl}` : "ilvl —"}
+        </span>
+      </div>
+    );
+  };
+  // Second line: upgrade details or crafted note; empty line to keep height if none
+  const SubRow = () =>
+    hasSecondary ? (
+      hasUpgrade && plan ? (
+        <div className={styles.subRow}>
+          <div className={styles.upgradePillSecondary} title={crestTotalsText(plan)}>
+            Upgrade: {plan.fromIlvl} → {plan.toIlvl}
+          </div>
+        </div>
+      ) : (
+        <div className={styles.subRow}>
+          <div className={styles.craftedPill}>Crafted item — no crest upgrades</div>
+        </div>
+      )
+    ) : null;
+
+  const Icon = (
+    <div className={styles.slotIcon}>
+      <ItemIcon
+        itemId={item?.id}
+        alt={nameText}
+        size={48}
+        iconUrl={meta?.iconUrl}
+      />
+    </div>
+  );
+
+  const NameRow = (
+    <div className={`${styles.nameRow} ${!hasSecondary ? styles.isSolo : ""}`}>
+      <div className={styles.itemName}>{nameText}</div>
+      <div className={styles.itemRight}><RightPill /></div>
+    </div>
+  );
 
   return (
-    <div className={styles.slotCard}>
-      <div className={styles.slotLabel}>{SLOT_DISPLAY[slot]}</div>
+    <div
+      className={`${styles.slotCard} ${!showLabel ? styles.noLabel : ""} ${className ?? ""}`}
+      data-rarity={rarity}
+      data-has-upgrade={hasUpgrade || undefined}
+      data-crafted={item?.crafted || undefined}
+      title={undefined}
+    >
+      {showLabel && <div className={styles.slotLabel}>{SLOT_DISPLAY[slot]}</div>}
 
       {item ? (
-        <>
-          {/* One hotspot: icon + name (+ meta) wrapped in a single link */}
-          {item.id ? (
-            <WowheadLink
-              id={item.id}
-              ilvl={item.ilvl}
-              bonusIds={item.bonusIds}
-              title={nameText}
-              className={styles.slotItem} /* re-use your existing grid styling */
-            >
-              <ItemIcon itemId={item.id} alt={nameText} />
-              <div className={styles.itemText}>
-                <div className={styles.itemName}>{nameText}</div>
-                <div className={styles.itemMeta}>
-                  ilvl {item.ilvl ?? "—"} <span className={styles.itemId}>ID {item.id}</span>
-                </div>
-              </div>
-            </WowheadLink>
-          ) : (
-            <div className={styles.slotItem}>
-              <ItemIcon itemId={undefined} alt={nameText} />
-              <div className={styles.itemText}>
-                <div className={styles.itemName}>{nameText}</div>
-                <div className={styles.itemMeta}>
-                  ilvl {item.ilvl ?? "—"} <span className={styles.itemId}>ID {item.id}</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Badges live outside the link so only icon+name are clickable */}
-          {item.crafted && (
-            <div className={styles.planBadge}>Crafted item — no crest upgrades</div>
-          )}
-
-          {hasUpgrade && plan && (
-            <div className={styles.planBadgeGood}>
-              Upgrade: {plan.fromIlvl} → {plan.toIlvl} (r{plan.fromRank}→{plan.toRank}) •{" "}
-              {crestTotalsText(plan)}
-            </div>
-          )}
-        </>
+        item.id ? (
+          <WowheadLink
+            id={item.id}
+            ilvl={item.ilvl}
+            bonusIds={item.bonusIds}
+            title={nameText}
+            className={styles.slotItem}
+          >
+            {Icon}
+            {NameRow}
+            <SubRow />
+          </WowheadLink>
+        ) : (
+          <div className={styles.slotItem}>
+            {Icon}
+            {NameRow}
+            <SubRow />
+          </div>
+        )
       ) : (
         <div className={styles.slotEmpty}>—</div>
       )}
@@ -129,26 +221,28 @@ export function Paperdoll({
   return (
     <section className={styles.paperdoll}>
       {/* Left column */}
-      <SlotCard slot="head"     item={bySlot.head}     plan={planMap.head} />
-      <SlotCard slot="neck"     item={bySlot.neck}     plan={planMap.neck} />
-      <SlotCard slot="shoulder" item={bySlot.shoulder} plan={planMap.shoulder} />
-      <SlotCard slot="back"     item={bySlot.back}     plan={planMap.back} />
-      <SlotCard slot="chest"    item={bySlot.chest}    plan={planMap.chest} />
-      <SlotCard slot="wrist"    item={bySlot.wrist}    plan={planMap.wrist} />
-      <SlotCard slot="hands"    item={bySlot.hands}    plan={planMap.hands} />
-      <SlotCard slot="waist"    item={bySlot.waist}    plan={planMap.waist} />
-      <SlotCard slot="legs"     item={bySlot.legs}     plan={planMap.legs} />
-      <SlotCard slot="feet"     item={bySlot.feet}     plan={planMap.feet} />
+      <SlotCard className={styles.colLeft}  slot="head"     item={bySlot.head}     plan={planMap.head} />
+      <SlotCard className={styles.colLeft}  slot="neck"     item={bySlot.neck}     plan={planMap.neck} />
+      <SlotCard className={styles.colLeft}  slot="shoulder" item={bySlot.shoulder} plan={planMap.shoulder} />
+      <SlotCard className={styles.colLeft}  slot="back"     item={bySlot.back}     plan={planMap.back} />
+      <SlotCard className={styles.colLeft}  slot="chest"    item={bySlot.chest}    plan={planMap.chest} />
+      <SlotCard className={styles.colLeft}  slot="wrist"    item={bySlot.wrist}    plan={planMap.wrist} />
+      <SlotCard className={styles.colLeft}  slot="trinket1" item={bySlot.trinket1} plan={planMap.trinket1} />
 
       {/* Right column */}
-      <SlotCard slot="finger1"  item={bySlot.finger1}  plan={planMap.finger1} />
-      <SlotCard slot="finger2"  item={bySlot.finger2}  plan={planMap.finger2} />
-      <SlotCard slot="trinket1" item={bySlot.trinket1} plan={planMap.trinket1} />
-      <SlotCard slot="trinket2" item={bySlot.trinket2} plan={planMap.trinket2} />
+      <SlotCard className={styles.colRight} slot="hands"    item={bySlot.hands}    plan={planMap.hands} />
+      <SlotCard className={styles.colRight} slot="waist"    item={bySlot.waist}    plan={planMap.waist} />
+      <SlotCard className={styles.colRight} slot="legs"     item={bySlot.legs}     plan={planMap.legs} />
+      <SlotCard className={styles.colRight} slot="feet"     item={bySlot.feet}     plan={planMap.feet} />
+      <SlotCard className={styles.colRight} slot="finger1"  item={bySlot.finger1}  plan={planMap.finger1} />
+      <SlotCard className={styles.colRight} slot="finger2"  item={bySlot.finger2}  plan={planMap.finger2} />
+      <SlotCard className={styles.colRight} slot="trinket2" item={bySlot.trinket2} plan={planMap.trinket2} />
 
-      {/* Bottom weapons */}
-      <SlotCard slot="main_hand" item={bySlot.main_hand} plan={planMap.main_hand} />
-      <SlotCard slot="off_hand"  item={bySlot.off_hand}  plan={planMap.off_hand} />
+      {/* Bottom middle: weapons row */}
+      <div className={styles.weaponsRow}>
+        <SlotCard className={styles.weaponSlot} slot="main_hand" item={bySlot.main_hand} plan={planMap.main_hand} />
+        <SlotCard className={styles.weaponSlot} slot="off_hand"  item={bySlot.off_hand}  plan={planMap.off_hand} />
+      </div>
     </section>
   );
 }

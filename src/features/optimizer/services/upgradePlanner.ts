@@ -1,7 +1,7 @@
-import { tracks } from "./tracks";
+import { tracks } from "../proxy/registry";
 import type { ParsedItem, ItemState, TrackKey } from "../types/simc";
 import { normalizeSlot } from "./slotMap";
-import { findUpgradeByBonusIds, toTrackKey } from "../data/upgradeIndex"
+import { findUpgradeByBonusIds, toTrackKey } from "../data/upgradeIndex";
 
 /** Find the track that contains this ilvl (exact match preferred). */
 export function inferTrackFromIlvl(ilvl: number): TrackKey | null {
@@ -30,6 +30,7 @@ export function inferRankFromIlvl(ilvl: number, trackKey: TrackKey): number {
   return bestRank;
 }
 
+/** Convert a parsed SimC line to our internal ItemState (or null if unknown). */
 export function toItemState(parsed: ParsedItem): ItemState | null {
   const slot = normalizeSlot(parsed.slot);
   if (!slot) return null;
@@ -40,7 +41,7 @@ export function toItemState(parsed: ParsedItem): ItemState | null {
   if (hit) {
     const trackKey = toTrackKey(hit.group);
     if (trackKey) {
-      // Normal, supported groups (Veteran/Champion/Hero/Myth)
+      // Normal, supported groups (Veteran/Champion/Hero/Myth etc.)
       return {
         slot,
         track: trackKey,
@@ -51,10 +52,10 @@ export function toItemState(parsed: ParsedItem): ItemState | null {
         crafted: parsed.crafted,
       };
     }
-    // Explorer/Adventurer (we don't model those); fall back to ilvl
+    // Explorer/Adventurer (if you don't model them), fall back to ilvl below.
   }
 
-  // Fallback when no bonus-id match (or unsupported group) – infer from ilvl
+  // Fallback when no bonus-id match or unsupported group: infer from ilvl
   if (typeof parsed.ilvl === "number") {
     const tk = inferTrackFromIlvl(parsed.ilvl);
     if (tk) {
@@ -73,3 +74,8 @@ export function toItemState(parsed: ParsedItem): ItemState | null {
 
   return null; // couldn't infer
 }
+
+// Temporary aliases if you want to keep old names compiling for now:
+export const inferTrackFromIlvl_old = inferTrackFromIlvl;
+export const inferRankFromIlvl_old = inferRankFromIlvl;
+export const toItemState_old = toItemState;

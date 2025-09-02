@@ -1,4 +1,4 @@
-import { tracks } from "./tracks";
+import { tracks } from "../proxy/registry";
 import type {
   TrackKey,
   Crest,
