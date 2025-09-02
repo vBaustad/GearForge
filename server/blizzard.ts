@@ -30,6 +30,7 @@ async function getAccessToken(): Promise<string> {
   return tokenCache.token;
 }
 
+/* ---------------- existing icon helper & cache ---------------- */
 const iconCache = new Map<number, { iconUrl: string; iconName?: string; expiresAt: number }>();
 
 export async function getItemIcon(itemId: number) {
@@ -51,4 +52,61 @@ export async function getItemIcon(itemId: number) {
   const iconName = iconUrl.split("/").pop()?.replace(".jpg", "");
   iconCache.set(itemId, { iconUrl, iconName, expiresAt: now + 7 * 24 * 3600 * 1000 });
   return { iconUrl, iconName };
+}
+
+/* ---------------- NEW: icon + rarity “meta” helper ---------------- */
+export type RarityToken =
+  | "poor" | "common" | "uncommon" | "rare" | "epic"
+  | "legendary" | "artifact" | "heirloom";
+
+const metaCache = new Map<number, {
+  iconUrl: string;
+  iconName?: string;
+  rarity?: RarityToken;
+  expiresAt: number;
+}>();
+
+function toRarityToken(qType?: string): RarityToken | undefined {
+  if (!qType) return undefined;
+  const t = qType.toLowerCase() as RarityToken; // Blizzard returns e.g. "EPIC"
+  const allowed: ReadonlyArray<RarityToken> = [
+    "poor","common","uncommon","rare","epic","legendary","artifact","heirloom",
+  ];
+  return allowed.includes(t) ? t : undefined;
+}
+
+/** Fetch once: icon URL + item quality → rarity token */
+export async function getItemMeta(itemId: number) {
+  const hit = metaCache.get(itemId);
+  const now = Date.now();
+  if (hit && now < hit.expiresAt) {
+    const { iconUrl, iconName, rarity } = hit;
+    return { iconUrl, iconName, rarity };
+  }
+
+  const token = await getAccessToken();
+
+  const mediaUrl = `https://${REGION}.api.blizzard.com/data/wow/media/item/${itemId}?namespace=static-${REGION}&locale=${LOCALE}`;
+  const itemUrl  = `https://${REGION}.api.blizzard.com/data/wow/item/${itemId}?namespace=static-${REGION}&locale=${LOCALE}`;
+
+  const [mediaRes, itemRes] = await Promise.all([
+    fetch(mediaUrl, { headers: { Authorization: `Bearer ${token}` } }),
+    fetch(itemUrl,  { headers: { Authorization: `Bearer ${token}` } }),
+  ]);
+
+  if (!mediaRes.ok) throw new Error(`Item media failed: ${mediaRes.status} ${await mediaRes.text()}`);
+  if (!itemRes.ok)  throw new Error(`Item data failed: ${itemRes.status} ${await itemRes.text()}`);
+
+  const mediaJson = (await mediaRes.json()) as { assets?: Array<{ key: string; value: string }> };
+  const itemJson  = (await itemRes.json())  as { quality?: { type?: string } };
+
+  const iconAsset = mediaJson.assets?.find(a => a.key === "icon");
+  if (!iconAsset?.value) throw new Error(`No icon asset for item ${itemId}`);
+
+  const iconUrl  = iconAsset.value;
+  const iconName = iconUrl.split("/").pop()?.replace(".jpg", "");
+  const rarity   = toRarityToken(itemJson.quality?.type);
+
+  metaCache.set(itemId, { iconUrl, iconName, rarity, expiresAt: now + 7 * 24 * 3600 * 1000 });
+  return { iconUrl, iconName, rarity };
 }
