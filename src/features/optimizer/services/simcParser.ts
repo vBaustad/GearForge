@@ -6,6 +6,8 @@ import type {
   SlotWatermark,
   CharacterUpgradeContext,
   ParsedItem,
+  CharacterMeta,
+  ProfessionRank,
 } from "../types/simc";
 import { SIMC_TO_USER_SLOT } from "./slotMap";
 
@@ -210,4 +212,162 @@ export function parseSimc(text: string): ParsedItem[] {
   }
 
   return items;
+}
+
+function extractSimple(all: string[], key: string): string | null {
+  // Matches lines like: key=value  (not comment lines)
+  // Accepts optional quotes: key="value"
+  const row = all.find(l => !l.trim().startsWith("#") && l.trim().toLowerCase().startsWith(`${key.toLowerCase()}=`));
+  if (!row) return null;
+  const idx = row.indexOf("=");
+  if (idx < 0) return null;
+  const raw = row.slice(idx + 1).trim();
+  // strip quotes if present
+  return raw.replace(/^"(.*)"$/, "$1");
+}
+
+function parseIntOrNull(s: string | null): number | null {
+  if (!s) return null;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
+}
+
+function parseProfessions(s: string | null): ProfessionRank[] {
+  if (!s) return [];
+  return s
+    .split("/")
+    .map(seg => seg.trim())
+    .filter(Boolean)
+    .map(seg => {
+      const [name, valStr] = seg.split("=").map(t => t.trim());
+      const value = Number(valStr);
+      if (!name || !Number.isFinite(value)) return null;
+      return { name, value } as ProfessionRank;
+    })
+    .filter((x): x is ProfessionRank => !!x);
+}
+
+function parseSavedLoadouts(lines: string[]): Array<{ name: string; talents: string }> {
+  // Lines look like:
+  // # Saved Loadout: Single Target
+  // # talents=CYG...
+  const out: Array<{ name: string; talents: string }> = [];
+  let pendingName: string | null = null;
+
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (line.startsWith("# Saved Loadout:")) {
+      pendingName = line.replace(/^#\s*Saved Loadout:\s*/i, "").trim();
+      continue;
+    }
+    if (pendingName && line.startsWith("# talents=")) {
+      const idx = line.indexOf("=");
+      const talents = idx >= 0 ? line.slice(idx + 1).trim() : "";
+      if (talents) out.push({ name: pendingName, talents });
+      pendingName = null;
+    }
+  }
+  return out;
+}
+
+function parseHeaderLine(line: string): {
+  spec: string | null;
+  timestamp: string | null;
+  regionRealm: string | null;
+} {
+  // Example:
+  // "# Ryggsekken - Balance - 2025-08-31 14:43 - EU/Stormscale"
+  const clean = line.replace(/^#\s*/, "");
+  const parts = clean.split(" - ").map(s => s.trim());
+  // parts[0] might be character name; we don't rely on it here
+  const spec = parts[1] ?? null;
+  const timestamp = parts[2] ?? null;
+  const regionRealm = parts[3] ?? null;
+  return { spec, timestamp, regionRealm };
+}
+
+function buildArmoryUrl(meta: { region: string | null; server: string | null; name: string | null }, locale?: string): string | undefined {
+  const { region, server, name } = meta;
+  if (!region || !server || !name) return undefined;
+
+  // Basic locale fallback by region (you can improve this later via user settings)
+  const defaultLocale = region.toLowerCase() === "eu" ? "en-gb"
+    : region.toLowerCase() === "us" ? "en-us"
+    : region.toLowerCase() === "kr" ? "ko-kr"
+    : region.toLowerCase() === "tw" ? "zh-tw"
+    : "en-us";
+
+  const loc = locale ?? defaultLocale;
+
+  // Slugify: lowercase + replace spaces/apostrophes with hyphens
+  const slug = (s: string) => s.toLowerCase().replace(/['’]/g, "").replace(/\s+/g, "-");
+
+  return `https://worldofwarcraft.blizzard.com/${loc}/character/${region.toLowerCase()}/${slug(server)}/${slug(name)}`;
+}
+
+/* ---------- public API: character meta parsing ---------- */
+
+export function parseCharacterMeta(simcText: string): CharacterMeta {
+  const lines = simcText.split(/\r?\n/);
+
+  const classLine = lines.find(l => !l.trim().startsWith("#") && /^[a-z_]+\s*=\s*".*"$/.test(l.trim()));
+  // e.g., druid="Ryggsekken"
+  let className: string | null = null;
+  let name: string | null = null;
+  if (classLine) {
+    const m = classLine.trim().match(/^([a-z_]+)\s*=\s*"([^"]+)"$/i);
+    if (m) {
+      className = m[1].toLowerCase();
+      name = m[2];
+    }
+  }
+
+  const spec = extractSimple(lines, "spec");
+  const level = parseIntOrNull(extractSimple(lines, "level"));
+  const race = extractSimple(lines, "race");
+  const region = extractSimple(lines, "region");
+  const server = extractSimple(lines, "server");
+  const role = extractSimple(lines, "role");
+  const professions = parseProfessions(extractSimple(lines, "professions"));
+  const talentsString = extractSimple(lines, "talents");
+
+  // Header line (first line that starts with '# ' and looks like the character header)
+  const headerLine = lines.find(l => l.trim().startsWith("# ") && / - .* - .* - .*\//.test(l));
+  const headerParsed = headerLine ? parseHeaderLine(headerLine.trim()) : { spec: null, timestamp: null, regionRealm: null };
+
+  const savedLoadouts = parseSavedLoadouts(lines);
+
+  const meta: CharacterMeta = {
+    name,
+    className,
+    spec,
+    level,
+    race,
+    region,
+    server,
+    role,
+    professions,
+    talentsString,
+    savedLoadouts,
+    headerLineSpec: headerParsed.spec,
+    headerLineTimestamp: headerParsed.timestamp,
+    headerLineRegionRealm: headerParsed.regionRealm,
+  };
+
+  meta.armoryUrl = buildArmoryUrl(meta);
+
+  return meta;
+}
+
+/* ---------- convenience combo ---------- */
+
+export function parseSimcAll(simcText: string): {
+  items: ParsedItem[];
+  upgradeCtx: CharacterUpgradeContext;
+  meta: CharacterMeta;
+} {
+  const upgradeCtx = parseCharacterUpgradeContext(simcText);
+  const items = parseSimc(simcText);
+  const meta = parseCharacterMeta(simcText);
+  return { items, upgradeCtx, meta };
 }
