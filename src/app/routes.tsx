@@ -3,12 +3,13 @@ import { createBrowserRouter } from "react-router-dom";
 import { RootLayout } from "./RootLayout";
 import { OptimizerPage } from "../features/optimizer/pages/OptimizerPage";
 import OptimizerResultPage from "../features/optimizer/pages/OptimizerResultPage";
+import { LandingPage } from "./LandingPage";
 
 export const router = createBrowserRouter([
   {
     element: <RootLayout />,
     children: [
-      { path: "/", element: <OptimizerPage /> },
+      { path: "/", element: <LandingPage /> },
       { path: "/optimizer", element: <OptimizerPage /> },
       { path: "/optimizer/view", element: <OptimizerResultPage /> },
 

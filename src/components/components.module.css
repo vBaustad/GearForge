@@ -1,4 +1,6 @@
-/* Footer (shared) */
+/* =====================
+   Footer (shared)
+===================== */
 .footerRoot {
   /* component-scoped palette to match: bg-black text-gray-300 border-gray-800 */
   --bg: #000000;
@@ -54,15 +56,19 @@
 .faqItem[open] .faqChevron { transform: rotate(180deg); }
 .faqBody { padding: 0 16px 16px; font-size: 14px; color: #9ca3af; } /* text-sm text-gray-400 */
 
-/* === Header (shared) === */
+
+/* =====================
+   Header (shared)
+===================== */
 .headerRoot {
-  /* component-scoped palette to mirror: bg-black border-gray-800, gray-300 text */
-  --bg: #000000;
-  --ink: #e5e7eb;     /* not used much; most items are gray-300 */
+  /* palette mirrors footer/infobar */
+  --bg: #000000;      /* black */
+  --ink: #e5e7eb;     /* gray-200 */
   --ink-dim: #d1d5db; /* gray-300 */
   --stroke: #1f2937;  /* gray-800 */
   --brand: #facc15;   /* yellow-500 */
-  --hover-bg: #1f2937;
+  --hover-bg: #111827;
+  --header-h: 64px;
 
   position: sticky;
   top: 0;
@@ -72,10 +78,20 @@
   color: var(--ink-dim);
 }
 
+/* soft shadow under sticky header */
+.headerRoot::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: -1px; height: 12px;
+  pointer-events: none;
+  background: linear-gradient(to bottom, rgba(0,0,0,.18), rgba(0,0,0,0));
+}
+
 .headerInner {
-  max-width: 1120px;   /* ~max-w-7xl; change to 920px if you want strict page width */
+  max-width: 1120px;        /* match footer */
   margin: 0 auto;
-  padding: 16px 24px;  /* py-4 px-6 */
+  padding: 12px 24px;       /* slightly tighter than footer */
+  min-height: var(--header-h);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -83,8 +99,8 @@
 
 /* Brand */
 .brand {
-  font-size: 24px;     /* text-2xl */
-  font-weight: 700;    /* font-bold */
+  font-size: 24px;          /* text-2xl */
+  font-weight: 700;         /* font-bold */
   color: var(--brand);
   text-decoration: none;
 }
@@ -92,54 +108,49 @@
 /* Desktop nav */
 .nav {
   display: none;
-  gap: 32px;           /* gap-8 */
-  font-size: 14px;     /* text-sm */
-  font-weight: 500;    /* font-medium */
+  gap: 32px;                /* gap-8 */
+  font-size: 14px;          /* text-sm */
+  font-weight: 500;         /* font-medium */
 }
-@media (min-width: 768px) {
-  .nav { display: flex; }
-}
+@media (min-width: 768px) { .nav { display: flex; } }
 
 .navLink {
-  color: var(--ink-dim);             /* text-gray-300 */
+  color: var(--ink-dim);
   text-decoration: none;
   transition: color .15s ease;
 }
 .navLink:hover { color: var(--brand); }
-.navLinkActive {
-  color: var(--brand);
-  font-weight: 600;                  /* font-semibold */
-}
+.navLinkActive { color: var(--brand); font-weight: 600; }
 
-/* Mobile button (shows on < md) */
+/* Mobile button */
 .mobileBtn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 8px;                      /* p-2 */
-  border-radius: 8px;                /* rounded-md */
+  padding: 8px;
+  border-radius: 8px;
   background: transparent;
   border: 0;
-  color: #9ca3af;                    /* text-gray-400 */
+  color: #9ca3af;
   cursor: pointer;
   transition: background-color .15s ease;
 }
 .mobileBtn:hover { background: var(--hover-bg); }
-@media (min-width: 768px) {
-  .mobileBtn { display: none; }
-}
+@media (min-width: 768px) { .mobileBtn { display: none; } }
 .mobileIcon { width: 24px; height: 24px; } /* h-6 w-6 */
 
-/* === InfoBar (shared) === */
 
-/* === InfoBar (shared, segmented) === */
+/* =====================
+   InfoBar (shared)
+===================== */
 .infobarRoot {
-  /* distinct palette for the bar */
-  --bg: #1b1b1b;
-  --ink: #f5f7fc;
-  --ink-dim: #b9c0cf;
-  --stroke: #1f2126;
-  --stroke-soft: #2a2c31;
+  /* identical palette to header for seamless stack */
+  --bg: #000000;       /* black */
+  --ink: #e5e7eb;      /* gray-200 */
+  --ink-dim: #d1d5db;  /* gray-300 */
+  --stroke: #1f2937;   /* gray-800 */
+  --pill: #111827;     /* gray-900 */
+  --pill-bd: #1f2937;  /* gray-800 */
 
   background: var(--bg);
   color: var(--ink);
@@ -147,12 +158,25 @@
   border-bottom: 1px solid var(--stroke);
 }
 
-.infobarSticky { position: sticky; top: 64px; z-index: 20; }
+.infobarSticky {
+  position: sticky;
+  top: 64px;           /* align just under header height */
+  z-index: 40;
+}
+@supports (position: sticky) {
+  .infobarSticky::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: -1px; height: 12px;
+    pointer-events: none;
+    background: linear-gradient(to bottom, rgba(0,0,0,.18), rgba(0,0,0,0));
+  }
+}
 
 .infobarInner {
-  max-width: 920px;
+  max-width: 1120px;   /* match header/footer */
   margin: 0 auto;
-  padding: 8px 16px;
+  padding: 10px 16px;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -166,77 +190,84 @@
   opacity: .95;
 }
 
-/* Segments container (no pills) */
-.infobarSegments {
-  display: inline-flex;
-  flex-wrap: wrap;
-  column-gap: 0;   /* separators handle spacing */
-  row-gap: 6px;
-}
-
-/* Each segment: inline, no rounded surface */
-.infobarSegment {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0;      /* keep it flat, no surface */
-  line-height: 1.3;
-}
-
-/* vertical line between segments */
-.infobarSegments .infobarSegment + .infobarSegment {
-  border-left: 1px solid var(--stroke-soft);
-  margin-left: 12px;
-  padding-left: 12px;
-}
-
-/* small square swatch per tier */
-.infobarSwatch {
-  width: 12px;
-  height: 12px;
-  border-radius: 0;                    /* not rounded */
-  background: #ffc94d;                 /* Gilded default */
-  box-shadow: inset 0 0 0 1px rgba(0,0,0,.25);
-}
-.infobarSwatch[data-tier="Runed"]     { background: #a0c3ff; }
-.infobarSwatch[data-tier="Carved"]    { background: #b7ffe0; }
-.infobarSwatch[data-tier="Weathered"] { background: #e2e2e2; }
-
-.infobarTier { letter-spacing: .2px; }
-.infobarSep  { opacity: .7; }
-
-/* numeric value, no pill surface */
-.infobarValue {
-  font-variant-numeric: tabular-nums;
-  color: var(--accent-2);
-  padding: 0 2px;
-}
-
 .infobarSpacer { flex: 1 1 auto; }
 
 .infobarNote {
   font-size: 12px;
   color: var(--ink-dim);
-  padding: 2px 6px;
-  border-radius: 4px;           /* subtle, can be 0 if you prefer */
-  background: transparent;      /* keep it flat as well */
-  border: 1px solid transparent;
 }
 
-/* Optional subtle sticky drop shadow */
-@supports (position: sticky) {
-  .infobarSticky::after {
-    content: "";
-    position: absolute;
-    left: 0; right: 0; bottom: -1px; height: 12px;
-    pointer-events: none;
-    background: linear-gradient(to bottom, rgba(0,0,0,.18), rgba(0,0,0,0));
-  }
+
+/* --- Crest pills (shared) --- */
+.crestRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: 6px; /* space after label */
 }
 
-/* Responsive */
+.crestPill {
+  --accent: #9ca3af;          /* default (Weathered-ish) */
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px;
+  border-radius: 10px;
+  line-height: 1;
+  font-size: 12px;
+
+  background: var(--pill);
+  border: 1px solid var(--pill-bd);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,0.03),
+    0 1px 0 rgba(0,0,0,.35);
+  transition: transform .08s ease, box-shadow .12s ease, border-color .12s ease;
+}
+
+.crestPill:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--accent), #1f2937 40%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,0.05),
+    0 6px 16px rgba(0,0,0,.25);
+}
+
+/* little accent dot for quick tier scanning */
+.crestPill::before {
+  content: "";
+  width: 6px; height: 6px;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.06);
+}
+
+/* tier accents (align gilded with brand yellow) */
+.crestPill[data-tier="Gilded"]    { --accent: #facc15; } /* yellow-500 */
+.crestPill[data-tier="Runed"]     { --accent: #60a5fa; } /* blue-400 */
+.crestPill[data-tier="Carved"]    { --accent: #34d399; } /* emerald-400 */
+.crestPill[data-tier="Weathered"] { --accent: #cbd5e1; } /* slate-300 */
+
+.crestImg   { display: block; border-radius: 3px; }
+.crestCount { font-weight: 800; color: #fef08a; }        /* soft yellow */
+.crestLabel { opacity: .9; color: var(--ink-dim); }
+
+/* Old segmented styles (kept for safety; can be removed if unused) */
+.infobarSegments { display: inline-flex; flex-wrap: wrap; column-gap: 0; row-gap: 6px; }
+.infobarSegment  { display: inline-flex; align-items: center; gap: 6px; padding: 0; line-height: 1.3; }
+.infobarSegments .infobarSegment + .infobarSegment {
+  border-left: 1px solid var(--stroke);
+  margin-left: 12px; padding-left: 12px;
+}
+.infobarTier { letter-spacing: .2px; }
+.infobarSep  { opacity: .7; }
+.infobarValue { font-variant-numeric: tabular-nums; color: #facc15; padding: 0 2px; }
+
+/* Responsive polish */
 @media (max-width: 640px) {
-  .infobarInner { gap: 10px; padding: 6px 12px; }
+  .headerInner { padding: 10px 12px; }
+  .infobarInner { gap: 10px; padding: 8px 12px; }
   .infobarLabel { font-size: 13px; }
-  .infobarNote  { display: none; }  /* keep bar compact on mobile */
+  .infobarNote  { display: none; }
+  .crestRow     { gap: 6px; }
+  .crestPill    { padding: 3px 7px; }
 }
