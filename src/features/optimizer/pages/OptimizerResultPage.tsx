@@ -6,29 +6,13 @@ import { parseSimc, parseCharacterUpgradeContext, parseCharacterMeta } from "../
 import { Paperdoll } from "../components/Paperdoll";
 import { NarrativePlan } from "../components/NarrativePlan";
 import type { SimcPayload, ItemState, ParsedItem, Crest } from "../types/simc";
-import { decodeFromUrlHash } from "../services/urlCodec";
+import { buildShareUrl, decodeFromUrlHash } from "../services/urlCodec";
 import { toItemState } from "../services/upgradePlanner";
 import { planAll } from "../services/planner";
 import { watermarksToFreeIlvlBySlot } from "../services/slotMap";
 import { RotateCcw, ExternalLink, Copy } from "lucide-react";
 import { IconUrlsProvider, type IconUrlMap } from "../context/IconUrlContext";
 import { useNavigate } from "react-router-dom";
-
-const CLASS_COLORS: Record<string, string> = {
-  death_knight: "#C41E3A",
-  demon_hunter: "#A330C9",
-  druid: "#FF7C0A",
-  evoker: "#33937F",
-  hunter: "#AAD372",
-  mage: "#3FC7EB",
-  monk: "#00FF98",
-  paladin: "#F48CBA",
-  priest: "#FFFFFF",
-  rogue: "#FFF468",
-  shaman: "#0070DD",
-  warlock: "#8787ED",
-  warrior: "#C69B6D",
-};
 
 const cap = (s?: string | null) => (s ? s[0].toUpperCase() + s.slice(1) : "");
 
@@ -48,7 +32,16 @@ export default function OptimizerResultPage() {
 
   const data: SimcPayload | null = useMemo(() => {
     if (typeof window === "undefined") return null;
-    return decodeFromUrlHash(window.location.hash);
+
+    // 1) #d=... (or legacy in hash)
+    const byHash = decodeFromUrlHash(window.location.hash);
+    if (byHash) return byHash;
+
+    // 2) ?d=... (or legacy in query)
+    const byQuery = decodeFromUrlHash(window.location.search);
+    if (byQuery) return byQuery;
+
+    return null;
   }, []);
 
   const simcText = data?.simc ?? "";
@@ -132,8 +125,21 @@ export default function OptimizerResultPage() {
 
   function copyLink() {
     if (typeof window === "undefined") return;
-    navigator.clipboard.writeText(window.location.href);
+
+    // Prefer decoded payload; else reconstruct from current state if possible
+    const current: SimcPayload | null =
+      data ?? (simcText ? { simc: simcText, ceilingIlvl, ignoreCeiling } : null);
+
+    if (!current) {
+      navigator.clipboard.writeText(window.location.href);
+      return;
+    }
+
+    const url = buildShareUrl(current); // origin + path + #d=...
+    navigator.clipboard.writeText(url);
+    window.history.replaceState(null, "", url); // optional: update address bar
   }
+
 
   // Collect icon IDs you’ll show: equipped + a few planned upgrade items
   const equippedIds = useMemo(
@@ -212,25 +218,18 @@ export default function OptimizerResultPage() {
 
   const navigate = useNavigate();
 
-  const classColor = meta?.className ? CLASS_COLORS[meta.className] : undefined;
-  const nameStyle: React.CSSProperties = classColor
-    ? {
-        color: classColor,
-        // add a subtle stroke/shadow when the color is very light (e.g., Priest)
-        textShadow:
-          classColor.toLowerCase() === "#ffffff"
-            ? "0 1px 1px rgba(0,0,0,0.5)"
-            : "0 1px 0 rgba(0,0,0,0.35)",
-      }
-    : {};
+  const classToken =
+    meta?.className
+      ? (page as Record<string, string>)[`class-${meta.className}`] ?? ""
+      : "";
 
   return (
     <main className={page.wrap}>
       <header className={page.header}>
-        <div className={page.titleRow}>
+        <div className={`${page.titleRow} ${classToken}`}>
 
           {/* H1 = Character name or fallback */}
-          <h1 className={page.title} style={nameStyle}>
+          <h1 className={`${page.title} ${page.charTitle}`}>
             {meta?.name ?? "Upgrade Planner"}
           </h1>
 
