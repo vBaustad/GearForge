@@ -2,17 +2,22 @@
 import { useEffect, useMemo, useState } from "react";
 import page from "../../../styles/page.module.css";
 import { usePageMeta } from "../../../app/seo/usePageMeta";
-import { parseSimc, parseCharacterUpgradeContext } from "../services/simcParser";
+import { parseSimc, parseCharacterUpgradeContext, parseCharacterMeta } from "../services/simcParser";
 import { Paperdoll } from "../components/Paperdoll";
 import { NarrativePlan } from "../components/NarrativePlan";
 import type { SimcPayload, ItemState, ParsedItem, Crest } from "../types/simc";
-import { decodeFromUrlHash } from "../services/urlCodec";
+import { buildShareUrl, decodeFromUrlHash } from "../services/urlCodec";
 import { toItemState } from "../services/upgradePlanner";
 import { planAll } from "../services/planner";
 import { watermarksToFreeIlvlBySlot } from "../services/slotMap";
-
+import { RotateCcw, ExternalLink, Copy } from "lucide-react";
 import { IconUrlsProvider, type IconUrlMap } from "../context/IconUrlContext";
 import { useNavigate } from "react-router-dom";
+
+const cap = (s?: string | null) => (s ? s[0].toUpperCase() + s.slice(1) : "");
+
+const titleCase = (s?: string | null) =>
+  s ? s.replace(/\b\w+/g, w => w[0].toUpperCase() + w.slice(1).toLowerCase()) : "";
 
 export default function OptimizerResultPage() {
   usePageMeta({
@@ -27,7 +32,16 @@ export default function OptimizerResultPage() {
 
   const data: SimcPayload | null = useMemo(() => {
     if (typeof window === "undefined") return null;
-    return decodeFromUrlHash(window.location.hash);
+
+    // 1) #d=... (or legacy in hash)
+    const byHash = decodeFromUrlHash(window.location.hash);
+    if (byHash) return byHash;
+
+    // 2) ?d=... (or legacy in query)
+    const byQuery = decodeFromUrlHash(window.location.search);
+    if (byQuery) return byQuery;
+
+    return null;
   }, []);
 
   const simcText = data?.simc ?? "";
@@ -38,11 +52,28 @@ export default function OptimizerResultPage() {
     [simcText]
   );
 
-  // --- Parse upgrade context (wallet, watermarks, achievements) ---
+  // --- Parse upgrade context ---
   const upgradeCtx = useMemo(
     () => (simcText ? parseCharacterUpgradeContext(simcText) : null),
     [simcText]
   );
+
+  // --- Character meta ---
+  const meta = useMemo(
+    () => (simcText ? parseCharacterMeta(simcText) : null),
+    [simcText]
+  );
+
+  // Helpers for header display
+  const displaySpec = (meta?.spec ?? meta?.headerLineSpec) ?? null;
+  const subtitle =
+    meta
+      ? [
+          displaySpec ? cap(displaySpec) : null,
+          meta.region ? meta.region.toUpperCase() : null,
+          meta.server ? titleCase(meta.server) : null,
+        ].filter(Boolean).join(" • ")
+      : null;
 
   // --- Item states for planner ---
   const itemStates: ItemState[] = useMemo(
@@ -94,8 +125,21 @@ export default function OptimizerResultPage() {
 
   function copyLink() {
     if (typeof window === "undefined") return;
-    navigator.clipboard.writeText(window.location.href);
+
+    // Prefer decoded payload; else reconstruct from current state if possible
+    const current: SimcPayload | null =
+      data ?? (simcText ? { simc: simcText, ceilingIlvl, ignoreCeiling } : null);
+
+    if (!current) {
+      navigator.clipboard.writeText(window.location.href);
+      return;
+    }
+
+    const url = buildShareUrl(current); // origin + path + #d=...
+    navigator.clipboard.writeText(url);
+    window.history.replaceState(null, "", url); // optional: update address bar
   }
+
 
   // Collect icon IDs you’ll show: equipped + a few planned upgrade items
   const equippedIds = useMemo(
@@ -174,28 +218,70 @@ export default function OptimizerResultPage() {
 
   const navigate = useNavigate();
 
+  const classToken =
+    meta?.className
+      ? (page as Record<string, string>)[`class-${meta.className}`] ?? ""
+      : "";
+
   return (
     <main className={page.wrap}>
       <header className={page.header}>
-        <div className={page.titleRow}>
-          <h1 className={page.title}>Upgrade Planner</h1>
+        <div className={`${page.titleRow} ${classToken}`}>
+
+          {/* H1 = Character name or fallback */}
+          <h1 className={`${page.title} ${page.charTitle}`}>
+            {meta?.name ?? "Upgrade Planner"}
+          </h1>
+
+          {/* Subtitle = Class • Realm */}
+          {meta && (
+            <div style={{ marginTop: 2, opacity: 0.85, fontSize: 14 }}>
+              {subtitle}
+            </div>
+          )}
         </div>
       </header>
 
       <section className={page.results}>
         <header className={page.resultsHeader}>
-          <h2>Recommended Upgrades</h2>
-          <div className={page.topBar}>
-            <div className={page.topLeft} />
-            <button className={page.primaryBtn} 
-              onClick={() => navigate("/optimizer")}
-              aria-label="Start over and return to the optimizer input page"
+          <div className={page.resultsHeaderBar}>
+            {/* Left: title */}
+            <h2>Recommended Upgrades</h2>
+
+            {/* Center: date */}
+            {meta?.headerLineTimestamp ? (
+              <div className={page.exportStamp}>Exported: {meta.headerLineTimestamp}</div>
+            ) : <div />}
+
+            {/* Right: actions */}
+            <div className={page.actions}>
+              <button
+                className={page.primaryBtn}
+                onClick={() => navigate("/optimizer")}
+                aria-label="Start over and return to the optimizer input page"
               >
-              ↺ Start Over
-            </button>
-            <button className={page.primaryBtn} onClick={copyLink}>
-              Copy Link
-            </button>
+                <RotateCcw className={page.btnIcon} />
+                Start Over
+              </button>
+
+              {meta?.armoryUrl && (
+                <a
+                  className={page.primaryBtn}
+                  href={meta.armoryUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Open character on the official Armory"
+                >
+                  <ExternalLink className={page.btnIcon} />
+                  Armory
+                </a>
+              )}
+
+              <button className={page.primaryBtn} onClick={copyLink}>
+                <Copy className={page.btnIcon} />
+                Copy Link
+              </button>
+            </div>
           </div>
         </header>
 
@@ -205,7 +291,7 @@ export default function OptimizerResultPage() {
             <p className={page.emptyText}>This link doesn’t contain a SimC payload.</p>
           </div>
         ) : (
-          <>     
+          <>
             <IconUrlsProvider urls={iconMap}>
               <Paperdoll items={items} plans={plans} />
               <NarrativePlan plans={plans} ceilingIlvl={ceilingIlvl} />

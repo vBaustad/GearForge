@@ -122,3 +122,26 @@ export interface SimcPayload {
   ignoreCeiling?: boolean;  // ignore ceiling and push to max
 }
 
+export type ProfessionRank = { name: string; value: number };
+
+export type CharacterMeta = {
+  name: string | null;
+  className: string | null;         // e.g., "druid"
+  spec: string | null;              // e.g., "balance"
+  level: number | null;
+  race: string | null;              // e.g., "night_elf"
+  region: string | null;            // e.g., "eu"
+  server: string | null;            // e.g., "stormscale"
+  role: string | null;              // e.g., "spell"
+  professions: ProfessionRank[];    // parsed from alchemy=100/jewelcrafting=100
+  talentsString: string | null;     // current active talents line
+  savedLoadouts: Array<{ name: string; talents: string }>;
+
+  // Optional niceties for UI/linking
+  headerLineSpec: string | null;    // parsed from first header line if present ("Balance")
+  headerLineTimestamp: string | null; // e.g., "2025-08-31 14:43"
+  headerLineRegionRealm: string | null; // e.g., "EU/Stormscale"
+
+  // Convenience
+  armoryUrl?: string;
+};

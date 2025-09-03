@@ -19,15 +19,17 @@ export function OptimizerPage() {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-
   async function handleAnalyze(e: React.FormEvent) {
     e.preventDefault();
     setIsParsing(true);
     setError(null);
     try {
-      if (!rawInput.trim()) throw new Error("Paste your SimC first.");
-      const hash = "d=" + encodeToUrlHash({ simc: rawInput });
-      navigate(`/optimizer/view#${hash}`);
+      const simc = rawInput.trim();
+      if (!simc) throw new Error("Paste your SimC first.");
+
+      // ✅ encodeToUrlHash already returns "#d=..."
+      const fragment = encodeToUrlHash({ simc });
+      navigate(`/optimizer/view${fragment}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not parse input.");
     } finally {

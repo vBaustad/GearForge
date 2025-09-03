@@ -42,12 +42,31 @@
 .textarea:focus { box-shadow:0 0 0 4px var(--ring); border-color:var(--accent); }
 .formRow { display:flex; gap:10px; }
 
-.topBar { display:flex; gap:10px; justify-content: flex-end; margin-right: 2px;}
+/* Generic action row (used elsewhere) */
+.topBar { display:flex; gap:10px; justify-content:flex-end; align-items:center; }
 
+/* Buttons */
 .primaryBtn, .ghostBtn {
-  appearance:none; border-radius:6px; padding:10px 14px; font-weight:700; cursor:pointer; border:1px solid #2a2c31;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;               /* icon ↔ label spacing */
+  line-height:1;
+  padding:8px 12px;
+  border-radius:8px;
+  border:1px solid transparent;
+  text-decoration:none;  /* anchor-as-button */
+  cursor:pointer;
+  white-space:nowrap;
 }
-.primaryBtn { background:linear-gradient(180deg,#f6b300,#d89700); color:#111; font-size:12px; border-color:#d89700; }
+.primaryBtn {
+  background:linear-gradient(180deg,#f6b300,#d89700);
+  color:#111;
+  font-size:12px;
+  border-color:#d89700;
+  box-shadow:0 1px 0 rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.15);
+}
+.primaryBtn:hover { filter:brightness(1.03); }
+.primaryBtn:active { transform:translateY(1px); }
 .primaryBtn:disabled { opacity:.75; cursor:default; }
 .ghostBtn { background:transparent; color:var(--ink); }
 
@@ -56,14 +75,40 @@
   outline:none; box-shadow:0 0 0 4px var(--ring);
 }
 
-.error { color:#ff7a7a; font-size:12px; }
+/* Icon in buttons */
+.btnIcon {
+  width:16px; height:16px; flex:0 0 16px; opacity:.9;
+}
 
 /* Results (page) */
 .results { margin-top:20px; }
-.resultsHeader {
-  display:flex; justify-content:space-between; align-items:flex-end;
-  margin-bottom:8px; font-size:24px;
+
+/* Wrapper for the header row: title | date | actions */
+.resultsHeader { margin-bottom:8px; }
+.resultsHeaderBar {
+  display:grid;
+  grid-template-columns:1fr auto 1fr; /* left / center / right */
+  align-items:center;
+  gap:8px;
 }
+.resultsHeader h2 { margin:0; font-size:24px; }
+
+/* Centered export timestamp */
+.exportStamp {
+  font-size:12px;
+  opacity:.7;
+  justify-self:center;
+  padding-top:6px;
+}
+
+/* Right-aligned actions (buttons) */
+.actions {
+  display:flex;
+  justify-content:flex-end;
+  gap:8px;
+}
+
+/* Meta / KPIs */
 .resultsMeta { display:flex; gap:16px; color:var(--ink-dim); align-items:flex-end; }
 .kpi strong { color:var(--ink); }
 .resultsGridOneCol { display:grid; gap:12px; }
@@ -75,9 +120,38 @@
 }
 .emptyBadge { display:inline-block; padding:2px 8px; border-radius:999px; border:1px solid #2a2c31; margin-bottom:6px; }
 
-/* Responsive (page) */
+/* Character header */
+.charHeader { display:grid; justify-items:center; gap:4px; margin-top:.25rem; }
+.charTitle {
+  font-weight:800; line-height:1.1;
+  font-size:clamp(28px,4.2vw,44px);
+  color:var(--class-color, currentColor);
+  text-shadow:0 1px 0 rgba(0,0,0,.35);
+}
+.charSubtitle { font-size:14px; opacity:.85; letter-spacing:.2px; }
+.sectionSubline { font-size:12px; opacity:.7; margin-top:2px; }
+.realmCap { text-transform:capitalize; }
+
+/* Class color tokens (set --class-color) */
+.class-death_knight { --class-color:#C41E3A; }
+.class-demon_hunter { --class-color:#A330C9; }
+.class-druid        { --class-color:#FF7C0A; }
+.class-evoker       { --class-color:#33937F; }
+.class-hunter       { --class-color:#AAD372; }
+.class-mage         { --class-color:#3FC7EB; }
+.class-monk         { --class-color:#00FF98; }
+.class-paladin      { --class-color:#F48CBA; }
+.class-priest       { --class-color:#FFFFFF; }
+.class-rogue        { --class-color:#FFF468; }
+.class-shaman       { --class-color:#0070DD; }
+.class-warlock      { --class-color:#8787ED; }
+.class-warrior      { --class-color:#C69B6D; }
+
+/* Responsive */
 @media (max-width:640px){
-  .resultsHeader { flex-direction:column; gap:8px; align-items:flex-start; }
+  .resultsHeaderBar { grid-template-columns: 1fr; }
+  .exportStamp { justify-self:start; border-top:none; padding-top:0; }
+  .actions { justify-content:flex-start; }
 }
 
 /* Motion prefs */
