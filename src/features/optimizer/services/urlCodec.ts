@@ -4,7 +4,6 @@ import {
   decompressFromEncodedURIComponent,
 } from "lz-string";
 import type { SimcPayload } from "../types/simc";
-import { preparePayloadSimc } from "./simcMinifier";
 
 /* ---------- type guards ---------- */
 function isRecord(v: unknown): v is Record<string, unknown> {
@@ -26,15 +25,24 @@ function safeJSONParse<T>(s: string): T | null {
   try { return JSON.parse(s) as unknown as T; } catch { return null; }
 }
 
-/** Build a full #d=... fragment (short + URL-safe). */
-export function encodeToUrlHash(payload: SimcPayload, minify = true): string {
-  const slim: SimcPayload = { ...payload, simc: preparePayloadSimc(payload.simc, minify) };
-  const json = JSON.stringify(slim);
-  const value = compressToEncodedURIComponent(json);
-  return `#d=${value}`;
+/** Remove accidental nesting like "#d=#d=..." or encoded "%23d%3D%23d%3D..." */
+function normalizeDValue(v: string): string {
+  let s = v.trim();
+  const prefixes = ["#d=", "%23d%3D", "d=", "#", "%23"];
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const p of prefixes) {
+      if (s.startsWith(p)) {
+        s = s.slice(p.length);
+        changed = true;
+      }
+    }
+  }
+  return s;
 }
 
-/** Decode from "#d=...", "?d=...", raw compressed, or legacy JSON. */
+/** Decode from "#d=...", "?d=...", raw compressed, or legacy JSON in the hash/query. */
 export function decodeFromUrlHash(hashish: string): SimcPayload | null {
   if (!hashish) return null;
 
@@ -49,6 +57,10 @@ export function decodeFromUrlHash(hashish: string): SimcPayload | null {
   }
   if (!value) return null;
 
+  // tolerate nested/encoded "#d=" prefixes
+  value = normalizeDValue(value);
+
+  // Try lz-string first
   const json = decompressFromEncodedURIComponent(value);
   if (json) {
     const parsed = safeJSONParse<unknown>(json);
@@ -63,12 +75,18 @@ export function decodeFromUrlHash(hashish: string): SimcPayload | null {
   return null;
 }
 
-/** Full shareable URL (origin + path + #d=...). */
-export function buildShareUrl(payload: SimcPayload, baseUrl?: string, minify = true): string {
+/** Build a full shareable URL (origin + path + "#d=..."). */
+export function buildShareUrl(payload: SimcPayload, baseUrl?: string): string {
   const base =
     baseUrl ??
     (typeof window !== "undefined"
       ? `${window.location.origin}${window.location.pathname}`
       : "/optimizer");
-  return `${base}${encodeToUrlHash(payload, minify)}`;
+  return `${base}${encodeToUrlHash(payload)}`;
+}
+
+/** Encode a SimcPayload into a compact "#d=..." fragment (no stripping). */
+export function encodeToUrlHash(payload: SimcPayload): string {
+  const json = JSON.stringify(payload);
+  return `#d=${compressToEncodedURIComponent(json)}`;
 }
