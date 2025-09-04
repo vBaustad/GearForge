@@ -1,71 +1,85 @@
 // src/components/InfoBar.tsx
 import { useMemo } from "react";
-import { getCrestCaps } from "../features/optimizer/services/crests";
+import { CREST_ORDER, CREST_ICONS, type CrestTier } from "./crests/crests";
+import { season } from "../config/seasons/currentSeason";
+import { getCrestCapsForSeason } from "../config/seasons/crestCaps";
+import { computeCatalyst, computeSparks } from "../config/seasons/progression";
 import c from "./components.module.css";
 
-const ORDER = ["Gilded", "Runed", "Carved", "Weathered"] as const;
-type Tier = (typeof ORDER)[number];
-
-const ICON_SRC: Record<Tier, string> = {
-  Gilded:    "/images/crests/gilded.jpg",
-  Runed:     "/images/crests/runed.jpg",
-  Carved:    "/images/crests/carved.jpg",
-  Weathered: "/images/crests/weathered.jpg",
-};
-
 export function InfoBar({ sticky = false }: { sticky?: boolean }) {
-  const caps = useMemo(() => getCrestCaps(), []);
+  // Crest caps from season config
+  const caps = useMemo(() => getCrestCapsForSeason(season), []);
   if (!caps.length) return null;
 
   const byTier = Object.fromEntries(
-    caps.map((cap) => [cap.tier as Tier, cap] as const)
-  ) as Record<Tier, (typeof caps)[number]>;
+    caps.map((cap) => [cap.tier as CrestTier, cap] as const)
+  ) as Record<CrestTier, (typeof caps)[number]>;
 
   const week = Math.max(...caps.map((c) => c.weeksOpen ?? 0));
+
+  // Season progression
+  const { total: sparks } = computeSparks(season);
+  const { total: catalyst, weeksUntilNext } = computeCatalyst(season);
 
   return (
     <div
       className={`${c.infobarRoot} ${sticky ? c.infobarSticky : ""}`}
       role="region"
-      aria-label="Crest caps"
+      aria-label="Crest caps and seasonal resources"
     >
       <div className={c.infobarInner}>
-        <span className={c.infobarLabel}>Crest Caps</span>
-
-        {/* Icon pills */}
-        <div className={c.crestRow} role="list">
-          {ORDER.map((tier) => {
-            const cap = byTier[tier];
-            if (!cap) return null;
-            return (
-              <span
-                key={tier}
-                className={c.crestPill}
-                data-tier={tier}                         // <-- add this
-                role="listitem"
-                title={`${tier} cap: ${cap.currentCap} (weekly +${cap.weeklyIncrement})`}
-                aria-label={`${tier} cap ${cap.currentCap}, weekly +${cap.weeklyIncrement}`}
-              >
-                <img
-                  className={c.crestImg}
-                  src={ICON_SRC[tier]}
-                  width={16}
-                  height={16}
-                  loading="lazy"
-                  decoding="async"
-                  alt={`${tier} crest`}
-                />
-                <strong className={c.crestCount}>{cap.currentCap}</strong>
-                <span className={c.crestLabel}>{tier}</span>
-              </span>
-            );
-          })}
+        {/* LEFT */}
+        <div className={c.leftGroup}>
+          <span className={c.infobarLabel}>Crest Caps</span>
+          <div className={c.crestRow} role="list">
+            {CREST_ORDER.map((tier) => {
+              const cap = byTier[tier];
+              if (!cap) return null;
+              return (
+                <span
+                  key={tier}
+                  className={c.crestPill}
+                  data-tier={tier}
+                  role="listitem"
+                  title={`${tier} cap: ${cap.currentCap} (weekly +${cap.weeklyIncrement})`}
+                  aria-label={`${tier} cap ${cap.currentCap}, weekly +${cap.weeklyIncrement}`}
+                >
+                  <img
+                    className={c.crestImg}
+                    src={CREST_ICONS[tier]}
+                    width={16}
+                    height={16}
+                    loading="lazy"
+                    decoding="async"
+                    alt={`${tier} crest`}
+                  />
+                  <strong className={c.crestCount}>{cap.currentCap}</strong>
+                  <span className={c.crestLabel}>{tier}</span>
+                </span>
+              );
+            })}
+          </div>
         </div>
 
-        <div className={c.infobarSpacer} />
-        <span className={c.infobarNote} aria-label={`Season week ${week}`}>
-          Week {week}
-        </span>
+        {/* RIGHT */}
+        <div className={c.rightGroup}>
+          <span className={c.infobarStat}>
+            <strong>Catalyst:</strong> {catalyst}{" "}
+            <em>
+              ({weeksUntilNext === 0
+                ? "next this week"
+                : `next in ${weeksUntilNext} week${weeksUntilNext > 1 ? "s" : ""}`})
+            </em>
+          </span>
+          <span className={c.infobarDivider} aria-hidden="true">•</span>
+          <span className={c.infobarStat}>
+            <strong>Sparks:</strong> {sparks.toFixed(1)}
+          </span>
+          <span className={c.infobarDivider} aria-hidden="true">•</span>
+          <span className={c.infobarNote} aria-label={`Season week ${week}`}>
+            Week {week}
+          </span>
+        </div>
       </div>
     </div>
   );

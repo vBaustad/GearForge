@@ -1,21 +1,24 @@
 import styles from "./crests.module.css";
 import { CrestIcon } from "./CrestIcon";
-import { CREST_ORDER, CREST_LABEL_LONG, CREST_LABEL_SHORT, type Crest } from "../../features/optimizer/types/crests";
+import type { Crest } from "../../types/crests";
+import { CREST_ORDER, CREST_LABEL_LONG, CREST_LABEL_SHORT } from "./crests";
+
+type Props = {
+  counts: Partial<Record<Crest, number>>;
+  showZero?: boolean;
+  size?: number;
+  order?: ReadonlyArray<Crest>;
+};
 
 export function CrestWallet({
   counts,
   showZero = false,
   size = 16,
-  order = CREST_ORDER,
-}: {
-  counts: Partial<Record<Crest, number>>;
-  showZero?: boolean;
-  size?: number;
-  order?: Crest[];
-}) {
+  order = CREST_ORDER,          // readonly is fine now
+}: Props) {
   const items = order
-    .map(tier => ({ tier, count: counts[tier] ?? 0 }))
-    .filter(x => showZero || x.count > 0);
+    .map((tier) => ({ tier, count: counts[tier] ?? 0 }))
+    .filter((x) => showZero || x.count > 0);
 
   if (!items.length) return null;
 
