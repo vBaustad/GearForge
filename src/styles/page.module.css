@@ -1,6 +1,8 @@
 /* =====================
    Theme & Layout (pages)
 ===================== */
+
+/* -- Tokens & layout shell -- */
 .wrap {
   --bg:#2e3036; --panel:#3a3c42; --panel-2:#33353b;
   --ink:#f0f2f7; --ink-dim:#c8cbd4; --stroke:#282a2f;
@@ -9,13 +11,48 @@
   color:var(--ink); background:var(--bg);
   width:100%; max-width:920px; margin:0 auto; padding:24px 16px 48px;
 }
+.wrapWide { max-width:1120px; }
 
-/* Header (page) */
+/* =====================
+   Page header (title + subtitle)
+===================== */
 .header { text-align:center; margin-bottom:16px; }
 .title { margin:0 0 6px; font-size:clamp(26px,3.2vw,34px); }
 .subtitle { margin:0; color:var(--ink-dim); }
 
-/* Feature cards grid (used on pages) */
+/* =====================
+   Shared card / header bits
+===================== */
+.iconDot {
+  width:28px; height:28px; border-radius:50%;
+  background:radial-gradient(circle at 30% 30%, var(--accent-2), var(--accent));
+  box-shadow:0 0 0 2px #151618, 0 0 20px rgba(255,179,0,.25);
+  display:block;           /* ensures perfect circle in grid cell */
+  flex-shrink:0;
+  vertical-align:middle;
+}
+
+/* 2-col header row so the dot aligns with the title */
+.cardHeader,
+.featureHead,
+.underHead {
+  display:grid;
+  grid-template-columns: 28px 1fr; /* dot | title */
+  align-items:center;
+  column-gap:10px;
+  margin-bottom:6px;
+}
+
+.cardTitle,
+.heroCardTitle,
+.underTitle {
+  margin:0;
+  line-height:1;           /* keeps vertical centering with the dot */
+  font-weight:800;
+  letter-spacing:.3px;
+}
+
+/* Default feature-card scaffolding (used elsewhere too) */
 .featuresGridSingle { display:grid; grid-template-columns:1fr; gap:16px; margin-top:16px; }
 .featureCard {
   background:var(--panel); border:1px solid #1f2024; border-radius:8px; padding:16px;
@@ -23,16 +60,11 @@
   transition:transform .12s ease, box-shadow .12s ease;
 }
 .featureCard:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(0,0,0,.25); }
-.cardHeader { display:grid; grid-template-columns:auto 1fr; align-items:center; column-gap:10px; margin-bottom:10px; }
-.iconDot {
-  width:28px; height:28px; border-radius:50%;
-  background:radial-gradient(circle at 30% 30%, var(--accent-2), var(--accent));
-  box-shadow:0 0 0 2px #151618, 0 0 20px rgba(255,179,0,.25);
-}
-.cardTitle { margin:0; font-weight:800; letter-spacing:.6px; }
 .cardSub { grid-column:2/3; margin:2px 0 0; color:var(--ink-dim); }
 
-/* Forms (page) */
+/* =====================
+   Forms
+===================== */
 .inputForm { display:grid; gap:10px; }
 .label { font-size:12px; color:var(--ink-dim); }
 .textarea {
@@ -42,97 +74,124 @@
 .textarea:focus { box-shadow:0 0 0 4px var(--ring); border-color:var(--accent); }
 .formRow { display:flex; gap:10px; }
 
-/* Generic action row (used elsewhere) */
-.topBar { display:flex; gap:10px; justify-content:flex-end; align-items:center; }
-
-/* Buttons */
+/* =====================
+   Buttons
+===================== */
 .primaryBtn, .ghostBtn {
-  display:inline-flex;
-  align-items:center;
-  gap:8px;               /* icon ↔ label spacing */
-  line-height:1;
-  padding:8px 12px;
-  border-radius:8px;
-  border:1px solid transparent;
-  text-decoration:none;  /* anchor-as-button */
-  cursor:pointer;
-  white-space:nowrap;
+  display:inline-flex; align-items:center; gap:8px; line-height:1;
+  padding:8px 12px; border-radius:8px; border:1px solid transparent;
+  text-decoration:none; cursor:pointer; white-space:nowrap;
 }
 .primaryBtn {
   background:linear-gradient(180deg,#f6b300,#d89700);
-  color:#111;
-  font-size:12px;
-  border-color:#d89700;
+  color:#111; font-size:12px; border-color:#d89700;
   box-shadow:0 1px 0 rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.15);
 }
 .primaryBtn:hover { filter:brightness(1.03); }
 .primaryBtn:active { transform:translateY(1px); }
 .primaryBtn:disabled { opacity:.75; cursor:default; }
 .ghostBtn { background:transparent; color:var(--ink); }
+.btnIcon { width:16px; height:16px; flex:0 0 16px; opacity:.9; }
 
 /* Focus (a11y) */
 .primaryBtn:focus-visible, .ghostBtn:focus-visible, .textarea:focus-visible {
   outline:none; box-shadow:0 0 0 4px var(--ring);
 }
 
-/* Icon in buttons */
-.btnIcon {
-  width:16px; height:16px; flex:0 0 16px; opacity:.9;
+/* =====================
+   Landing – Hero card + undercards
+===================== */
+/* ===== Landing – Hero & Feature grid ===== */
+.heroCtaRow{
+  margin-top:12px;
+  display:flex; justify-content:center;
 }
 
-/* Results (page) */
-.results { margin-top:20px; }
+/* 2-per-row grid (collapses to 1 on small screens) */
+.featureGrid2{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:14px;
+  margin-top:18px;
+}
+@media (max-width: 720px){ .featureGrid2{ grid-template-columns:1fr; } }
 
-/* Wrapper for the header row: title | date | actions */
+/* Uniform nav cards */
+.navCard{
+  display:grid;
+  grid-template-rows: auto 1fr auto; /* header | text | CTA */
+  background:var(--panel);
+  border:1px solid #1f2024;
+  border-radius:12px;
+  padding:16px 18px;
+  color:var(--ink-dim);
+  text-decoration:none;
+  min-height:150px;
+  box-shadow:0 1px 0 rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.02);
+  transition:transform .12s ease, box-shadow .12s ease;
+}
+.navCard:hover{ transform:translateY(-1px); box-shadow:0 6px 18px rgba(0,0,0,.25); }
+
+/* Variants */
+.navCardActive{ border-color: var(--accent); }
+.navCardDisabled{ opacity:.65; pointer-events:none; }
+
+/* Content bits */
+.navTitle{ font-size:17px; color:var(--ink); font-weight:800; line-height:1; margin:0; }
+.navText{ margin:6px 0 0; line-height:1.5; }
+.navCta{ align-self:end; margin-top:10px; font-weight:800; color:var(--accent); }
+
+/* Reuse: featureHead + iconDot already defined; ensure grid alignment */
+.featureHead{
+  display:grid;
+  grid-template-columns: 28px 1fr; /* dot | title */
+  align-items:center;
+  column-gap:10px;
+  margin-bottom:6px;
+}
+.iconDot{
+  width:28px; height:28px; border-radius:50%;
+  background:radial-gradient(circle at 30% 30%, var(--accent-2), var(--accent));
+  box-shadow:0 0 0 2px #151618, 0 0 20px rgba(255,179,0,.25);
+  display:block; flex-shrink:0; vertical-align:middle;
+}
+
+/* =====================
+   Results & meta (other pages)
+===================== */
+.results { margin-top:20px; }
 .resultsHeader { margin-bottom:8px; }
 .resultsHeaderBar {
-  display:grid;
-  grid-template-columns:1fr auto 1fr; /* left / center / right */
-  align-items:center;
-  gap:8px;
+  display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:8px;
 }
 .resultsHeader h2 { margin:0; font-size:24px; }
-
-/* Centered export timestamp */
-.exportStamp {
-  font-size:12px;
-  opacity:.7;
-  justify-self:center;
-  padding-top:6px;
-}
-
-/* Right-aligned actions (buttons) */
-.actions {
-  display:flex;
-  justify-content:flex-end;
-  gap:8px;
-}
-
-/* Meta / KPIs */
+.exportStamp { font-size:12px; opacity:.7; justify-self:center; padding-top:6px; }
+.actions { display:flex; justify-content:flex-end; gap:8px; }
 .resultsMeta { display:flex; gap:16px; color:var(--ink-dim); align-items:flex-end; }
 .kpi strong { color:var(--ink); }
 .resultsGridOneCol { display:grid; gap:12px; }
 
-/* Empty state (page) */
+/* =====================
+   Empty state
+===================== */
 .empty {
   border:1px dashed #2a2c31; border-radius:8px; padding:20px; text-align:center;
   background:#1f2126; color:var(--ink-dim);
 }
 .emptyBadge { display:inline-block; padding:2px 8px; border-radius:999px; border:1px solid #2a2c31; margin-bottom:6px; }
 
-/* Character header */
+/* =====================
+   Character header (class colors)
+===================== */
 .charHeader { display:grid; justify-items:center; gap:4px; margin-top:.25rem; }
 .charTitle {
-  font-weight:800; line-height:1.1;
-  font-size:clamp(28px,4.2vw,44px);
-  color:var(--class-color, currentColor);
-  text-shadow:0 1px 0 rgba(0,0,0,.35);
+  font-weight:800; line-height:1.1; font-size:clamp(28px,4.2vw,44px);
+  color:var(--class-color, currentColor); text-shadow:0 1px 0 rgba(0,0,0,.35);
 }
 .charSubtitle { font-size:14px; opacity:.85; letter-spacing:.2px; }
 .sectionSubline { font-size:12px; opacity:.7; margin-top:2px; }
 .realmCap { text-transform:capitalize; }
 
-/* Class color tokens (set --class-color) */
 .class-death_knight { --class-color:#C41E3A; }
 .class-demon_hunter { --class-color:#A330C9; }
 .class-druid        { --class-color:#FF7C0A; }
@@ -147,12 +206,15 @@
 .class-warlock      { --class-color:#8787ED; }
 .class-warrior      { --class-color:#C69B6D; }
 
-/* Responsive */
+/* =====================
+   Responsive & motion
+===================== */
 @media (max-width:640px){
-  .resultsHeaderBar { grid-template-columns: 1fr; }
-  .exportStamp { justify-self:start; border-top:none; padding-top:0; }
+  .resultsHeaderBar { grid-template-columns:1fr; }
+  .exportStamp { justify-self:start; padding-top:0; }
   .actions { justify-content:flex-start; }
 }
 
-/* Motion prefs */
-@media (prefers-reduced-motion: reduce){ *{ animation:none!important; transition:none!important; } }
+@media (prefers-reduced-motion: reduce){
+  *{ animation:none!important; transition:none!important; }
+}
