@@ -1,4 +1,4 @@
-import type { Track, TrackKey } from "../types/simc";
+import type { Track, TrackKey } from "../features/optimizer/types/simc";
 
 /** Track templates WITHOUT ilvl. */
 type TrackTemplate = Omit<Track, "ilvlByRank">;

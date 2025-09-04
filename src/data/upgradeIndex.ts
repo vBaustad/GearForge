@@ -1,6 +1,6 @@
 // src/features/optimizer/data/upgradeIndex.ts
-import type { TrackKey } from "../types/simc";
-import type { BonusUpgrade, UpgradeIndex } from "../types/upgrades";
+import type { TrackKey } from "../features/optimizer/types/simc";
+import type { BonusUpgrade, UpgradeIndex } from "../features/optimizer/types/upgrades";
 
 /** Stable: Wowhead bonus → (track group, level, etc.). */
 export const bonusUpgradeIndex: UpgradeIndex = {

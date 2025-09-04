@@ -1,4 +1,6 @@
-import { CREST_ICON_SRC, type Crest } from "../../features/optimizer/types/crests";
+// src/components/crests/CrestIcon.tsx
+import type { Crest } from "../../types/crests";
+import { CREST_ICONS } from "./crests";
 
 export function CrestIcon({
   tier,
@@ -13,7 +15,7 @@ export function CrestIcon({
 }) {
   return (
     <img
-      src={CREST_ICON_SRC[tier]}
+      src={CREST_ICONS[tier]}
       width={size}
       height={size}
       alt={`${tier} Crest`}
