@@ -4,22 +4,47 @@ import { CREST_ORDER, CREST_ICONS, type CrestTier } from "./crests/crests";
 import { season } from "../config/seasons/currentSeason";
 import { getCrestCapsForSeason } from "../config/seasons/crestCaps";
 import { computeCatalyst, computeSparks } from "../config/seasons/progression";
+import { PROGRESSION_ICONS } from "./progression/progession"
 import c from "./components.module.css";
 
-export function InfoBar({ sticky = false }: { sticky?: boolean }) {
-  // Crest caps from season config
-  const caps = useMemo(() => getCrestCapsForSeason(season), []);
-  if (!caps.length) return null;
+function isHalf(n: number) {
+  // robust .5 check (avoids float jitter)
+  return Math.abs(n * 2 - Math.round(n * 2)) < 1e-9 && (Math.round(n * 2) % 2 === 1);
+}
+function formatSparks(n: number) {
+  return isHalf(n) ? n.toFixed(1) : Math.floor(n).toString();
+}
 
-  const byTier = Object.fromEntries(
-    caps.map((cap) => [cap.tier as CrestTier, cap] as const)
-  ) as Record<CrestTier, (typeof caps)[number]>;
+  /** Parse "s3" / "season-3" / "season_3" / trailing "-3" from an id like "tww-s3". */
+  function getSeasonNumberFromId(id: string): number | undefined {
+    const m =
+      id.match(/(?:^|[-_])s(?:eason)?[-_]?(\d+)\b/i) || // tww-s3, tww-season-3, season_3
+      id.match(/-(\d+)$/);                               // fallback: trailing "-3"
+    return m ? Number(m[1]) : undefined;
+  }
 
-  const week = Math.max(...caps.map((c) => c.weeksOpen ?? 0));
+  export function InfoBar({ sticky = false }: { sticky?: boolean }) {
+    // Crest caps from season config
+    const caps = useMemo(() => getCrestCapsForSeason(season), []);
+    if (!caps.length) return null;
 
-  // Season progression
-  const { total: sparks } = computeSparks(season);
-  const { total: catalyst, weeksUntilNext } = computeCatalyst(season);
+    const byTier = Object.fromEntries(
+      caps.map((cap) => [cap.tier as CrestTier, cap] as const)
+    ) as Record<CrestTier, (typeof caps)[number]>;
+
+    const week = Math.max(...caps.map((c) => c.weeksOpen ?? 0));
+
+    // Season progression
+    const { total: sparksTotal } = computeSparks(season);
+    const { total: catalystTotal, weeksUntilNext } = computeCatalyst(season);
+
+    // Season number (derived from id)
+    const seasonNumber = getSeasonNumberFromId(season.id);
+
+  const catalystTooltip =
+    weeksUntilNext === 0
+      ? "Catalyst: next available this reset."
+      : `Catalyst: next in ${weeksUntilNext} week${weeksUntilNext > 1 ? "s" : ""}.`;
 
   return (
     <div
@@ -61,23 +86,57 @@ export function InfoBar({ sticky = false }: { sticky?: boolean }) {
           </div>
         </div>
 
-        {/* RIGHT */}
+        {/* RIGHT — reuse pill styling for consistency */}
         <div className={c.rightGroup}>
-          <span className={c.infobarStat}>
-            <strong>Catalyst:</strong> {catalyst}{" "}
-            <em>
-              ({weeksUntilNext === 0
-                ? "next this week"
-                : `next in ${weeksUntilNext} week${weeksUntilNext > 1 ? "s" : ""}`})
-            </em>
+          {/* Catalyst pill */}
+          <span
+            className={c.crestPill}
+            role="listitem"
+            title={catalystTooltip}
+            aria-label={`Catalyst ${catalystTotal}. ${catalystTooltip}`}
+          >
+            <img
+              className={c.crestImg}
+              src={PROGRESSION_ICONS.catalyst}
+              width={16}
+              height={16}
+              loading="lazy"
+              decoding="async"
+              alt="Catalyst"
+            />
+            <strong className={c.crestCount}>{catalystTotal}</strong>
+            <span className={c.crestLabel}>Catalyst</span>
           </span>
-          <span className={c.infobarDivider} aria-hidden="true">•</span>
-          <span className={c.infobarStat}>
-            <strong>Sparks:</strong> {sparks.toFixed(1)}
+
+          {/* Sparks pill */}
+          <span
+            className={c.crestPill}
+            role="listitem"
+            title="Sparks (you can craft/upgrade at 1.0)."
+            aria-label={`Sparks ${formatSparks(sparksTotal)}`}
+          >
+            <img
+              className={c.crestImg}
+              src={PROGRESSION_ICONS.spark}
+              width={16}
+              height={16}
+              loading="lazy"
+              decoding="async"
+              alt="Sparks"
+            />
+            <strong className={c.crestCount}>{formatSparks(sparksTotal)}</strong>
+            <span className={c.crestLabel}>Sparks</span>
           </span>
-          <span className={c.infobarDivider} aria-hidden="true">•</span>
-          <span className={c.infobarNote} aria-label={`Season week ${week}`}>
-            Week {week}
+
+          {/* Week pill (no icon to keep it subtle) */}
+          <span
+            className={c.crestPill}
+            role="listitem"
+            title={`Season ${seasonNumber} - week ${week}`}
+            aria-label={`Season ${seasonNumber} - week ${week}`}
+          >
+            <span className={c.crestLabel}>Week</span>
+            <strong className={c.crestCount}>{week}</strong>            
           </span>
         </div>
       </div>

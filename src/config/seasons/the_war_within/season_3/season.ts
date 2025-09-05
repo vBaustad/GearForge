@@ -6,7 +6,7 @@ import type { Track, TrackKey } from "../../../../features/optimizer/types/simc"
 import { trackTemplates } from "../../../../data/trackDefinitions";  // ← moved
 import { bonusUpgradeIndex } from "../../../../data/upgradeIndex";
 import { ilvlByRank_tww_s3 } from "./ilvlByRank";
-import { meta_tww_s3 } from "./season.meta";
+import { seasonMeta } from "./season.meta";
 
 const tracks = Object.fromEntries(
   (Object.keys(trackTemplates) as TrackKey[]).map((key) => {
@@ -29,7 +29,7 @@ const tracks = Object.fromEntries(
 ) as Record<TrackKey, Track>;
 
 export const season: SeasonConfig = {
-  ...meta_tww_s3,
+  ...seasonMeta,
   tracks,
   bonusUpgradeIndex,
 };

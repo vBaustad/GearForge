@@ -30,48 +30,111 @@
   color: var(--ink-dim);
 }
 
-.footerInner { max-width: var(--page-max); margin: 0 auto; padding: 48px 24px; }
-.footerGrid  { display: grid; grid-template-columns: 1fr; gap: 48px; }
-@media (min-width: 768px) { .footerGrid { grid-template-columns: repeat(3, 1fr); } }
+/* tighter container */
+.footerInner {
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding: 28px 20px;            /* was 48px 24px */
+}
 
-.footerH     { color: #fff; font-size: 18px; font-weight: 600; margin: 0; }
-.footerText  { margin-top: 16px; line-height: 1.7; color: #9ca3af; }
+/* slimmer grid */
+.footerGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;                     /* was 48px */
+}
+@media (min-width: 768px) {
+  .footerGrid { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* smaller heading + copy */
+.footerH     { color: #fff; font-size: 16px; font-weight: 600; margin: 0; } /* was 18px */
+.footerText  { margin-top: 8px; line-height: 1.6; color: #9ca3af; }         /* was 16px/1.7 */
 .footerBrand { color: var(--brand); font-weight: 600; }
 
-.footerList      { margin: 16px 0 0; padding: 0; list-style: none; display: grid; gap: 8px; color: #9ca3af; }
-.footerListItem  { display: flex; align-items: flex-start; gap: 8px; }
-.footerBullet    { color: var(--brand); }
+/* slimmer lists */
+.footerList     { margin: 10px 0 0; padding: 0; list-style: none; display: grid; gap: 6px; color: #9ca3af; }
+.footerListItem { display: flex; align-items: flex-start; gap: 8px; }
+.footerBullet   { color: var(--brand); }
 
-.footerLinks { margin: 16px 0 0; padding: 0; list-style: none; display: grid; gap: 12px; }
+.footerLinks { margin: 10px 0 0; padding: 0; list-style: none; display: grid; gap: 10px; }
 .footerLink  { color: var(--ink-dim); text-decoration: none; transition: color .15s ease; }
 .footerLink:hover { color: var(--brand); }
 
-.footerDivider { margin-top: 40px; border-top: 1px solid var(--stroke); }
+/* less top whitespace before the divider */
+.footerDivider { margin-top: 24px; border-top: 1px solid var(--stroke); }   /* was 40px */
 
-.footerBottom  { margin-top: 24px; display: flex; flex-direction: column; gap: 16px; font-size: 14px; }
+/* compact bottom row */
+.footerBottom  { margin-top: 12px; display: flex; flex-direction: column; gap: 10px; font-size: 13px; } /* was 24px / 16px / 14px */
 @media (min-width: 768px) { .footerBottom { flex-direction: row; align-items: center; justify-content: space-between; } }
 
 .footerLegal  { color: #9ca3af; }
 .dot         { margin: 0 8px; opacity: .7; }
 
-.footerSocials   { display: flex; flex-wrap: wrap; align-items: center; gap: 24px; }
+.footerSocials   { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; }
 .footerLinkIcon  { display: inline-flex; align-items: center; gap: 8px; color: #9ca3af; text-decoration: none; transition: color .15s ease; }
 .footerLinkIcon:hover { color: var(--brand); }
 
 .icon { width: 16px; height: 16px; }
 
-/* Footer FAQ */
-.faqList   { margin-top: 16px; display: grid; gap: 12px; }
-.faqItem   { border: 1px solid var(--stroke); background: rgba(17,24,39,.6); border-radius: 8px; }
-.faqSummary{
-  list-style: none; display: flex; cursor: pointer; align-items: center; justify-content: space-between;
-  gap: 12px; padding: 12px 16px; color: #e5e7eb; border-radius: 8px; transition: color .15s ease;
+/* ===== Footer FAQ (no jump, smooth expand) ===== */
+
+.faqList   { margin-top: 10px; display: grid; gap: 10px; }
+
+/* prevent scroll jump with sticky headers; hide overflow for animation */
+.faqItem {
+  border: 1px solid var(--stroke);
+  background: rgba(17,24,39,.6);
+  border-radius: 8px;
+  overflow: hidden;
+  scroll-margin-top: 112px; /* ≈ header + infobar stack; tweak if needed */
+}
+
+.faqSummary {
+  list-style: none;
+  display: flex;
+  cursor: pointer;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;           /* tighter */
+  color: #e5e7eb;
+  border-radius: 8px;
+  transition: color .15s ease, background-color .15s ease;
+  margin: 0;
 }
 .faqSummary:hover { color: var(--brand); }
 .faqSummary::-webkit-details-marker { display: none; }
+
 .faqChevron { width: 16px; height: 16px; transition: transform .2s ease; }
 .faqItem[open] .faqChevron { transform: rotate(180deg); }
-.faqBody { padding: 0 16px 16px; font-size: 14px; color: #9ca3af; }
+
+/* animated body: expands downward */
+.faqBody {
+  padding: 0 14px;              /* no bottom padding when closed */
+  max-height: 0;
+  overflow: hidden;
+  opacity: .9;
+  font-size: 14px;
+  color: #9ca3af;
+  transition: max-height .25s ease, padding .2s ease;
+  will-change: max-height;
+}
+.faqItem[open] .faqBody {
+  padding: 0 14px 12px;         /* add bottom padding when open */
+  max-height: 600px;            /* large enough for typical content */
+}
+
+/* compact inner spacing */
+.faqBody > *:first-child { margin-top: 8px; }
+.faqBody > * { margin-block: 6px; }
+
+/* respect reduced-motion users */
+@media (prefers-reduced-motion: reduce) {
+  .faqBody { transition: none; }
+  .faqChevron { transition: none; }
+}
+
 
 /* =====================
    Header (shared)
@@ -232,6 +295,57 @@
 /* Stats on the right */
 .infobarStat { opacity: 0.95; font-size: 0.95rem; }
 .infobarDivider { opacity: 0.5; }
+
+/* --- Tooltip wrapper --- */
+.hasTooltip {
+  position: relative;
+  display: inline-flex;
+}
+
+/* Bubble on hover; uses data-tip for content */
+.hasTooltip::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 8px);
+  transform: translateX(-50%);
+  white-space: nowrap;
+  pointer-events: none;
+
+  background: rgba(0, 0, 0, 0.92);
+  color: #e5e7eb;              /* gray-200 */
+  border: 1px solid rgba(31, 41, 55, 0.6); /* gray-800 */
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-size: 12px;
+  line-height: 1;
+  opacity: 0;
+  transition: opacity 120ms ease;
+  z-index: 40;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.4);
+}
+
+/* little nub */
+.hasTooltip::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  transform: translateX(-50%);
+  width: 0; height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid rgba(0, 0, 0, 0.92);
+  opacity: 0;
+  transition: opacity 120ms ease;
+  z-index: 41;
+}
+
+.hasTooltip:hover::after,
+.hasTooltip:hover::before {
+  opacity: 1;
+}
+
 
 /* Responsive polish */
 @media (max-width: 1000px) {

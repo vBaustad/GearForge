@@ -1,7 +1,11 @@
+// src/config/seasons/the_war_within/season_3/season.meta.ts
 import type { SeasonConfig } from "../../../../types/season";
 
-export const meta_tww_s3 = {
-  id: "tww-s3",
+export const SEASON_NUMBER = 3 as const;
+export const SEASON_ID = "tww-s3" as const; // stable slug used across the app
+
+export const seasonMeta = {
+  id: SEASON_ID,
   defaultDropCeilingIlvl: 701,
 
   currencies: {
@@ -12,9 +16,7 @@ export const meta_tww_s3 = {
     flightstones: 3008,
   },
 
-  crestWeeklyIncrement: {
-    Weathered: 90, Carved: 90, Runed: 90, Gilded: 90,
-  },
+  crestWeeklyIncrement: { Weathered: 90, Carved: 90, Runed: 90, Gilded: 90 },
 
   crestCapStartDateISO: {
     Weathered: "2025-08-06",
@@ -37,5 +39,5 @@ export const meta_tww_s3 = {
   | "crestWeeklyIncrement"
   | "crestCapStartDateISO"
   | "noCrestUpgradeItemIds"
-  | "progression"         
+  | "progression"
 >;

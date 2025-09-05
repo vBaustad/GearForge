@@ -6,6 +6,7 @@ import c from "./components.module.css";
 const EMAIL = ""; // e.g. "hello@gearforge.dev" (leave empty to hide)
 const LINKS = {
   githubRepo: "https://github.com/vBaustad/GearForge",
+  githubIssues: "https://github.com/vBaustad/GearForge/issues",
   linkedin: "https://www.linkedin.com/in/vBaustad/",
   coffee: "https://buymeacoffee.com/vbaustad",
   faq: "/faq",
@@ -44,16 +45,16 @@ export function Footer() {
           <section>
             <h3 className={c.footerH}>About</h3>
             <p className={c.footerText}>
-              <span className={c.footerBrand}>GearForge</span> helps you analyze and
-              optimize your game gear and content workflows—fast, clear, and focused.
+              <span className={c.footerBrand}>GearForge</span> is a World of Warcraft gearing
+              assistant. Paste your SimC export to see upgrade recommendations.
             </p>
             <ul className={c.footerList}>
               <li className={c.footerListItem}>
-                <span className={c.footerBullet} aria-hidden>•</span>
-                <span>Actionable optimizers and analyzers</span>
+                <span className={c.footerBullet} aria-hidden="true">•</span>
+                <span>Upgrade planner: track &amp; rank, crest/FS cost, watermark bumps</span>
               </li>
               <li className={c.footerListItem}>
-                <span className={c.footerBullet} aria-hidden>•</span>
+                <span className={c.footerBullet} aria-hidden="true">•</span>
                 <span>Free to use while in active development</span>
               </li>
             </ul>
@@ -103,6 +104,9 @@ export function Footer() {
             )}
             <a href={LINKS.githubRepo} target="_blank" rel="noreferrer" className={c.footerLinkIcon}>
               <Github className={c.icon} /> GitHub Repo
+            </a>
+            <a href={LINKS.githubRepo} target="_blank" rel="noreferrer" className={c.footerLinkIcon}>
+              <Github className={c.icon} /> Report Issue
             </a>
             <a href={LINKS.linkedin} target="_blank" rel="noreferrer" className={c.footerLinkIcon}>
               <Linkedin className={c.icon} /> LinkedIn
