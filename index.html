@@ -3,9 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- PWA / App -->
     <link rel="manifest" href="/site.webmanifest" />
-    <meta name="theme-color" content="#0f1216" />
-    <script>     
+    <meta name="color-scheme" content="dark light" />
+    <meta name="theme-color" content="#0f1216" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#ffffff"   media="(prefers-color-scheme: light)" />
+
+    <!-- Wowhead tooltips -->
+    <script>
       var whTooltips = {
         colorLinks: false,
         iconizeLinks: false,
@@ -15,40 +21,45 @@
     </script>
     <script defer src="https://wow.zamimg.com/js/tooltips.js"></script>
 
-    <!-- Title + SEO -->
+    <!-- Preconnects for icons/tooltips -->
+    <link rel="preconnect" href="https://wow.zamimg.com" crossorigin>
+    <link rel="dns-prefetch" href="//wow.zamimg.com">
+    <link rel="preconnect" href="https://render.worldofwarcraft.com" crossorigin>
+    <link rel="dns-prefetch" href="//render.worldofwarcraft.com">
+
+    <!-- Primary SEO -->
     <title>GearForge — Optimize Your Gear</title>
     <meta name="description" content="GearForge helps you analyze, compare, and optimize your gear with fast, clear recommendations." />
+    <meta name="robots" content="index,follow" />
+    <link rel="canonical" href="%VITE_SITE_URL%" />
 
-    <!-- Favicons (matching your /public files) -->
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="GearForge" />
+    <meta property="og:title" content="GearForge — Optimize Your Gear" />
+    <meta property="og:description" content="Optimize your gear. Maximize your potential." />
+    <meta property="og:url" content="%VITE_SITE_URL%" />
+    <meta property="og:image" content="%VITE_OG_IMAGE%" />
+    <meta property="og:image:alt" content="GearForge upgrade planner and seasonal tracker preview" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="GearForge — Optimize Your Gear" />
+    <meta name="twitter:description" content="Optimize your gear. Maximize your potential." />
+    <meta name="twitter:image" content="%VITE_OG_IMAGE%" />
+    <!-- <meta name="twitter:site" content="@your_handle" /> -->
+
+    <!-- Icons -->
     <link rel="icon" href="/favicon.ico" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="/android-chrome-192x192.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="/android-chrome-512x512.png" />
-    <meta name="theme-color" content="#0f1216" />
-
-    <link rel="preconnect" href="https://render.worldofwarcraft.com" crossorigin>
-    <link rel="dns-prefetch" href="https://render.worldofwarcraft.com">
-
-
-    <!-- Open Graph -->
-    <meta property="og:site_name" content="GearForge" />
-    <meta property="og:title" content="GearForge" />
-    <meta property="og:description" content="Optimize your gear. Maximize your potential." />
-    <meta property="og:type" content="website" />
-    <meta property="og:image" content="/og-cover.png" />
-    <!-- (Optional) replace with absolute URL in prod for best previews -->
-    <!-- <meta property="og:url" content="https://your-domain.com/" /> -->
-
-    <!-- Twitter -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="GearForge" />
-    <meta name="twitter:description" content="Optimize your gear. Maximize your potential." />
-    <meta name="twitter:image" content="/og-cover.png" />
   </head>
   <body>
     <div id="root"></div>
+    <!-- Make sure this path matches your actual entry (you used /src/main.tsx earlier) -->
     <script type="module" src="/src/app/main.tsx"></script>
   </body>
 </html>

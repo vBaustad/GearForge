@@ -1,6 +1,17 @@
+// src/components/Header.tsx
 import { Link, NavLink } from "react-router-dom";
 import { Menu } from "lucide-react";
 import c from "./components.module.css";
+
+type NavItem = { label: string; to: string; end?: boolean };
+
+const NAV: NavItem[] = [
+  { label: "Home", to: "/", end: true },
+  { label: "Optimizer", to: "/optimizer" }, // stays active for /optimizer/view
+  { label: "Guides", to: "/guides" },
+  { label: "FAQ", to: "/faq" },
+  // add { label: "Terms", to: "/terms" } or "Privacy" if you want them in top nav
+];
 
 export function Header() {
   return (
@@ -13,16 +24,16 @@ export function Header() {
 
         {/* Desktop nav */}
         <nav className={c.nav} aria-label="Primary">
-          {["Home", "Tools", "Guides", "About"].map((item) => (
+          {NAV.map((item) => (
             <NavLink
-              key={item}
-              to={item === "Home" ? "/" : `/${item.toLowerCase()}`}
+              key={item.to}
+              to={item.to}
+              end={item.end}
               className={({ isActive }) =>
                 isActive ? `${c.navLink} ${c.navLinkActive}` : c.navLink
               }
-              end={item === "Home"}
             >
-              {item}
+              {item.label}
             </NavLink>
           ))}
         </nav>
