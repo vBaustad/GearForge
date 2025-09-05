@@ -6,13 +6,13 @@ import { encodeToUrlHash } from "../services/urlCodec";
 
 export function OptimizerPage() {
   usePageMeta({
-    title: "GearForge — Optimize Your Gear",
-    description: "Paste your SimC (or export) to analyze upgrades, compare slots, and get fast, clear recommendations.",
-    ogTitle: "GearForge",
-    ogDescription: "Forge the perfect setup.",
-    ogImage: "/images/og/gearforge-wide-dark.png",
-    canonical: typeof window !== "undefined" ? window.location.href : "https://gearforge.app",
+    title: "Upgrade Planner",
+    description: "Plan your WoW upgrades from a SimC export. See crest/FS costs and free watermarks.",
+    canonical: "/optimizer",
+    image: "/og/optimizer.png",
+    ogType: "website",
   });
+
 
   const [rawInput, setRawInput] = useState("");
   const [isParsing, setIsParsing] = useState(false);
@@ -26,8 +26,6 @@ export function OptimizerPage() {
     try {
       const simc = rawInput.trim();
       if (!simc) throw new Error("Paste your SimC first.");
-
-      // ✅ encodeToUrlHash already returns "#d=..."
       const fragment = encodeToUrlHash({ simc });
       navigate(`/optimizer/view${fragment}`);
     } catch (err) {

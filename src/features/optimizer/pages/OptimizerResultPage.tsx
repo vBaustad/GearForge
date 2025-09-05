@@ -21,14 +21,13 @@ const titleCase = (s?: string | null) =>
 
 export default function OptimizerResultPage() {
   usePageMeta({
-    title: "GearForge — Optimize Your Gear",
-    description:
-      "Paste your SimC (or export) to analyze upgrades, compare slots, and get fast, clear recommendations.",
-    ogTitle: "GearForge",
-    ogDescription: "Forge the perfect setup.",
-    ogImage: "/images/og/gearforge-wide-dark.png",
-    canonical: typeof window !== "undefined" ? window.location.href : "https://gearforge.app",
+    title: "Upgrade Planner",
+    description: "Plan your WoW upgrades from a SimC export. See crest/FS costs and free watermarks.",
+    canonical: "/optimizer",
+    image: "/og/optimizer.png",
+    ogType: "website",
   });
+
 
   const data: SimcPayload | null = useMemo(() => {
     if (typeof window === "undefined") return null;

@@ -1,3 +1,5 @@
 # robots.txt for GearForge
 User-agent: *
 Allow: /
+
+Sitemap: https://gearforge.vercel.app/sitemap.xml

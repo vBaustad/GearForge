@@ -4,15 +4,12 @@ import { Link } from "react-router-dom";
 
 export function LandingPage() {
   usePageMeta({
-    title: "GearForge — Smarter WoW gear decisions",
-    description:
-      "Paste your SimC and get clear, prioritized upgrade plans with crest costs, caps, and drop ceilings.",
-    ogTitle: "GearForge",
-    ogDescription: "Forge the perfect setup.",
-    ogImage: "/images/og/gearforge-wide-dark.png",
-    canonical: typeof window !== "undefined" ? window.location.href : "https://gearforge.app",
+    title: "Upgrade Planner",
+    description: "Plan your WoW upgrades from a SimC export. See crest/FS costs and free watermarks.",
+    canonical: "/optimizer",
+    image: "/og/optimizer.png",
+    ogType: "website",
   });
-
 
   return (
     <main className={`${page.wrap} ${page.wrapWide}`}>
