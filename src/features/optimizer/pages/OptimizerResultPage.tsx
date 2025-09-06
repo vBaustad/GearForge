@@ -13,6 +13,7 @@ import { watermarksToFreeIlvlBySlot } from "../services/slotMap";
 import { RotateCcw, ExternalLink, Copy } from "lucide-react";
 import { IconUrlsProvider, type IconUrlMap } from "../context/IconUrlContext";
 import { useNavigate } from "react-router-dom";
+import PageSplashGate from "../components/PageSplashGate";
 
 const cap = (s?: string | null) => (s ? s[0].toUpperCase() + s.slice(1) : "");
 
@@ -223,81 +224,86 @@ export default function OptimizerResultPage() {
       : "";
 
   return (
-    <main className={page.wrap}>
-      <header className={page.header}>
-        <div className={`${page.titleRow} ${classToken}`}>
+    <PageSplashGate
+      durationMs={2000}
+      oncePerSession={false}
+      storageKey="gf-opt-splash-seen"
+    >
+      <main className={page.wrap}>
+        <header className={page.header}>
+          <div className={`${page.titleRow} ${classToken}`}>
 
-          {/* H1 = Character name or fallback */}
-          <h1 className={`${page.title} ${page.charTitle}`}>
-            {meta?.name ?? "Upgrade Planner"}
-          </h1>
+            <h1 className={`${page.title} ${page.charTitle}`}>
+              {meta?.name ?? "Upgrade Planner"}
+            </h1>
 
-          {/* Subtitle = Class • Realm */}
-          {meta && (
-            <div style={{ marginTop: 2, opacity: 0.85, fontSize: 14 }}>
-              {subtitle}
-            </div>
-          )}
-        </div>
-      </header>
-
-      <section className={page.results}>
-        <header className={page.resultsHeader}>
-          <div className={page.resultsHeaderBar}>
-            {/* Left: title */}
-            <h2>Recommended Upgrades</h2>
-
-            {/* Center: date */}
-            {meta?.headerLineTimestamp ? (
-              <div className={page.exportStamp}>Exported: {meta.headerLineTimestamp}</div>
-            ) : <div />}
-
-            {/* Right: actions */}
-            <div className={page.actions}>
-              <button
-                className={page.primaryBtn}
-                onClick={() => navigate("/optimizer")}
-                aria-label="Start over and return to the optimizer input page"
-              >
-                <RotateCcw className={page.btnIcon} />
-                Start Over
-              </button>
-
-              {meta?.armoryUrl && (
-                <a
-                  className={page.primaryBtn}
-                  href={meta.armoryUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Open character on the official Armory"
-                >
-                  <ExternalLink className={page.btnIcon} />
-                  Armory
-                </a>
-              )}
-
-              <button className={page.primaryBtn} onClick={copyLink}>
-                <Copy className={page.btnIcon} />
-                Copy Link
-              </button>
-            </div>
+            {/* Subtitle = Class • Realm */}
+            {meta && (
+              <div style={{ marginTop: 2, opacity: 0.85, fontSize: 14 }}>
+                {subtitle}
+              </div>
+            )}
           </div>
         </header>
 
-        {items.length === 0 ? (
-          <div className={page.empty}>
-            <div className={page.emptyBadge}>No data</div>
-            <p className={page.emptyText}>This link doesn’t contain a SimC payload.</p>
-          </div>
-        ) : (
-          <>
-            <IconUrlsProvider urls={iconMap}>
-              <Paperdoll items={items} plans={plans} />
-              <NarrativePlan plans={plans} ceilingIlvl={ceilingIlvl} />
-            </IconUrlsProvider>
-          </>
-        )}
-      </section>
-    </main>
+        <section className={page.results}>
+          <header className={page.resultsHeader}>
+            <div className={page.resultsHeaderBar}>
+              {/* Left: title */}
+              <h2>Recommended Upgrades</h2>
+
+              {/* Center: date */}
+              {meta?.headerLineTimestamp ? (
+                <div className={page.exportStamp}>Exported: {meta.headerLineTimestamp}</div>
+              ) : <div />}
+
+              {/* Right: actions */}
+              <div className={page.actions}>
+                <button
+                  className={page.primaryBtn}
+                  onClick={() => navigate("/optimizer")}
+                  aria-label="Start over and return to the optimizer input page"
+                >
+                  <RotateCcw className={page.btnIcon} />
+                  Start Over
+                </button>
+
+                {meta?.armoryUrl && (
+                  <a
+                    className={page.primaryBtn}
+                    href={meta.armoryUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Open character on the official Armory"
+                  >
+                    <ExternalLink className={page.btnIcon} />
+                    Armory
+                  </a>
+                )}
+
+                <button className={page.primaryBtn} onClick={copyLink}>
+                  <Copy className={page.btnIcon} />
+                  Copy Link
+                </button>
+              </div>
+            </div>
+          </header>
+
+          {items.length === 0 ? (
+            <div className={page.empty}>
+              <div className={page.emptyBadge}>No data</div>
+              <p className={page.emptyText}>This link doesn’t contain a SimC payload.</p>
+            </div>
+          ) : (
+            <>
+              <IconUrlsProvider urls={iconMap}>
+                <Paperdoll items={items} plans={plans} />              
+                <NarrativePlan plans={plans} ceilingIlvl={ceilingIlvl} />
+              </IconUrlsProvider>
+            </>
+          )}
+        </section>
+      </main>
+    </PageSplashGate>
   );
 }
