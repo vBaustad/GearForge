@@ -6,13 +6,13 @@ export function LandingPage() {
   usePageMeta({
     title: "Upgrade Planner",
     description: "Plan your WoW upgrades from a SimC export. See crest/FS costs and free watermarks.",
-    canonical: "/optimizer",
+    canonical: "/", // ← landing page canonical
     image: "/og/optimizer.png",
     ogType: "website",
   });
 
   return (
-    <main className={`${page.wrap} ${page.wrapWide}`}>
+    <main id="main" className={`${page.wrap} ${page.wrapWide}`}>
       {/* Hero */}
       <header className={page.header}>
         <h1 className={page.title}>Make better gear choices, faster</h1>

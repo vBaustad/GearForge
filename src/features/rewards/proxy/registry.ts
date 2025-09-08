@@ -1,25 +1,16 @@
+// src/features/rewards/proxy/registry.ts
 import { season } from "../../../config/seasons/currentSeason";
 import type { TrackKey } from "../../optimizer/types/simc";
-import type { MPlusRewardRow } from "../../../types/season";
 
-// Safe helper: prefer name if present, else id (no `any`)
-type SeasonIdOnly = { id: string };
-type MaybeNamed = { name?: string };
-function seasonDisplayName(s: SeasonIdOnly & MaybeNamed) {
-  return s.name ?? s.id;
-}
+export const rewardsSeasonName = season.name ?? season.id;
+export const rewardsRowsRaw    = season.rewards.rows;
+export const rewardsSpotlight  = season.rewards.spotlightLevels;
 
-export const rewardsSeasonName = seasonDisplayName(season);
-export const rewardsSpotlight = season.rewards.spotlightLevels;
-
-// raw rows: { level, end:{track,rank}, vault:{track,rank} }
-export const rewardsRowsRaw: MPlusRewardRow[] = season.rewards.rows;
-
-/** Resolve a track+rank → ilvl using current season tracks */
+// track+rank → ilvl (authoritative from the season’s tracks)
 export function resolveIlvl(track: TrackKey, rank: number): number {
-  const t = season.tracks[track];
-  if (!t?.ilvlByRank) throw new Error(`Missing ilvlByRank for track ${track}`);
-  const ilvl = (t.ilvlByRank as Record<number, number>)[rank];
-  if (!ilvl) throw new Error(`Missing ilvl for ${track} rank ${rank}`);
-  return ilvl;
+  const table = season.tracks[track]?.ilvlByRank as Record<number, number> | undefined;
+  if (!table) throw new Error(`Missing ilvlByRank for track ${track}`);
+  const v = table[rank];
+  if (!v) throw new Error(`Missing ilvl for ${track} rank ${rank}`);
+  return v;
 }

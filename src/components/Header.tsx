@@ -7,7 +7,8 @@ type NavItem = { label: string; to: string; end?: boolean };
 
 const NAV: NavItem[] = [
   { label: "Home", to: "/", end: true },
-  { label: "Optimizer", to: "/optimizer" }, // stays active for /optimizer/view
+  { label: "Optimizer", to: "/optimizer" },
+  { label: "Rewards", to: "/rewards" },
   { label: "Guides", to: "/guides" },
   { label: "FAQ", to: "/faq" },
   // add { label: "Terms", to: "/terms" } or "Privacy" if you want them in top nav

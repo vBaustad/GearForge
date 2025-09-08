@@ -1,7 +1,8 @@
+// src/features/optimizer/pages/OptimizerPage.tsx
 import { useEffect, useState } from "react";
 import page from "../../../styles/page.module.css";
 import { usePageMeta } from "../../../app/seo/usePageMeta";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { encodeToUrlHash } from "../services/urlCodec";
 
 export function OptimizerPage() {
@@ -12,7 +13,6 @@ export function OptimizerPage() {
     image: "/og/optimizer.png",
     ogType: "website",
   });
-
 
   const [rawInput, setRawInput] = useState("");
   const [isParsing, setIsParsing] = useState(false);
@@ -40,12 +40,28 @@ export function OptimizerPage() {
   }, []);
 
   return (
-    <main className={page.wrap}>
-      <header className={page.header}>
-        <h1 className={page.title}>Optimize your gear in seconds</h1>
-        <p className={page.subtitle}>
-          Paste your SimC (or export) and get clear, prioritized upgrade recommendations.
-        </p>
+    <main id="main" className="mx-auto max-w-7xl px-4 py-6 space-y-8">
+      {/* Header row: title on left, Home button on right (matches Rewards page) */}
+      <header className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-white">
+            Optimize your gear in seconds
+          </h1>
+          <p className="text-gray-400">
+            Paste your SimC (or export) and get clear, prioritized upgrade recommendations.
+          </p>
+        </div>
+
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 rounded-md border border-gray-800 bg-black/60 px-3 py-1.5 text-sm text-gray-100 hover:bg-black/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/40"
+          aria-label="Go to home"
+        >
+          <svg viewBox="0 0 20 20" className="h-4 w-4" aria-hidden="true">
+            <path fill="currentColor" d="M12.5 4 6 10l6.5 6 1.5-1.5L9 10l5-4.5z" />
+          </svg>
+          Home
+        </Link>
       </header>
 
       <section className={page.featuresGridSingle}>
