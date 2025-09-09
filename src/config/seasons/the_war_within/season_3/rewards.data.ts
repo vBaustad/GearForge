@@ -14,9 +14,9 @@ export const rewardTuples_s3: RewardTuple[] = [
   [ 7, ["Hero",     1], ["Hero", 4], "10 Gilded"],
   [ 8, ["Hero",     2], ["Hero", 4], "12 Gilded"],
   [ 9, ["Hero",     2], ["Hero", 4], "14 Gilded"],
-  [10, ["Hero",     3], ["Hero", 5], "16 Gilded"],
-  [11, ["Hero",     3], ["Hero", 5], "18 Gilded"],
-  [12, ["Hero",     3], ["Hero", 5], "20 Gilded"],
+  [10, ["Hero",     3], ["Myth", 1], "16 Gilded"],
+  [11, ["Hero",     3], ["Myth", 1], "18 Gilded"],
+  [12, ["Hero",     3], ["Myth", 1], "20 Gilded"],
   // TODO: +13..+20
 ];
 
