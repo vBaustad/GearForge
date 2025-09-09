@@ -1,9 +1,9 @@
+// src/features/rewards/components/VaultCards.tsx
 import { useMemo } from "react";
 import type { RewardsViewData, RewardRowUI } from "../types/rewards";
 import { CREST_ICONS } from "../../../components/crests/crests";
 import type { Crest } from "../../../types/crests";
-
-const RANK_COLOR = "text-amber-300";
+import c from "./components.module.css";
 
 function parseCrestNote(note?: string): { count: number; tier: Crest } | null {
   if (!note) return null;
@@ -38,28 +38,25 @@ export function VaultCards({ data }: { data: RewardsViewData }) {
   if (!spotlight.length) return null;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
+    <div className={c.cardGrid5} role="list" aria-label="Keystone breakpoint cards">
       {spotlight.map((row) => {
         const parsed = parseCrestNote(row.note);
         const crestTier = row.crest?.tier ?? parsed?.tier;
         const crestCount = parsed?.count;
 
         return (
-          <div
-            key={row.level}
-            className="rounded-2xl border border-gray-800 bg-black/60 p-4"
-          >
-            <div className="flex items-start justify-between">
+          <article key={row.level} role="listitem" className={c.cardPanel}>
+            <div className={c.cardHeadRow}>
               <div>
-                <div className="text-sm uppercase tracking-wide text-gray-400">Keystone</div>
-                <div className="text-3xl font-semibold text-white">+{row.level}</div>
+                <div className={c.kicker}>Keystone</div>
+                <h3 className={c.cardTitle}>+{row.level}</h3>
               </div>
 
-              {/* TOP-RIGHT crest: pill with number, else icon-only in an accessible chip */}
+              {/* TOP-RIGHT crest: pill with number, else icon-only */}
               {crestTier && (
                 typeof crestCount === "number" ? (
                   <span
-                    className="inline-flex items-center gap-1.5 rounded-md border border-gray-700 bg-black/40 px-2.5 py-1 text-xs text-gray-100 shadow-sm"
+                    className={c.crestPill}
                     aria-label={`${crestCount} ${crestTier}`}
                     title={`${crestCount} ${crestTier}`}
                   >
@@ -71,13 +68,13 @@ export function VaultCards({ data }: { data: RewardsViewData }) {
                       height={20}
                       loading="lazy"
                       decoding="async"
-                      className="h-5 w-5"
+                      className={c.crestImgSm}
                     />
-                    <strong className="leading-none tabular-nums">{crestCount}</strong>
+                    <strong className={`${c.crestPillText} ${c.tabular}`}>{crestCount}</strong>
                   </span>
                 ) : (
                   <span
-                    className="inline-flex items-center rounded-md border border-gray-700 bg-black/40 px-2.5 py-1 shadow-sm"
+                    className={c.crestPill}
                     aria-label={`${crestTier} crest`}
                     title={`${crestTier} crest`}
                   >
@@ -89,43 +86,35 @@ export function VaultCards({ data }: { data: RewardsViewData }) {
                       height={20}
                       loading="lazy"
                       decoding="async"
-                      className="h-5 w-5"
+                      className={c.crestImgSm}
                     />
                   </span>
                 )
               )}
             </div>
 
-            <div className="mt-4 space-y-3">
-              <div>
-                <div className="flex items-baseline justify-between">
-                  <span className="text-gray-400">End of Dungeon</span>
-                  <span className="text-xl font-semibold text-white tabular-nums">
-                    {row.endOfDungeonIlvl}
-                  </span>
+            <div className={c.cardBody}>
+              <div className={c.kvBlock}>
+                <div className={c.kvRow}>
+                  <span className={c.kvLabel}>Dungeon Drop</span>
+                  <span className={`${c.kvValue} ${c.tabular}`}>{row.endOfDungeonIlvl}</span>
                 </div>
-                <div className="text-xs text-gray-500">
-                  <span className={`${RANK_COLOR} font-medium`}>
-                    {fmtTrackRank(row.endTrack, row.endRank, row.endMax)}
-                  </span>
+                <div className={c.rankSmallGold}>
+                  {fmtTrackRank(row.endTrack, row.endRank, row.endMax)}
                 </div>
               </div>
 
-              <div>
-                <div className="flex items-baseline justify-between">
-                  <span className="text-gray-400">Great Vault</span>
-                  <span className="text-xl font-semibold text-white tabular-nums">
-                    {row.vaultIlvl}
-                  </span>
+              <div className={c.kvBlock}>
+                <div className={c.kvRow}>
+                  <span className={c.kvLabel}>Great Vault</span>
+                  <span className={`${c.kvValue} ${c.tabular}`}>{row.vaultIlvl}</span>
                 </div>
-                <div className="text-xs text-gray-500">
-                  <span className={`${RANK_COLOR} font-medium`}>
-                    {fmtTrackRank(row.vaultTrack, row.vaultRank, row.vaultMax)}
-                  </span>
+                <div className={c.rankSmallGold}>
+                  {fmtTrackRank(row.vaultTrack, row.vaultRank, row.vaultMax)}
                 </div>
               </div>
             </div>
-          </div>
+          </article>
         );
       })}
     </div>

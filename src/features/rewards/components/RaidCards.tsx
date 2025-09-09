@@ -1,71 +1,67 @@
-// src/features/rewards/components/RaidCards.tsx
 import { getRaidViewData } from "../services/raid";
-
-const RANK_COLOR = "text-amber-300"; // brand gold
+import c from "./components.module.css";
 
 export function RaidCards() {
   const { cards } = getRaidViewData();
-
   if (!cards?.length) return null;
 
   return (
     <div
-      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3"
+      className={c.cardGrid4}
       role="list"
       aria-label="Raid difficulties and their loot item levels"
     >
-      {cards.map((c) => {
-        const titleId = `raid-${String(c.difficulty).toLowerCase()}`;
+      {cards.map((card) => {
+        const titleId = `raid-${String(card.difficulty).toLowerCase()}`;
 
         return (
           <article
-            key={c.difficulty}
+            key={card.difficulty}
             role="listitem"
             aria-labelledby={titleId}
-            className="rounded-2xl border border-gray-800 bg-black/60 p-4"
+            className={`${c.cardPanel} ${c.raidCard}`}
           >
-            <div className="flex items-start justify-between">
+            <div className={c.cardHeadRow}>
               <div>
-                <div className="text-sm uppercase tracking-wide text-gray-400">Raid</div>
-                <h3 id={titleId} className="text-xl font-semibold text-white">
-                  {c.difficulty}
+                <div className={c.kicker}>Raid</div>
+                <h3 id={titleId} className={c.cardTitle}>
+                  {card.difficulty}
                 </h3>
               </div>
 
               {/* Crest pill (decorative icon; text announces the tier) */}
               <span
-                className="inline-flex items-center gap-1.5 rounded-md border border-gray-700 bg-black/40 px-2.5 py-1 text-xs text-gray-100 shadow-sm"
-                title={`${c.crest.tier} crests drop here`}
-                aria-label={`${c.crest.tier} crests`}
+                className={c.crestPill}
+                title={`${card.crest.tier} crests drop here`}
+                aria-label={`${card.crest.tier} crests`}
               >
                 <img
-                  src={c.crest.icon}
+                  src={card.crest.icon}
                   alt=""
                   aria-hidden="true"
                   width={20}
                   height={20}
                   loading="lazy"
                   decoding="async"
-                  className="h-5 w-5"
+                  className={c.crestImgSm}
                 />
-                <span className="leading-none">{c.crest.tier}</span>
+                <span className={c.crestPillText}>{card.crest.tier}</span>
               </span>
             </div>
 
-            <div className="mt-4 space-y-2">
-              {c.segments.map((s) => (
+            <div className={c.segmentList}>
+              {card.segments.map((s) => (
                 <div
                   key={s.label}
-                  className="rounded-lg bg-black/30 px-3 py-2 border border-gray-800"
+                  className={c.segment}
                   aria-label={`${s.label}: item level ${s.ilvl}${s.rankLabel ? `, ${s.rankLabel}` : ""}`}
                 >
-                  <div className="flex items-baseline justify-between">
-                    <span className="text-gray-300">{s.label}</span>
-                    <span className="text-white font-medium tabular-nums">{s.ilvl}</span>
+                  <div className={c.segmentTopRow}>
+                    <span className={c.segmentLabel}>{s.label}</span>
+                    <span className={`${c.ilvl} ${c.tabular}`}>{s.ilvl}</span>
                   </div>
-
                   {s.rankLabel && (
-                    <div className={`text-xs ${RANK_COLOR} mt-0.5`}>{s.rankLabel}</div>
+                    <div className={c.rankSmallGold}>{s.rankLabel}</div>
                   )}
                 </div>
               ))}

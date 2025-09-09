@@ -6,7 +6,7 @@ export function LandingPage() {
   usePageMeta({
     title: "Upgrade Planner",
     description: "Plan your WoW upgrades from a SimC export. See crest/FS costs and free watermarks.",
-    canonical: "/", // ← landing page canonical
+    canonical: "/", // landing page canonical
     image: "/og/optimizer.png",
     ogType: "website",
   });
@@ -38,12 +38,12 @@ export function LandingPage() {
           </Link>
 
           {/* Link: Rewards */}
-          <Link to="/rewards" className={page.navCard} aria-label="Dungeon & Vault ilvls — view tables">
+          <Link to="/rewards" className={page.navCard} aria-label="Dungeon, Raid & Vault ilvls — view tables">
             <div className={page.featureHead}>
               <span className={page.iconDot} aria-hidden />
-              <h3 className={page.navTitle}>Dungeon &amp; Vault ilvls</h3>
+              <h3 className={page.navTitle}>Dungeon, Raid &amp; Vault item levels</h3>
             </div>
-            <p className={page.navText}>Quick tables for Vault and Keystone drop item levels.</p>
+            <p className={page.navText}>Quick tables for Mythic+, Raid and Great Vault reward item levels.</p>
             <span className={page.navCta}>View tables</span>
           </Link>
 

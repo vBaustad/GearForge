@@ -1,5 +1,5 @@
-// src/components/CollapsibleSection.tsx
 import { useId, useState } from "react";
+import c from "./components.module.css";
 
 export function CollapsibleSection({
   title,
@@ -20,29 +20,28 @@ export function CollapsibleSection({
   const [open, setOpen] = useState(defaultOpen);
 
   return (
-    <section aria-labelledby={headingId} className="rounded-2xl border border-gray-800 overflow-hidden">
-      {/* Entire header is clickable */}
+    <section aria-labelledby={headingId} className={c.sectionPanel}>
       <button
         type="button"
-        className="w-full flex items-center justify-between bg-black/60 px-4 py-3 text-left hover:bg-black/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/40"
+        className={c.sectionHeaderBtn}
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => setOpen(v => !v)}
       >
-        <div className="min-w-0">
-          <h2 id={headingId} className="text-lg font-semibold text-white truncate">{title}</h2>
-          {subtitle && <p className="text-xs text-gray-400">{subtitle}</p>}
+        <div className={c.sectionTitleWrap}>
+          <h2 id={headingId} className={c.sectionTitle}>{title}</h2>
+          {subtitle && <p className={c.sectionSubtitle}>{subtitle}</p>}
         </div>
 
-        <span className="inline-flex items-center gap-2 rounded-md border border-gray-700 bg-black/40 px-3 py-1.5 text-xs text-gray-100">
+        <span className={c.sectionToggle}>
           {open ? "Collapse" : "Expand"}
-          <svg viewBox="0 0 20 20" className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`}>
+          <svg viewBox="0 0 20 20" className={c.caret} aria-hidden="true">
             <path fill="currentColor" d="M10 12.5 3.5 6h13L10 12.5z" />
           </svg>
         </span>
       </button>
 
-      <div id={panelId} hidden={!open} role="region" aria-labelledby={headingId}>
+      <div id={panelId} hidden={!open} role="region" aria-labelledby={headingId} className={c.sectionBody}>
         {children}
       </div>
     </section>

@@ -11,7 +11,8 @@
   color:var(--ink); background:var(--bg);
   width:100%; max-width:920px; margin:0 auto; padding:24px 16px 48px;
 }
-.wrapWide { max-width:1120px; }
+/* 5xl-ish container for wider pages */
+.wrapWide { max-width:1024px; }
 
 /* =====================
    Page header (title + subtitle)
@@ -19,6 +20,22 @@
 .header { text-align:center; margin-bottom:16px; }
 .title { margin:0 0 6px; font-size:clamp(26px,3.2vw,34px); }
 .subtitle { margin:0; color:var(--ink-dim); }
+
+/* Row header variant (title/subtitle left + actions right) */
+.headerRow {
+  display:flex; align-items:flex-start; justify-content:space-between;
+  gap:12px; margin-bottom:16px;
+}
+
+/* Home button (right side) */
+.homeBtn {
+  display:inline-flex; align-items:center; gap:8px; line-height:1;
+  padding:8px 12px; border-radius:8px; border:1px solid #1f2024;
+  background:var(--panel); color:var(--ink); text-decoration:none;
+}
+.homeBtn:hover { filter:brightness(1.03); }
+.homeBtn:focus-visible { outline:none; box-shadow:0 0 0 4px var(--ring); }
+.homeIcon { width:16px; height:16px; flex:0 0 16px; opacity:.9; }
 
 /* =====================
    Shared card / header bits
@@ -52,7 +69,9 @@
   letter-spacing:.3px;
 }
 
-/* Default feature-card scaffolding (used elsewhere too) */
+/* =====================
+   Default feature-card scaffolding (used elsewhere too)
+===================== */
 .featuresGridSingle { display:grid; grid-template-columns:1fr; gap:16px; margin-top:16px; }
 .featureCard {
   background:var(--panel); border:1px solid #1f2024; border-radius:8px; padding:16px;
@@ -101,7 +120,6 @@
 /* =====================
    Landing – Hero card + undercards
 ===================== */
-/* ===== Landing – Hero & Feature grid ===== */
 .heroCtaRow{
   margin-top:12px;
   display:flex; justify-content:center;
@@ -156,6 +174,13 @@
   display:block; flex-shrink:0; vertical-align:middle;
 }
 
+/* Small pill for "Under construction" */
+.ucBadge {
+  display:inline-block; padding:2px 8px; margin-left:6px;
+  border:1px solid #2a2c31; border-radius:999px;
+  font-size:11px; color:var(--ink-dim);
+}
+
 /* =====================
    Results & meta (other pages)
 ===================== */
@@ -179,6 +204,7 @@
   background:#1f2126; color:var(--ink-dim);
 }
 .emptyBadge { display:inline-block; padding:2px 8px; border-radius:999px; border:1px solid #2a2c31; margin-bottom:6px; }
+.emptyText { margin:6px 0 0; }
 
 /* =====================
    Character header (class colors)

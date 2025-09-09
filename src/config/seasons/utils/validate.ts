@@ -22,7 +22,37 @@ export function validateRewardsRows(
   }
 }
 
-/** Optional: whole-season validator hook */
-export function validateSeasonConfig(season: SeasonConfig) {
-  // Add any cross-field checks you want later.
+export function validateSeasonConfig(season: SeasonConfig): void {
+  const { rewards, tracks } = season;
+
+  // Must have at least one reward row
+  if (!rewards?.rows?.length) {
+    throw new Error("Season rewards: no rows defined.");
+  }
+
+  // Spotlight levels should exist in rows (warn, don’t fail)
+  const levels = new Set(rewards.rows.map(r => r.level));
+  for (const lvl of rewards.spotlightLevels ?? []) {
+    if (!levels.has(lvl)) {
+      console.warn(`Season rewards: spotlight level +${lvl} has no corresponding row.`);
+    }
+  }
+
+  // Each row’s track/rank must be valid for both end and vault
+  for (const row of rewards.rows) {
+    (["end", "vault"] as const).forEach(kind => {
+      const pair = row[kind];
+      const t = tracks[pair.track];
+      if (!t) {
+        throw new Error(
+          `Season rewards: unknown track "${pair.track}" at +${row.level} (${kind}).`
+        );
+      }
+      if (pair.rank < 1 || pair.rank > t.maxRank) {
+        throw new Error(
+          `Season rewards: ${pair.track} rank ${pair.rank} out of bounds 1..${t.maxRank} at +${row.level} (${kind}).`
+        );
+      }
+    });
+  }
 }
