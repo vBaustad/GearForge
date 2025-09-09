@@ -1,35 +1,22 @@
 // src/config/seasons/the_war_within/season_3/season.ts
-
-import type { SeasonConfig } from "../../../../types/season";
-import type { Track, TrackKey } from "../../../../features/optimizer/types/simc";
-// UPDATED paths (adjust to your final layout):
-import { trackTemplates } from "../../../../data/trackDefinitions";  // ← moved
+import { composeSeason } from "../../utils/composeSeason";
+import { trackTemplates } from "../../../../data/trackDefinitions";
 import { bonusUpgradeIndex } from "../../../../data/upgradeIndex";
-import { ilvlByRank_tww_s3 } from "./ilvlByRank";
-import { seasonMeta } from "./season.meta";
 
-const tracks = Object.fromEntries(
-  (Object.keys(trackTemplates) as TrackKey[]).map((key) => {
-    // make the template obviously Track minus ilvlByRank
-    const base = trackTemplates[key] as Omit<Track, "ilvlByRank">;
+import { ilvlByRank_tww_s3 as ilvlByRank } from "./ilvlByRank";
+import { seasonMeta as meta } from "./season.meta";
+import {
+  rewardTuples_s3 as rewardTuples,
+  crestByLevel_s3 as crestByLevel,
+  spotlightLevels_s3 as spotlightLevels,
+} from "./rewards.data";
 
-    const ilvlByRank = ilvlByRank_tww_s3[key];
-    if (!ilvlByRank) throw new Error(`Missing ilvl for track: ${key}`);
-
-    // Validate length vs maxRank
-    const expected = base.maxRank;
-    const actual = Object.keys(ilvlByRank).length;
-    if (actual !== expected) {
-      throw new Error(`ilvl length mismatch for ${key}. Expected ${expected}, got ${actual}`);
-    }
-
-    const track: Track = { ...base, ilvlByRank };
-    return [key, track];
-  })
-) as Record<TrackKey, Track>;
-
-export const season: SeasonConfig = {
-  ...seasonMeta,
-  tracks,
+export const season = composeSeason({
+  meta,
+  ilvlByRank,
+  rewardTuples,
+  crestByLevel,
+  spotlightLevels,
+  trackTemplates,
   bonusUpgradeIndex,
-};
+});

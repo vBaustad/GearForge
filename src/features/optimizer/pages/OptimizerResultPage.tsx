@@ -1,4 +1,3 @@
-// src/features/optimizer/pages/OptimizerResultPage.tsx
 import { useEffect, useMemo, useState } from "react";
 import page from "../../../styles/page.module.css";
 import { usePageMeta } from "../../../app/seo/usePageMeta";
@@ -12,11 +11,10 @@ import { planAll } from "../services/planner";
 import { watermarksToFreeIlvlBySlot } from "../services/slotMap";
 import { RotateCcw, ExternalLink, Copy } from "lucide-react";
 import { IconUrlsProvider, type IconUrlMap } from "../context/IconUrlContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import PageSplashGate from "../components/PageSplashGate";
 
 const cap = (s?: string | null) => (s ? s[0].toUpperCase() + s.slice(1) : "");
-
 const titleCase = (s?: string | null) =>
   s ? s.replace(/\b\w+/g, w => w[0].toUpperCase() + w.slice(1).toLowerCase()) : "";
 
@@ -29,18 +27,12 @@ export default function OptimizerResultPage() {
     ogType: "website",
   });
 
-
   const data: SimcPayload | null = useMemo(() => {
     if (typeof window === "undefined") return null;
-
-    // 1) #d=... (or legacy in hash)
     const byHash = decodeFromUrlHash(window.location.hash);
     if (byHash) return byHash;
-
-    // 2) ?d=... (or legacy in query)
     const byQuery = decodeFromUrlHash(window.location.search);
     if (byQuery) return byQuery;
-
     return null;
   }, []);
 
@@ -85,7 +77,7 @@ export default function OptimizerResultPage() {
   const ceilingIlvl = data?.ceilingIlvl ?? 701;
   const ignoreCeiling = !!data?.ignoreCeiling;
 
-  // --- (Optional) Watermarks -> free ranges ---
+  // --- Watermarks -> free ranges (optional) ---
   const freeIlvlBySlot = useMemo(
     () => (upgradeCtx ? watermarksToFreeIlvlBySlot(upgradeCtx.watermarks) : {}),
     [upgradeCtx]
@@ -125,23 +117,18 @@ export default function OptimizerResultPage() {
 
   function copyLink() {
     if (typeof window === "undefined") return;
-
-    // Prefer decoded payload; else reconstruct from current state if possible
     const current: SimcPayload | null =
       data ?? (simcText ? { simc: simcText, ceilingIlvl, ignoreCeiling } : null);
-
     if (!current) {
       navigator.clipboard.writeText(window.location.href);
       return;
     }
-
-    const url = buildShareUrl(current); // origin + path + #d=...
+    const url = buildShareUrl(current);
     navigator.clipboard.writeText(url);
-    window.history.replaceState(null, "", url); // optional: update address bar
+    window.history.replaceState(null, "", url);
   }
 
-
-  // Collect icon IDs you’ll show: equipped + a few planned upgrade items
+  // Collect icon IDs to prefetch
   const equippedIds = useMemo(
     () =>
       Array.from(
@@ -191,9 +178,7 @@ export default function OptimizerResultPage() {
   useEffect(() => {
     let canceled = false;
     setIconMap({});
-
     if (fetchTotal === 0) return;
-
     (async () => {
       const pairs: Array<[number, string]> = [];
       await Promise.all(
@@ -210,40 +195,39 @@ export default function OptimizerResultPage() {
       if (canceled) return;
       setIconMap(Object.fromEntries(pairs));
     })();
-
     return () => {
       canceled = true;
     };
   }, [fetchTotal, allIconIds]);
 
   const navigate = useNavigate();
-
   const classToken =
     meta?.className
       ? (page as Record<string, string>)[`class-${meta.className}`] ?? ""
       : "";
 
   return (
-    <PageSplashGate
-      durationMs={2000}
-      oncePerSession={false}
-      storageKey="gf-opt-splash-seen"
-    >
-      <main className={page.wrap}>
-        <header className={page.header}>
-          <div className={`${page.titleRow} ${classToken}`}>
-
+    <PageSplashGate durationMs={2000} oncePerSession={false} storageKey="gf-opt-splash-seen">
+      <main className={`${page.wrap} ${page.wrapWide}`}>
+        {/* Header row: title + subtitle on left, Home button on right */}
+        <header className={page.headerRow}>
+          <div className={`${page.charHeader} ${classToken}`}>
             <h1 className={`${page.title} ${page.charTitle}`}>
               {meta?.name ?? "Upgrade Planner"}
             </h1>
-
-            {/* Subtitle = Class • Realm */}
             {meta && (
-              <div style={{ marginTop: 2, opacity: 0.85, fontSize: 14 }}>
+              <div className={page.sectionSubline} aria-live="polite">
                 {subtitle}
               </div>
             )}
           </div>
+
+          <Link to="/" className={page.homeBtn} aria-label="Go to home">
+            <svg viewBox="0 0 20 20" className={page.homeIcon} aria-hidden="true">
+              <path fill="currentColor" d="M12.5 4 6 10l6.5 6 1.5-1.5L9 10l5-4.5z" />
+            </svg>
+            Home
+          </Link>
         </header>
 
         <section className={page.results}>
@@ -255,7 +239,9 @@ export default function OptimizerResultPage() {
               {/* Center: date */}
               {meta?.headerLineTimestamp ? (
                 <div className={page.exportStamp}>Exported: {meta.headerLineTimestamp}</div>
-              ) : <div />}
+              ) : (
+                <div />
+              )}
 
               {/* Right: actions */}
               <div className={page.actions}>
@@ -295,12 +281,10 @@ export default function OptimizerResultPage() {
               <p className={page.emptyText}>This link doesn’t contain a SimC payload.</p>
             </div>
           ) : (
-            <>
-              <IconUrlsProvider urls={iconMap}>
-                <Paperdoll items={items} plans={plans} />              
-                <NarrativePlan plans={plans} ceilingIlvl={ceilingIlvl} />
-              </IconUrlsProvider>
-            </>
+            <IconUrlsProvider urls={iconMap}>
+              <Paperdoll items={items} plans={plans} />
+              <NarrativePlan plans={plans} ceilingIlvl={ceilingIlvl} />
+            </IconUrlsProvider>
           )}
         </section>
       </main>

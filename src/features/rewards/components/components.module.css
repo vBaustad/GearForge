@@ -1,0 +1,220 @@
+/* =========================================
+   Shared Components Styles (cards, sections)
+   Relies on page.module.css CSS variables
+   --bg, --panel, --panel-2, --ink, --ink-dim, --stroke, --ring, --accent, --accent-2
+========================================= */
+
+/* ---------- Utilities ---------- */
+.tabular { font-variant-numeric: tabular-nums; }
+.kicker {
+  font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-dim);
+}
+.rankSmallGold { font-size: 12px; color: var(--accent); margin-top: 2px; }
+
+/* ---------- Grids ---------- */
+/* 5-up for VaultCards (1 / 3 / 5) */
+.cardGrid5 { display: grid; grid-template-columns: 1fr; gap: 12px; }
+@media (min-width: 720px){ .cardGrid5 { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width:1120px){ .cardGrid5 { grid-template-columns: repeat(5, 1fr); } }
+
+/* 4-up grid like VaultCards, but for raid */
+.cardGrid4 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+@media (min-width: 720px) {
+  .cardGrid4 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 1120px) {
+  .cardGrid4 { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* Slightly taller than Vault cards to fit 4 segments */
+.raidCard { min-height: 260px; }
+
+/* Segments list inside raid card */
+.segmentList {
+  margin-top: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+/* Individual segment block (boss groups / very rare) */
+.segment {
+  border: 1px solid #1f2024;
+  border-radius: 10px;
+  background: rgba(0,0,0,.30);
+  padding: 10px 12px;
+}
+
+/* Top row of a segment: label left, ilvl right */
+.segmentTopRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.segmentLabel { color: var(--ink-dim); }
+.ilvl { color: var(--ink); font-weight: 600; }
+
+
+/* ---------- Generic panel card (black “glass” look) ---------- */
+.cardPanel{
+  background: rgba(0,0,0,.60);           /* was var(--panel) */
+  border: 1px solid #1f2024;
+  border-radius: 12px;
+  padding: 16px;
+  color: var(--ink);
+  box-shadow: 0 1px 0 rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.02);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.cardPanel:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(0,0,0,.25); }
+
+/* Header row: left title block, right crest pill */
+.cardHeadRow { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+
+/* Card title (large number or label) */
+.cardTitle { margin: 0; color: var(--ink); font-weight: 800; font-size: 22px; line-height: 1.15; }
+
+/* Content block spacing */
+.cardBody { margin-top: 12px; display: grid; gap: 10px; }
+
+/* Key-value blocks inside cards */
+.kvBlock { display: grid; gap: 2px; }
+.kvRow { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.kvLabel { color: var(--ink-dim); }
+.kvValue { color: var(--ink); font-weight: 600; }
+
+/* Crest pill (top-right) */
+.crestPill{
+  display: inline-flex; align-items: center; gap: 6px;
+  border-radius: 8px; border: 1px solid #2a2c31;
+  background: rgba(0,0,0,.40);           /* was var(--panel-2) */
+  padding: 4px 8px; color: var(--ink);
+  box-shadow: 0 1px 0 rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.02);
+}
+.crestImgSm { width: 20px; height: 20px; display: block; }
+.crestPillText { line-height: 1; font-weight: 700; }
+
+/* Small segment block (raid bosses group) */
+.segmentBlock{
+  border: 1px solid #1f2024;
+  border-radius: 10px;
+  background: rgba(0,0,0,.30);
+  padding: 10px 12px;
+}
+
+/* ---------- Collapsible Section ---------- */
+.sectionPanel{
+  border: 1px solid #1f2024; border-radius: 12px; overflow: hidden; background: transparent;
+}
+/* Clickable header button spans full width */
+.sectionHeaderBtn{
+  width: 100%; display: flex; align-items: center; justify-content: space-between; text-align: left;
+  background: rgba(0,0,0,.60);           /* was var(--panel-2) */
+  padding: 12px 14px; color: var(--ink); cursor: pointer; border: 0;
+}
+.sectionHeaderBtn:hover { background: rgba(0,0,0,.50); }
+.sectionHeaderBtn:focus-visible { outline: none; box-shadow: 0 0 0 4px var(--ring); }
+
+.sectionTitleWrap { min-width: 0; }
+.sectionTitle{
+  margin: 0; font-weight: 700; font-size: 16px; line-height: 1.1; color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sectionSubtitle{
+  margin: 2px 0 0; font-size: 12px; color: var(--ink-dim);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* Right-side toggle chip */
+.sectionToggle{
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid #2a2c31; background: rgba(0,0,0,.40); color: var(--ink);
+  padding: 6px 10px; border-radius: 8px; font-size: 12px;
+}
+.caret{ width: 16px; height: 16px; display: inline-block; transition: transform .15s ease; }
+.sectionHeaderBtn[aria-expanded="true"] .caret{ transform: rotate(180deg); }
+
+/* Collapsible body area (same black glass) */
+.sectionBody{
+  background: rgba(0,0,0,.60);
+  /* keep padding to children so tables can be flush */
+}
+
+/* ---------- A11y: screen-reader-only utility ---------- */
+
+/* Module-scoped class */
+.srOnly {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap; /* prevent line breaks */
+  border: 0;
+}
+
+/* Make the element visible when focused/active (e.g., skip links) */
+.srOnlyFocusable:active,
+.srOnlyFocusable:focus {
+  position: static !important;
+  width: auto; height: auto;
+  margin: 0;
+  overflow: visible;
+  clip: auto; clip-path: none;
+  white-space: normal;
+}
+
+/* --- Global aliases for existing markup that uses class="sr-only" --- */
+:global(.sr-only) {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+:global(.sr-only-focusable:active),
+:global(.sr-only-focusable:focus) {
+  position: static !important;
+  width: auto; height: auto;
+  margin: 0;
+  overflow: visible;
+  clip: auto; clip-path: none;
+  white-space: normal;
+}
+
+
+
+
+
+
+
+
+/* ---------- Optional table hooks if you convert DungeonLootTable ---------- */
+.tableFrame{
+  overflow-x: auto; border: 1px solid #1f2024; border-radius: 12px;
+  background: rgba(0,0,0,.60);
+}
+.table{ width: 100%; border-collapse: collapse; font-size: 14px; }
+.tableHead{ background: rgba(0,0,0,.60); position: sticky; top: 0; z-index: 1; }
+.th{ color: var(--ink-dim); font-weight: 600; text-align: left; padding: 10px 12px; }
+.row{ background: rgba(0,0,0,.40); }
+.rowAlt{ background: rgba(0,0,0,.20); }
+.row:hover{ background: rgba(0,0,0,.30); }
+.cell{ padding: 10px 12px; color: var(--ink); }
+.cellDim{ color: var(--ink-dim); }
+
+.crestChip{
+  display: inline-flex; align-items: center; gap: 6px;
+  border-radius: 8px; border: 1px solid #2a2c31;
+  background: rgba(0,0,0,.40);
+  padding: 4px 8px; color: var(--ink);
+  box-shadow: 0 1px 0 rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.02);
+}

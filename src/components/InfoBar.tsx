@@ -2,8 +2,8 @@
 import { useMemo } from "react";
 import { CREST_ORDER, CREST_ICONS, type CrestTier } from "./crests/crests";
 import { season } from "../config/seasons/currentSeason";
-import { getCrestCapsForSeason } from "../config/seasons/crestCaps";
-import { computeCatalyst, computeSparks } from "../config/seasons/progression";
+import { getCrestCapsForSeason } from "../config/seasons/utils/crestCaps";
+import { computeCatalyst, computeSparks } from "../config/seasons//utils/progression";
 import { PROGRESSION_ICONS } from "./progression/progession"
 import c from "./components.module.css";
 

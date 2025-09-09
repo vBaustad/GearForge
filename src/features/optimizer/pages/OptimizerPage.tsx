@@ -1,7 +1,8 @@
+// src/features/optimizer/pages/OptimizerPage.tsx
 import { useEffect, useState } from "react";
 import page from "../../../styles/page.module.css";
 import { usePageMeta } from "../../../app/seo/usePageMeta";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { encodeToUrlHash } from "../services/urlCodec";
 
 export function OptimizerPage() {
@@ -12,7 +13,6 @@ export function OptimizerPage() {
     image: "/og/optimizer.png",
     ogType: "website",
   });
-
 
   const [rawInput, setRawInput] = useState("");
   const [isParsing, setIsParsing] = useState(false);
@@ -40,12 +40,22 @@ export function OptimizerPage() {
   }, []);
 
   return (
-    <main className={page.wrap}>
-      <header className={page.header}>
-        <h1 className={page.title}>Optimize your gear in seconds</h1>
-        <p className={page.subtitle}>
-          Paste your SimC (or export) and get clear, prioritized upgrade recommendations.
-        </p>
+    <main id="main" className={`${page.wrap} ${page.wrapWide}`}>
+      {/* Header row matches RewardsPage */}
+      <header className={page.headerRow}>
+        <div>
+          <h1 className={page.title}>Optimize your gear in seconds</h1>
+          <p className={page.subtitle}>
+            Paste your SimC (or export) and get clear, prioritized upgrade recommendations.
+          </p>
+        </div>
+
+        <Link to="/" className={page.homeBtn} aria-label="Go to home">
+          <svg viewBox="0 0 20 20" className={page.homeIcon} aria-hidden="true">
+            <path fill="currentColor" d="M12.5 4 6 10l6.5 6 1.5-1.5L9 10l5-4.5z" />
+          </svg>
+          Home
+        </Link>
       </header>
 
       <section className={page.featuresGridSingle}>

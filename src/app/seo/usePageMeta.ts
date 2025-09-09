@@ -9,26 +9,46 @@ export type UsePageMetaOpts = {
   description?: string;
   /** Absolute or relative URL to an OG image */
   image?: string;
-  /** Absolute or relative canonical URL; defaults to current pathname */
+  /** Alt text for OG/Twitter image */
+  imageAlt?: string;
+  /** Absolute or relative canonical URL; defaults to current full href */
   canonical?: string;
   /** Set robots to noindex,nofollow */
   noindex?: boolean;
   /** Open Graph type; default "website" */
   ogType?: OgType;
+  /** OG site name (default "GearForge") */
+  siteName?: string;
+  /** OG locale, e.g. "en_US" or "nb_NO" */
+  locale?: string;
+
+  /** Twitter handle of the site (e.g. "@gearforge") */
+  twitterSite?: string;
+  /** Twitter handle of the author/creator */
+  twitterCreator?: string;
+
   /** Optional JSON-LD object */
   jsonLd?: object;
   /** Title template; %s replaced by title */
   titleTemplate?: string; // e.g. "%s — GearForge"
+
+  /** Article-only fields (used when ogType === "article") */
+  publishedTime?: string; // ISO 8601
+  modifiedTime?: string;  // ISO 8601
+  section?: string;
+  tags?: string[];        // e.g., ["WoW","Mythic+","Vault"]
 };
 
 const SITE_URL = import.meta.env.VITE_SITE_URL || "";
 const DEFAULT_OG = import.meta.env.VITE_OG_IMAGE || "/og-cover.png";
 const DEFAULT_TEMPLATE = "%s — GearForge";
+const DEFAULT_SITE_NAME = "GearForge";
 
 function abs(url?: string): string | undefined {
   if (!url) return undefined;
   try {
-    const base = SITE_URL || (typeof window !== "undefined" ? window.location.origin : "");
+    const base =
+      SITE_URL || (typeof window !== "undefined" ? window.location.origin : "");
     return new URL(url, base).toString();
   } catch {
     return url;
@@ -43,13 +63,11 @@ function upsertMeta(attr: "name" | "property", key: string, content?: string) {
   if (typeof document === "undefined") return;
   const el = selectMeta(attr, key);
   if (!content) {
-    // Only clear if we previously managed it
     if (el?.dataset.dgrp === "seo") el.remove();
     return;
   }
   if (el) {
     el.setAttribute("content", content);
-    // keep existing element (may be from index.html)
     return;
   }
   const meta = document.createElement("meta");
@@ -79,7 +97,7 @@ function upsertJsonLd(data?: object) {
   if (typeof document === "undefined") return;
   document
     .querySelectorAll('script[type="application/ld+json"][data-dgrp="seo"]')
-    .forEach((n) => n.remove());
+  .forEach((n) => n.remove());
   if (!data) return;
   const el = document.createElement("script");
   el.type = "application/ld+json";
@@ -93,11 +111,20 @@ export function usePageMeta(opts: UsePageMetaOpts) {
     title,
     description,
     image,
+    imageAlt,
     canonical,
     noindex,
     ogType = "website",
+    siteName = DEFAULT_SITE_NAME,
+    locale,
+    twitterSite,
+    twitterCreator,
     jsonLd,
     titleTemplate = DEFAULT_TEMPLATE,
+    publishedTime,
+    modifiedTime,
+    section,
+    tags,
   } = opts;
 
   useEffect(() => {
@@ -105,7 +132,9 @@ export function usePageMeta(opts: UsePageMetaOpts) {
 
     // Title (+ template)
     if (title) {
-      const full = titleTemplate.replace("%s", title);
+      const full = titleTemplate.includes("%s")
+        ? titleTemplate.replace("%s", title)
+        : title;
       document.title = full;
       upsertMeta("property", "og:title", full);
       upsertMeta("name", "twitter:title", full);
@@ -116,28 +145,72 @@ export function usePageMeta(opts: UsePageMetaOpts) {
     upsertMeta("property", "og:description", description);
     upsertMeta("name", "twitter:description", description);
 
-    // Canonical & URL (absolute)
-    const canonicalAbs = abs(canonical ?? (typeof window !== "undefined" ? window.location.pathname : "/"));
+    // Canonical & URL — default to the full current URL
+    const currentHref =
+      typeof window !== "undefined" ? window.location.href : undefined;
+    const canonicalAbs = abs(canonical ?? currentHref);
     upsertLinkCanonical(canonicalAbs);
     upsertMeta("property", "og:url", canonicalAbs || undefined);
 
-    // OG image / Twitter image (absolute, with fallback)
+    // OG/Twitter image (+ alt)
     const imgAbs = abs(image || DEFAULT_OG);
     upsertMeta("property", "og:image", imgAbs);
+    upsertMeta("property", "og:image:secure_url", imgAbs);
     upsertMeta("name", "twitter:image", imgAbs);
+    upsertMeta("property", "og:image:alt", imageAlt);
+    upsertMeta("name", "twitter:image:alt", imageAlt);
 
-    // OG type + site_name (static site name; override if needed)
+    // OG basics
     upsertMeta("property", "og:type", ogType);
-    upsertMeta("property", "og:site_name", "GearForge");
+    upsertMeta("property", "og:site_name", siteName);
+    upsertMeta("property", "og:locale", locale);
 
-    // Twitter card type
+    // Twitter
     upsertMeta("name", "twitter:card", imgAbs ? "summary_large_image" : "summary");
+    upsertMeta("name", "twitter:site", twitterSite);
+    upsertMeta("name", "twitter:creator", twitterCreator);
 
     // robots
     if (noindex) upsertMeta("name", "robots", "noindex, nofollow");
     else upsertMeta("name", "robots", undefined);
 
+    // Article-specific OG tags
+    if (ogType === "article") {
+      upsertMeta("property", "article:published_time", publishedTime);
+      upsertMeta("property", "article:modified_time", modifiedTime);
+      upsertMeta("property", "article:section", section);
+      if (tags?.length) {
+        // remove previous tags added by us
+        document
+          .querySelectorAll('meta[property="article:tag"][data-dgrp="seo"]')
+          .forEach((n) => n.remove());
+        tags.forEach((t) => {
+          const meta = document.createElement("meta");
+          meta.setAttribute("property", "article:tag");
+          meta.setAttribute("content", t);
+          meta.dataset.dgrp = "seo";
+          document.head.appendChild(meta);
+        });
+      } else {
+        document
+          .querySelectorAll('meta[property="article:tag"][data-dgrp="seo"]')
+          .forEach((n) => n.remove());
+      }
+    } else {
+      // Clean up article tags if we switch types
+      ["article:published_time","article:modified_time","article:section"]
+        .forEach((k) => upsertMeta("property", k, undefined));
+      document
+        .querySelectorAll('meta[property="article:tag"][data-dgrp="seo"]')
+        .forEach((n) => n.remove());
+    }
+
     // JSON-LD
     upsertJsonLd(jsonLd);
-  }, [title, description, image, canonical, noindex, ogType, jsonLd, titleTemplate]);
+  }, [
+    title, description, image, imageAlt,
+    canonical, noindex, ogType, siteName, locale,
+    twitterSite, twitterCreator, jsonLd, titleTemplate,
+    publishedTime, modifiedTime, section, tags?.join("|"),
+  ]);
 }

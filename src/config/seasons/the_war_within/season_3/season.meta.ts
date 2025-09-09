@@ -6,6 +6,7 @@ export const SEASON_ID = "tww-s3" as const; // stable slug used across the app
 
 export const seasonMeta = {
   id: SEASON_ID,
+  name: "The War Within — Season 3", 
   defaultDropCeilingIlvl: 701,
 
   currencies: {
@@ -34,6 +35,7 @@ export const seasonMeta = {
 } satisfies Pick<
   SeasonConfig,
   | "id"
+  | "name"
   | "defaultDropCeilingIlvl"
   | "currencies"
   | "crestWeeklyIncrement"

@@ -6,13 +6,13 @@ export function LandingPage() {
   usePageMeta({
     title: "Upgrade Planner",
     description: "Plan your WoW upgrades from a SimC export. See crest/FS costs and free watermarks.",
-    canonical: "/optimizer",
+    canonical: "/", // landing page canonical
     image: "/og/optimizer.png",
     ogType: "website",
   });
 
   return (
-    <main className={`${page.wrap} ${page.wrapWide}`}>
+    <main id="main" className={`${page.wrap} ${page.wrapWide}`}>
       {/* Hero */}
       <header className={page.header}>
         <h1 className={page.title}>Make better gear choices, faster</h1>
@@ -37,17 +37,15 @@ export function LandingPage() {
             <span className={page.navCta}>Open →</span>
           </Link>
 
-          {/* Under construction: Drops */}
-          <div className={`${page.navCard} ${page.navCardDisabled}`} aria-disabled="true" title="Under construction">
+          {/* Link: Rewards */}
+          <Link to="/rewards" className={page.navCard} aria-label="Dungeon, Raid & Vault ilvls — view tables">
             <div className={page.featureHead}>
               <span className={page.iconDot} aria-hidden />
-              <h3 className={page.navTitle}>
-                Dungeon & Vault ilvls <span className={page.ucBadge}>Under construction</span>
-              </h3>
+              <h3 className={page.navTitle}>Dungeon, Raid &amp; Vault item levels</h3>
             </div>
-            <p className={page.navText}>Quick tables for Vault and Keystone drop item levels.</p>
+            <p className={page.navText}>Quick tables for Mythic+, Raid and Great Vault reward item levels.</p>
             <span className={page.navCta}>View tables</span>
-          </div>
+          </Link>
 
           {/* Under construction: Guides */}
           <div className={`${page.navCard} ${page.navCardDisabled}`} aria-disabled="true" title="Under construction">
@@ -57,7 +55,7 @@ export function LandingPage() {
                 Guides <span className={page.ucBadge}>Under construction</span>
               </h3>
             </div>
-            <p className={page.navText}>Short notes on crests & upgrade paths.</p>
+            <p className={page.navText}>Short notes on crests &amp; upgrade paths.</p>
             <span className={page.navCta}>Browse</span>
           </div>
 

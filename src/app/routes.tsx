@@ -4,6 +4,7 @@ import { RootLayout } from "./RootLayout";
 import { LandingPage } from "./LandingPage";
 import { OptimizerPage } from "../features/optimizer/pages/OptimizerPage";
 import OptimizerResultPage from "../features/optimizer/pages/OptimizerResultPage";
+import { RewardsPage } from "../features/rewards/pages/RewardsPage";
 
 /* eslint-disable react-refresh/only-export-components */
 // Route-level lazy loaders (each returns { Component })
@@ -23,6 +24,7 @@ export const router = createBrowserRouter([
       // Feature: Optimizer
       { path: "optimizer", element: <OptimizerPage /> },
       { path: "optimizer/view", element: <OptimizerResultPage /> },
+      { path: "rewards", element: <RewardsPage /> },
 
       // Site pages (lazy)
       { path: "guides",  lazy: GuidesPage },
