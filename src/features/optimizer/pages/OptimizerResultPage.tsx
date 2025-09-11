@@ -4,19 +4,50 @@ import { usePageMeta } from "../../../app/seo/usePageMeta";
 import { parseSimc, parseCharacterUpgradeContext, parseCharacterMeta } from "../services/simcParser";
 import { Paperdoll } from "../components/Paperdoll";
 import { NarrativePlan } from "../components/NarrativePlan";
-import type { SimcPayload, ItemState, ParsedItem, Crest } from "../types/simc";
+import type { SimcPayload, ItemState, ParsedItem, Crest, ItemPlan, SlotKey } from "../types/simc";
 import { buildShareUrl, decodeFromUrlHash } from "../services/urlCodec";
 import { toItemState } from "../services/upgradePlanner";
 import { planAll } from "../services/planner";
-import { watermarksToFreeIlvlBySlot } from "../services/slotMap";
+import { watermarksToFreeIlvlBySlot, normalizeSlot } from "../services/slotMap";
 import { RotateCcw, ExternalLink, Copy } from "lucide-react";
 import { IconUrlsProvider, type IconUrlMap } from "../context/IconUrlContext";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import PageSplashGate from "../components/PageSplashGate";
 
 const cap = (s?: string | null) => (s ? s[0].toUpperCase() + s.slice(1) : "");
 const titleCase = (s?: string | null) =>
   s ? s.replace(/\b\w+/g, w => w[0].toUpperCase() + w.slice(1).toLowerCase()) : "";
+
+// small helpers
+const isFiniteNum = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
+const avg = (nums: number[]) => (nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : 0);
+
+// Extract ilvl from either .ilvl or .level (ignore <=0)
+const getIlvl = (x: { ilvl?: number; level?: number } | undefined | null): number | null => {
+  if (!x) return null;
+  const v = isFiniteNum(x.ilvl) ? x.ilvl : isFiniteNum(x.level) ? x.level : null;
+  return v && v > 0 ? v : null;
+};
+
+type ItemBySlot = Partial<Record<SlotKey, ParsedItem>>;
+type PlanBySlot = Partial<Record<SlotKey, ItemPlan>>;
+
+function buildItemMap(items: ParsedItem[]): ItemBySlot {
+  const map: ItemBySlot = {};
+  for (const it of items) {
+    const s = normalizeSlot(it.slot);
+    if (s) map[s] = it;
+  }
+  return map;
+}
+
+function buildPlanMap(plans?: ItemPlan[]): PlanBySlot {
+  const map: PlanBySlot = {};
+  for (const p of plans ?? []) {
+    map[p.slot] = p;
+  }
+  return map;
+}
 
 export default function OptimizerResultPage() {
   usePageMeta({
@@ -206,30 +237,89 @@ export default function OptimizerResultPage() {
       ? (page as Record<string, string>)[`class-${meta.className}`] ?? ""
       : "";
 
+  // =========================
+  // Avg ilvl: current vs potential (mirror Paperdoll's per-slot rule)
+  // =========================
+
+  // Build the same maps Paperdoll uses
+  const bySlot = useMemo(() => buildItemMap(items), [items]);
+  const planMap = useMemo(() => buildPlanMap(plans), [plans]);
+
+  // Current average: average of equipped items' ilvls by slot
+  const currentAvgIlvl = useMemo(() => {
+    const vals: number[] = [];
+    for (const slot in bySlot) {
+      const key = slot as SlotKey;
+      const v = getIlvl(bySlot[key]);
+      if (isFiniteNum(v) && v > 0) vals.push(v);
+    }
+    return Math.round(avg(vals));
+  }, [bySlot]);
+
+  // Potential average: same display rule Paperdoll uses per slot
+  const potentialAvgIlvl = useMemo(() => {
+    const vals: number[] = [];
+    const slots = Object.keys(bySlot) as SlotKey[];
+    for (const slot of slots) {
+      const item = bySlot[slot];
+      const plan = planMap[slot];
+      const current = getIlvl(item);
+      if (!isFiniteNum(current) || current <= 0) continue;
+
+      const hasUpgrade =
+        !!plan &&
+        isFiniteNum(plan.toRank) &&
+        isFiniteNum(plan.fromRank) &&
+        plan.toRank > plan.fromRank;
+
+      const display =
+        hasUpgrade && isFiniteNum(plan?.toIlvl) && plan!.toIlvl > 0
+          ? plan!.toIlvl
+          : current;
+
+      vals.push(display);
+    }
+    return Math.round(avg(vals));
+  }, [bySlot, planMap]);
+
+  const ilvlDelta = (potentialAvgIlvl ?? 0) - (currentAvgIlvl ?? 0);
+
   return (
     <PageSplashGate durationMs={2000} oncePerSession={false} storageKey="gf-opt-splash-seen">
       <main className={`${page.wrap} ${page.wrapWide}`}>
-        {/* Header row: title + subtitle on left, Home button on right */}
-        <header className={page.headerRow}>
-          <div className={`${page.charHeader} ${classToken}`}>
-            <h1 className={`${page.title} ${page.charTitle}`}>
-              {meta?.name ?? "Upgrade Planner"}
-            </h1>
-            {meta && (
-              <div className={page.sectionSubline} aria-live="polite">
-                {subtitle}
-              </div>
-            )}
-          </div>
 
-          <Link to="/" className={page.homeBtn} aria-label="Go to home">
-            <svg viewBox="0 0 20 20" className={page.homeIcon} aria-hidden="true">
-              <path fill="currentColor" d="M12.5 4 6 10l6.5 6 1.5-1.5L9 10l5-4.5z" />
-            </svg>
-            Home
-          </Link>
+        {/* MASTHEAD: centered identity + KPIs */}
+        <header className={`${page.mast} ${classToken}`}>
+          <h1 className={page.mastName}>{meta?.name ?? "Upgrade Planner"}</h1>
+          {meta && <div className={page.mastSubline}>{subtitle}</div>}
+
+          <div className={`${page.mastKpis} ${page.kpiRow}`} aria-live="polite">
+            <div className={page.kpiPill} title="Average of equipped items">
+              <span className={page.kpiLabel}>Current ilvl</span>
+              <strong className={page.kpiValue}>{currentAvgIlvl || "—"}</strong>
+            </div>
+
+            <div
+              className={[
+                page.kpiPill,
+                ilvlDelta > 0 ? page.kpiUp : "",
+                ilvlDelta < 0 ? page.kpiDown : "",
+              ].join(" ")}
+              title="If you apply the recommended upgrades"
+            >
+              <span className={page.kpiLabel}>Potential ilvl</span>
+              <strong className={page.kpiValue}>{potentialAvgIlvl || "—"}</strong>
+              {ilvlDelta !== 0 && (
+                <span className={page.kpiDelta}>
+                  {ilvlDelta > 0 ? "+" : ""}
+                  {ilvlDelta}
+                </span>
+              )}
+            </div>
+          </div>
         </header>
 
+        {/* RESULTS HEADER sits closer to the paperdoll area */}
         <section className={page.results}>
           <header className={page.resultsHeader}>
             <div className={page.resultsHeaderBar}>
