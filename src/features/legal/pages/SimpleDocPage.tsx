@@ -1,6 +1,6 @@
 // src/app/pages/legal/SimpleDocPage.tsx
 import type { PropsWithChildren } from "react";
-import { usePageMeta } from "../../seo/usePageMeta";
+import { usePageMeta } from "../../../app/seo/usePageMeta";
 
 type SimpleDocProps = PropsWithChildren<{
   title: string;

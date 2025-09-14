@@ -1,4 +1,4 @@
-import { usePageMeta } from "../../seo/usePageMeta";
+import { usePageMeta } from "../../../app/seo/usePageMeta";
 
 const faqs = [
   { q: "What is GearForge?", a: "A WoW gearing assistant for upgrades, crest/FS costs, and seasonal tracking." },

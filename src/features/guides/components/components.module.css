@@ -1,0 +1,82 @@
+/* =========================================
+   Guides feature — components.module.css
+   Used by GuideCard + GuideGrid
+   (Global look—card shell, title, pills—comes from page.module.css)
+========================================= */
+
+/* ===== Grid (index page) ===== */
+.cardsGrid3 {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 700px)  { .cardsGrid3 { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 1024px) { .cardsGrid3 { grid-template-columns: 1fr 1fr 1fr; } }
+
+/* ===== Card media (16:9 cover) ===== */
+.media16x9 {
+  position: relative;
+  width: 100%;
+  padding-top: 56.25%;          /* 16:9 */
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #1f2024;
+  background: #1f2126;          /* neutral fallback if image fails */
+}
+.mediaImg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ===== Text clamping for excerpts ===== */
+.excerptClamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;         /* ~3 lines on most UAs */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ===== Footer row inside card (tags ← → CTA) ===== */
+.cardFooterRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* ===== CTA link on cards ===== */
+.openLink {
+  text-decoration: underline;
+  color: var(--ink);
+}
+.openLink:hover { filter: brightness(1.05); }
+.openLink:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px var(--ring);
+  border-radius: 6px;
+}
+
+/* ===== Optional: slightly tighter padding than global .featureCard ===== */
+.guideCardTight { padding: 14px; }
+
+/* ===== (Optional) generic small button, if needed for future actions ===== */
+.btn {
+  appearance: none;
+  cursor: pointer;
+  border: 1px solid var(--stroke, #2a2f3a);
+  background: var(--btn-bg, #0f1216);
+  color: var(--btn-ink, #e5e7eb);
+  padding: 6px 10px;
+  border-radius: 8px;
+  font: 500 12px/1 system-ui, -apple-system, Segoe UI, Roboto;
+}
+.btn:hover { filter: brightness(1.1); }
+.btn:focus-visible { outline: 2px solid #7c3aed; outline-offset: 2px; }
+
+/* ===== Motion preferences ===== */
+@media (prefers-reduced-motion: reduce){
+  * { transition: none !important; animation: none !important; }
+}
