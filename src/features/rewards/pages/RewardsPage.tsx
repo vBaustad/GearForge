@@ -41,7 +41,6 @@ export function RewardsPage() {
 
       {/* Breakpoints */}
       <section className={page.results} aria-labelledby="rewards-breakpoints">
-        <h2 id="rewards-breakpoints" className={page.cardTitle}>Breakpoints</h2>
         <VaultCards data={data} />
       </section>
 
@@ -59,7 +58,6 @@ export function RewardsPage() {
 
       {/* Raid cards */}
       <section className={page.results} aria-labelledby="rewards-raid-drops">
-        <h2 id="rewards-raid-drops" className={page.cardTitle}>Raid Drops</h2>
         <RaidCards />
       </section>
     </main>

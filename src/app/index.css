@@ -10,3 +10,14 @@ body {
   background: #2e3036;
   color: #f0f2f7;
 }
+
+/* Prevent horizontal layout shift when vertical scrollbar appears/disappears */
+html {
+  /* Reserve space for the scrollbar across all routes */
+  scrollbar-gutter: stable both-edges;
+}
+
+/* Fallback for browsers without scrollbar-gutter support (e.g., older Chromium) */
+@supports not (scrollbar-gutter: stable) {
+  html { overflow-y: scroll; }
+}

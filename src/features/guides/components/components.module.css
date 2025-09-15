@@ -1,82 +1,125 @@
-/* =========================================
-   Guides feature — components.module.css
-   Used by GuideCard + GuideGrid
-   (Global look—card shell, title, pills—comes from page.module.css)
-========================================= */
+/* grid */
+.cardsGrid { display:grid; gap:16px; grid-template-columns:1fr; }
+@media (min-width:640px){ .cardsGrid{ grid-template-columns:1fr 1fr; } }
+@media (min-width:1024px){ .cardsGrid{ grid-template-columns:1fr 1fr 1fr; } }
 
-/* ===== Grid (index page) ===== */
-.cardsGrid3 {
-  display: grid;
-  gap: 12px;
-  grid-template-columns: 1fr;
+/* card */
+.card{
+  position:relative; display:flex; flex-direction:column; overflow:hidden; border-radius:10px;
+  background: rgba(0,0,0,.60); /* match Rewards black-glass */
+  border:1px solid #1f2024;    /* align border color with Rewards */
+  transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease;
 }
-@media (min-width: 700px)  { .cardsGrid3 { grid-template-columns: 1fr 1fr; } }
-@media (min-width: 1024px) { .cardsGrid3 { grid-template-columns: 1fr 1fr 1fr; } }
+.card:hover{ transform:translateY(-2px); box-shadow:0 10px 24px rgba(0,0,0,.35); border-color:rgba(255,179,0,.18); }
+.card:focus-visible{ outline:none; box-shadow:0 0 0 4px var(--ring,rgba(255,179,0,.25)); }
 
-/* ===== Card media (16:9 cover) ===== */
-.media16x9 {
-  position: relative;
-  width: 100%;
-  padding-top: 56.25%;          /* 16:9 */
-  border-radius: 8px;
-  overflow: hidden;
-  border: 1px solid #1f2024;
-  background: #1f2126;          /* neutral fallback if image fails */
-}
-.mediaImg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+/* image */
+.cardImg{
+  width:100%;
+  height:120px; /* smaller image area */
   object-fit: cover;
+  object-position: center 45%;
+  display:block;
+}
+@media (min-width:640px){ .cardImg{ height:140px; } }
+@media (min-width:1024px){ .cardImg{ height:160px; } }
+
+/* body sits BELOW the image with a divider line */
+.cardBody{
+  position:static;
+  padding:10px 12px 12px;
+  border-top:1px solid #1f2024; /* divider under the image (Rewards style) */
+  background: rgba(0,0,0,.60);
 }
 
-/* ===== Text clamping for excerpts ===== */
-.excerptClamp {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;         /* ~3 lines on most UAs */
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+/* category tag (uppercased, colored) */
+.category{
+  font:700 11px/1.1 system-ui, -apple-system, Segoe UI, Roboto;
+  text-transform:uppercase; letter-spacing:.4px;
+  margin:0 0 6px; color:var(--accent,#ffb300);
 }
 
-/* ===== Footer row inside card (tags ← → CTA) ===== */
-.cardFooterRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+/* title (2-line clamp) */
+.cardTitle{
+  color:var(--ink,#f0f2f7);
+  font-weight:800; font-size:16px; line-height:1.3;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+  /* Reserve space for exactly two lines even if title is shorter */
+  min-height: calc(2 * 1.3em);
+  margin:0 0 6px;
 }
 
-/* ===== CTA link on cards ===== */
-.openLink {
-  text-decoration: underline;
-  color: var(--ink);
+/* meta */
+.meta{ font-size:12px; color:var(--ink-dim,#c8cbd4); }
+
+/* optional: category color variants */
+.cat-mists   { color:#9cff9c; }
+.cat-wow     { color:#ffd34d; }
+.cat-midnight{ color:#a8a2ff; }
+.cat-raid    { color:#ff9b6b; }
+.cat-ui      { color:#7dd3fc; }
+.cat-macro   { color:#f9a8d4; }
+
+/* ===== Code block with copy button (moved from page.module.css) ===== */
+.codeWrap{
+  margin-top:12px; border:1px solid #2a2c31; border-radius:10px; overflow:hidden;
+  background:linear-gradient(180deg, #1a1b20, #141518);
 }
-.openLink:hover { filter: brightness(1.05); }
-.openLink:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 4px var(--ring);
-  border-radius: 6px;
+.codeHead{
+  display:flex; justify-content:space-between; align-items:center;
+  padding:8px 10px; border-bottom:1px solid #2a2c31;
+}
+.codeLabel{ font-size:12px; color:var(--ink-dim); letter-spacing:.2px; }
+.copyBtn{
+  font:600 12px/1 system-ui, -apple-system, Segoe UI, Roboto;
+  color:var(--ink); background:#2a2c31; border:1px solid #1f2024; border-radius:6px;
+  padding:6px 8px; cursor:pointer;
+}
+.copyBtn:hover{ filter:brightness(1.05); }
+.copyBtn:focus-visible{ outline:none; box-shadow:0 0 0 4px var(--ring); }
+.codePre{
+  margin:0; padding:12px; overflow:auto; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size:12px; line-height:1.5; color:#e6e8ee;
 }
 
-/* ===== Optional: slightly tighter padding than global .featureCard ===== */
-.guideCardTight { padding: 14px; }
-
-/* ===== (Optional) generic small button, if needed for future actions ===== */
-.btn {
-  appearance: none;
-  cursor: pointer;
-  border: 1px solid var(--stroke, #2a2f3a);
-  background: var(--btn-bg, #0f1216);
-  color: var(--btn-ink, #e5e7eb);
-  padding: 6px 10px;
-  border-radius: 8px;
-  font: 500 12px/1 system-ui, -apple-system, Segoe UI, Roboto;
+/* ===== Callouts (tip/warn) ===== */
+.callout{
+  margin-top:12px; padding:10px 12px; border-radius:10px; border:1px solid #2a2c31;
+  background:linear-gradient(180deg, #1a1b20, #16181d);
 }
-.btn:hover { filter: brightness(1.1); }
-.btn:focus-visible { outline: 2px solid #7c3aed; outline-offset: 2px; }
+.calloutTitle{ font-weight:800; margin:0 0 6px; }
+.calloutTip{ box-shadow: inset 0 0 0 1px rgba(56,189,248,.2); }
+.calloutWarn{ box-shadow: inset 0 0 0 1px rgba(251,191,36,.25); }
 
-/* ===== Motion preferences ===== */
-@media (prefers-reduced-motion: reduce){
-  * { transition: none !important; animation: none !important; }
+/* ===== Quote box (Blizzard/forum style) ===== */
+.quoteBox{
+  border:1px solid #2a2c31; border-radius:10px; overflow:hidden; margin-top:12px;
+  background:linear-gradient(180deg, #1a1b20, #141518);
 }
+.quoteHead{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:2px 16px; border-bottom:1px solid #2a2c31;
+  min-height:48px;
+  background:
+    radial-gradient(1200px 300px at 0% 0%, rgba(0,64,128,.25), transparent 60%),
+    linear-gradient(180deg, #0e2a4a, #0b1e33);
+}
+.quoteLeft{ display:flex; align-items:center; gap:8px; }
+.quoteBrandRow{ display:flex; align-items:center; gap:10px; margin-right:6px; }
+.quoteIcon{ display:block; opacity:.95; }
+.quoteBrandIcon{ height:28px; width:auto; display:block; }
+.quoteBrandLogo{ height:26px; width:auto; display:block; }
+.quoteLabel{ font-size:12px; font-weight:700; opacity:.85; }
+.quoteActions{ display:flex; align-items:center; gap:8px; }
+.quoteLink{ color:var(--accent); text-decoration:none; font-size:12px; display:inline-flex; align-items:center; height:100%; }
+.quoteLink:hover{ text-decoration:underline; }
+.quoteToggle{
+  font:600 12px/1 system-ui, -apple-system, Segoe UI, Roboto;
+  color:var(--ink); background:#2a2c31; border:1px solid #1f2024; border-radius:6px;
+  padding:6px 8px; cursor:pointer;
+}
+.quoteToggle:focus-visible{ outline:none; box-shadow:0 0 0 4px var(--ring); }
+.quoteBody{ padding:12px; }
+.quote_blizzard .quoteHead{ background:rgba(88, 139, 255, .08); }
+.quote_blizzard .quoteBody{ color:#00c0ff; }
+.quote_blizzard .quoteBody a{ color:#00c0ff; text-decoration:underline; }

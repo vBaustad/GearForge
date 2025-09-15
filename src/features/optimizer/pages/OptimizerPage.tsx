@@ -1,6 +1,7 @@
 // src/features/optimizer/pages/OptimizerPage.tsx
 import { useEffect, useState } from "react";
 import page from "../../../styles/page.module.css";
+import s from "../components/components.module.css";
 import { usePageMeta } from "../../../app/seo/usePageMeta";
 import { useNavigate, Link } from "react-router-dom";
 import { encodeToUrlHash } from "../services/urlCodec";
@@ -8,7 +9,7 @@ import { encodeToUrlHash } from "../services/urlCodec";
 export function OptimizerPage() {
   usePageMeta({
     title: "Upgrade Planner",
-    description: "Plan your WoW upgrades from a SimC export. See crest/FS costs and free watermarks.",
+    description: "Plan your WoW upgrades from a SimC export. See crest costs and the fastest, most crest-efficient path to higher item level.",
     canonical: "/optimizer",
     image: "/og/optimizer.png",
     ogType: "website",
@@ -59,7 +60,7 @@ export function OptimizerPage() {
       </header>
 
       <section className={page.featuresGridSingle}>
-        <article className={page.featureCard}>
+        <article className={s.cardPanel}>
           <div className={page.cardHeader}>
             <div className={page.iconDot} aria-hidden />
             <h3 className={page.cardTitle}>OPTIMIZER</h3>

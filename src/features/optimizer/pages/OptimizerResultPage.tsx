@@ -52,7 +52,7 @@ function buildPlanMap(plans?: ItemPlan[]): PlanBySlot {
 export default function OptimizerResultPage() {
   usePageMeta({
     title: "Upgrade Planner",
-    description: "Plan your WoW upgrades from a SimC export. See crest/FS costs and free watermarks.",
+    description: "Plan your WoW upgrades from a SimC export. See crest costs and the fastest, most crest-efficient path to higher item level.",
     canonical: "/optimizer",
     image: "/og/optimizer.png",
     ogType: "website",
