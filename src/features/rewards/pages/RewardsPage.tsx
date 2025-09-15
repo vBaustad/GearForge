@@ -7,6 +7,7 @@ import { CollapsibleSection } from "../components/CollapsibleSection";
 import { usePageMeta } from "../../../app/seo/usePageMeta";
 import { Link } from "react-router-dom";
 import page from "../../../styles/page.module.css";
+import rp from "./rewardsPage.module.css";
 
 export function RewardsPage() {
   const data = useRewardsData();
@@ -23,7 +24,7 @@ export function RewardsPage() {
   return (
     <main className={`${page.wrap} ${page.wrapWide}`}>
       {/* Header row: title on left, Home button on right */}
-      <header className={page.headerRow}>
+      <header className={`${page.headerRow} ${rp.headerDecor}`}>
         <div>
           <h1 className={page.title}>Rewards: Mythic+, Raid, Vault</h1>
           <p className={page.subtitle}>
@@ -41,24 +42,30 @@ export function RewardsPage() {
 
       {/* Breakpoints */}
       <section className={page.results} aria-labelledby="rewards-breakpoints">
-        <VaultCards data={data} />
+        <div className={`featureCard ${rp.featureCardDecor}`} style={{ padding: 12 }}>
+          <VaultCards data={data} />
+        </div>
       </section>
 
       {/* Full table (collapsed by default) */}
       <div className={page.results}>
-        <CollapsibleSection
-          id="mplus-table"
-          title="Full Mythic+ Table"
-          subtitle={`Keystone rewards for ${data.seasonName}`}
-          defaultOpen={false}
-        >
-          <DungeonLootTable data={data} embedded />
-        </CollapsibleSection>
+        <div className={`featureCard ${rp.featureCardDecor}`} style={{ padding: 12 }}>
+          <CollapsibleSection
+            id="mplus-table"
+            title="Full Mythic+ Table"
+            subtitle={`Keystone rewards for ${data.seasonName}`}
+            defaultOpen={false}
+          >
+            <DungeonLootTable data={data} embedded />
+          </CollapsibleSection>
+        </div>
       </div>
 
       {/* Raid cards */}
       <section className={page.results} aria-labelledby="rewards-raid-drops">
-        <RaidCards />
+        <div className={`featureCard ${rp.featureCardDecor}`} style={{ padding: 12 }}>
+          <RaidCards />
+        </div>
       </section>
     </main>
   );

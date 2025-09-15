@@ -7,6 +7,7 @@ import { ItemIcon } from "./ItemIcon";
 import { WowheadLink } from "./WowheadLink";
 import { refreshWowheadTooltips } from "./WowheadProvider";
 import { useItemMeta } from "../hooks/useItemMeta";
+import { ArrowRight } from 'lucide-react';
 
 type ItemBySlot = Partial<Record<SlotKey, ParsedItem>>;
 type PlanBySlot = Partial<Record<SlotKey, ItemPlan>>;
@@ -128,21 +129,6 @@ function SlotCard({
       </div>
     );
   };
-  // Second line: upgrade details or crafted note; empty line to keep height if none
-  const SubRow = () =>
-    hasSecondary ? (
-      hasUpgrade && plan ? (
-        <div className={styles.subRow}>
-          <div className={styles.upgradePillSecondary} title={crestTotalsText(plan)}>
-            Upgrade: {plan.fromIlvl} → {plan.toIlvl}
-          </div>
-        </div>
-      ) : (
-        <div className={styles.subRow}>
-          <div className={styles.craftedPill}>Crafted item — no crest upgrades</div>
-        </div>
-      )
-    ) : null;
 
   const Icon = (
     <div className={styles.slotIcon}>
@@ -158,8 +144,31 @@ function SlotCard({
   const NameRow = (
     <div className={`${styles.nameRow} ${!hasSecondary ? styles.isSolo : ""}`}>
       <div className={styles.itemName}>{nameText}</div>
-      <div className={styles.itemRight}><RightPill /></div>
     </div>
+  );
+
+  // Pills row beneath the name: optional crafted/upgrade detail
+  const PillsRow = () => (
+    hasSecondary ? (
+      <div className={styles.pillsRow}>
+        {hasUpgrade && plan ? (
+          <div
+            className={styles.upgradePillSecondary}
+            title={crestTotalsText(plan)}
+          >
+            <span>Upgrade: {plan.fromIlvl}</span>
+            <ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
+            <span>{plan.toIlvl}</span>
+          </div>
+        ) : (
+          <div className={styles.craftedPill}>
+            <span>Crafted item</span>
+            <ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
+            <span>no crest upgrades</span>
+          </div>
+        )}
+      </div>
+    ) : null
   );
 
   return (
@@ -171,6 +180,8 @@ function SlotCard({
       title={undefined}
     >
       {showLabel && <div className={styles.slotLabel}>{SLOT_DISPLAY[slot]}</div>}
+      {/* Always-fixed ilvl pill top-right */}
+      <div className={styles.pillTopRight}><RightPill /></div>
 
       {item ? (
         item.id ? (
@@ -182,14 +193,18 @@ function SlotCard({
             className={styles.slotItem}
           >
             {Icon}
-            {NameRow}
-            <SubRow />
+            <div className={`${styles.textCol} ${!hasSecondary ? styles.isSolo : ""}`}>
+              {NameRow}
+              <PillsRow />
+            </div>
           </WowheadLink>
         ) : (
           <div className={styles.slotItem}>
             {Icon}
-            {NameRow}
-            <SubRow />
+            <div className={`${styles.textCol} ${!hasSecondary ? styles.isSolo : ""}`}>
+              {NameRow}
+              <PillsRow />
+            </div>
           </div>
         )
       ) : (

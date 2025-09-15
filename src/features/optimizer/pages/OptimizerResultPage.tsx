@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import page from "../../../styles/page.module.css";
 import { usePageMeta } from "../../../app/seo/usePageMeta";
 import { parseSimc, parseCharacterUpgradeContext, parseCharacterMeta } from "../services/simcParser";
@@ -13,6 +13,7 @@ import { RotateCcw, ExternalLink, Copy } from "lucide-react";
 import { IconUrlsProvider, type IconUrlMap } from "../context/IconUrlContext";
 import { useNavigate } from "react-router-dom";
 import PageSplashGate from "../components/PageSplashGate";
+import orp from "./optimizerResultPage.module.css";
 
 const cap = (s?: string | null) => (s ? s[0].toUpperCase() + s.slice(1) : "");
 const titleCase = (s?: string | null) =>
@@ -95,7 +96,7 @@ export default function OptimizerResultPage() {
           displaySpec ? cap(displaySpec) : null,
           meta.region ? meta.region.toUpperCase() : null,
           meta.server ? titleCase(meta.server) : null,
-        ].filter(Boolean).join(" • ")
+        ].filter(Boolean).join(" - ")
       : null;
 
   // --- Item states for planner ---
@@ -115,7 +116,7 @@ export default function OptimizerResultPage() {
   );
   void freeIlvlBySlot;
 
-  // --- Wallet → crest counts (optional) ---
+  // --- Wallet â†’ crest counts (optional) ---
   const CURRENCY_TO_CREST: Record<number, Crest> = {
     3284: "Weathered",
     3286: "Carved",
@@ -236,7 +237,7 @@ export default function OptimizerResultPage() {
     meta?.className
       ? (page as Record<string, string>)[`class-${meta.className}`] ?? ""
       : "";
-
+      
   // =========================
   // Avg ilvl: current vs potential (mirror Paperdoll's per-slot rule)
   // =========================
@@ -289,14 +290,14 @@ export default function OptimizerResultPage() {
       <main className={`${page.wrap} ${page.wrapWide}`}>
 
         {/* MASTHEAD: centered identity + KPIs */}
-        <header className={`${page.mast} ${classToken}`}>
+        <header className={`${page.mast} ${classToken} ${orp.headerDecor}`}>
           <h1 className={page.mastName}>{meta?.name ?? "Upgrade Planner"}</h1>
           {meta && <div className={page.mastSubline}>{subtitle}</div>}
 
           <div className={`${page.mastKpis} ${page.kpiRow}`} aria-live="polite">
             <div className={page.kpiPill} title="Average of equipped items">
               <span className={page.kpiLabel}>Current ilvl</span>
-              <strong className={page.kpiValue}>{currentAvgIlvl || "—"}</strong>
+              <strong className={page.kpiValue}>{currentAvgIlvl || "â€”"}</strong>
             </div>
 
             <div
@@ -308,7 +309,7 @@ export default function OptimizerResultPage() {
               title="If you apply the recommended upgrades"
             >
               <span className={page.kpiLabel}>Potential ilvl</span>
-              <strong className={page.kpiValue}>{potentialAvgIlvl || "—"}</strong>
+              <strong className={page.kpiValue}>{potentialAvgIlvl || "â€”"}</strong>
               {ilvlDelta !== 0 && (
                 <span className={page.kpiDelta}>
                   {ilvlDelta > 0 ? "+" : ""}
@@ -321,6 +322,7 @@ export default function OptimizerResultPage() {
 
         {/* RESULTS HEADER sits closer to the paperdoll area */}
         <section className={page.results}>
+          <div className={`featureCard ${orp.featureCardDecor}`} style={{ padding: 12 }}>
           <header className={page.resultsHeader}>
             <div className={page.resultsHeaderBar}>
               {/* Left: title */}
@@ -368,7 +370,7 @@ export default function OptimizerResultPage() {
           {items.length === 0 ? (
             <div className={page.empty}>
               <div className={page.emptyBadge}>No data</div>
-              <p className={page.emptyText}>This link doesn’t contain a SimC payload.</p>
+              <p className={page.emptyText}>This link doesnâ€™t contain a SimC payload.</p>
             </div>
           ) : (
             <IconUrlsProvider urls={iconMap}>
@@ -376,6 +378,7 @@ export default function OptimizerResultPage() {
               <NarrativePlan plans={plans} ceilingIlvl={ceilingIlvl} />
             </IconUrlsProvider>
           )}
+          </div>
         </section>
       </main>
     </PageSplashGate>

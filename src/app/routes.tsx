@@ -10,6 +10,7 @@ import { RewardsPage } from "../features/rewards/pages/RewardsPage";
 // Route-level lazy loaders (each returns { Component })
 const GuidesPage     = () => import("../features/guides/pages/GuidesIndexPage").then(m => ({ Component: m.default }));
 const GuidePostPage  = () => import("../features/guides/pages/GuidePostPage").then(m => ({ Component: m.default }));
+const GuideClassSpecPage = () => import("../features/guides/pages/ClassSpecGuidesPage").then(m => ({ Component: m.default }));
 const FaqPage        = () => import("../features/faq/pages/FaqPage").then(m => ({ Component: m.default }));
 const TermsPage      = () => import("../features/legal/pages/TermsPage").then(m => ({ Component: m.default }));
 const PrivacyPage    = () => import("../features/legal/pages/PrivacyPage").then(m => ({ Component: m.default }));
@@ -30,6 +31,7 @@ export const router = createBrowserRouter([
 
       // Site pages (lazy)
       { path: "guides",        lazy: GuidesPage },
+      { path: "guides/classes/:class/:spec", lazy: GuideClassSpecPage },
       { path: "guides/:slug",  lazy: GuidePostPage },
       { path: "faq",           lazy: FaqPage },
       { path: "terms",         lazy: TermsPage },

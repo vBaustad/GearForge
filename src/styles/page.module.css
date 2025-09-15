@@ -16,7 +16,7 @@
 }
 /* Optional wider container for content-heavy pages.
    Combine with .wrap: <main className={`${page.wrap} ${page.wrapWide}`}> */
-.wrapWide { max-width:1024px; }
+.wrapWide { max-width:1350px; }
 
 
 /* =====================
@@ -105,6 +105,7 @@
      <div><h1 className={page.title}>…</h1><p className={page.subtitle}>…</p></div>
      <a className={page.homeBtn}>Home</a>
    </div> */
+/* Structure-only; visuals now live in per-page headerDecor classes */
 .headerRow {
   display:flex; align-items:flex-start; justify-content:space-between;
   gap:12px; margin-bottom:16px;
@@ -381,8 +382,8 @@
 .realmCap { text-transform:capitalize; }
 
 /* One class per spec archetype to set --class-color */
-.class-death_knight { --class-color:#C41E3A; }
-.class-demon_hunter { --class-color:#A330C9; }
+.class-deathknight { --class-color:#C41E3A; }
+.class-demonhunter { --class-color:#A330C9; }
 .class-druid        { --class-color:#FF7C0A; }
 .class-evoker       { --class-color:#33937F; }
 .class-hunter       { --class-color:#AAD372; }
@@ -411,4 +412,3 @@
 @media (prefers-reduced-motion: reduce){
   *{ animation:none!important; transition:none!important; }
 }
-

@@ -23,6 +23,7 @@ function categoryClass(tag?: string){
   if (t.includes("ui")) return s["cat-ui"];
   if (t.includes("raid")) return s["cat-raid"];
   if (t.includes("wow")) return s["cat-wow"];
+  if (t.includes("maxroll")) return s["cat-maxroll"];
   return ""; // default uses --accent
 }
 

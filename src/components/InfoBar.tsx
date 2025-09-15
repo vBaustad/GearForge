@@ -43,7 +43,7 @@ function formatSparks(n: number) {
 
   const catalystTooltip =
     weeksUntilNext === 0
-      ? "Catalyst: next available this reset."
+      ? "Catalyst: new charge this week!"
       : `Catalyst: next in ${weeksUntilNext} week${weeksUntilNext > 1 ? "s" : ""}.`;
 
   return (

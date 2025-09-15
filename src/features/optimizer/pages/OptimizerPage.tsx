@@ -1,7 +1,7 @@
 // src/features/optimizer/pages/OptimizerPage.tsx
 import { useEffect, useState } from "react";
 import page from "../../../styles/page.module.css";
-import s from "../components/components.module.css";
+import op from "./optimizerPage.module.css";
 import { usePageMeta } from "../../../app/seo/usePageMeta";
 import { useNavigate, Link } from "react-router-dom";
 import { encodeToUrlHash } from "../services/urlCodec";
@@ -42,8 +42,8 @@ export function OptimizerPage() {
 
   return (
     <main id="main" className={`${page.wrap} ${page.wrapWide}`}>
-      {/* Header row matches RewardsPage */}
-      <header className={page.headerRow}>
+      {/* Header row matches Rewards/Guides styling */}
+      <header className={`${page.headerRow} ${op.headerDecor}`}>
         <div>
           <h1 className={page.title}>Optimize your gear in seconds</h1>
           <p className={page.subtitle}>
@@ -60,7 +60,7 @@ export function OptimizerPage() {
       </header>
 
       <section className={page.featuresGridSingle}>
-        <article className={s.cardPanel}>
+        <article className={`featureCard ${op.featureCardDecor}`} style={{ padding: 12 }}>
           <div className={page.cardHeader}>
             <div className={page.iconDot} aria-hidden />
             <h3 className={page.cardTitle}>OPTIMIZER</h3>

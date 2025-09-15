@@ -13,8 +13,9 @@ body {
 
 /* Prevent horizontal layout shift when vertical scrollbar appears/disappears */
 html {
-  /* Reserve space for the scrollbar across all routes */
-  scrollbar-gutter: stable both-edges;
+  /* Reserve space for the vertical scrollbar (right side only).
+     Using just `stable` avoids adding extra empty space on the left edge. */
+  scrollbar-gutter: stable;
 }
 
 /* Fallback for browsers without scrollbar-gutter support (e.g., older Chromium) */

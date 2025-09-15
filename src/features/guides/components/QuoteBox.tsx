@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import page from "../../../styles/page.module.css";
+import s from "./components.module.css";
 
 export function QuoteBox({
   source = "blizzard",
@@ -28,27 +28,27 @@ export function QuoteBox({
   }, [originalUrl, html, text]);
 
   return (
-    <div className={`${page.quoteBox} ${source ? page[`quote_${source}` as const] : ""}`}>
-      <div className={page.quoteHead}>
-        <div className={page.quoteLeft}>
+    <div className={`${s.quoteBox} ${source ? s[`quote_${source}` as const] : ""}`}>
+      <div className={s.quoteHead}>
+        <div className={s.quoteLeft}>
           {source === "blizzard" ? (
-            <div className={page.quoteBrandRow} aria-hidden>
-              <img src="/images/logos/world-of-warcraft-logo.png" alt="World of Warcraft" className={page.quoteBrandIcon} />
-              <img src="/images/logos/blizzard-entertainment-logo.png" alt="Blizzard Entertainment" className={page.quoteBrandLogo} />
+            <div className={s.quoteBrandRow} aria-hidden>
+              <img src="/images/logos/world-of-warcraft-logo.png" alt="World of Warcraft" className={s.quoteBrandIcon} />
+              <img src="/images/logos/blizzard-entertainment-logo.png" alt="Blizzard Entertainment" className={s.quoteBrandLogo} />
             </div>
           ) : null}
         </div>
-        <div className={page.quoteActions}>
+        <div className={s.quoteActions}>
           {originalUrl ? (
-            <a href={originalUrl} target="_blank" rel="noreferrer" className={page.quoteLink}>View Original</a>
+            <a href={originalUrl} target="_blank" rel="noreferrer" className={s.quoteLink}>View Original</a>
           ) : null}
-          <button type="button" aria-label="Toggle quote visibility" className={page.quoteToggle} onClick={() => setOpen(v => !v)}>
+          <button type="button" aria-label="Toggle quote visibility" className={s.quoteToggle} onClick={() => setOpen(v => !v)}>
             {open ? "Hide" : "Show"}
           </button>
         </div>
       </div>
       {open ? (
-        <div className={page.quoteBody}>
+        <div className={s.quoteBody}>
           {loading ? (
             <div className="navText">Loading…</div>
           ) : html ? (
