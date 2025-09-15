@@ -51,7 +51,7 @@ export function Footer() {
             <ul className={c.footerList}>
               <li className={c.footerListItem}>
                 <span className={c.footerBullet} aria-hidden="true">•</span>
-                <span>Upgrade planner: track &amp; rank, crest/FS cost, watermark bumps</span>
+                <span>Upgrade planner: track &amp; rank, crest/FS cost, optimized path</span>
               </li>
               <li className={c.footerListItem}>
                 <span className={c.footerBullet} aria-hidden="true">•</span>

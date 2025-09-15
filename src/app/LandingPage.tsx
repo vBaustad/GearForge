@@ -1,11 +1,12 @@
-import page from "../styles/page.module.css";
+﻿import page from "../styles/page.module.css";
+import lp from "./landing.module.css";
 import { usePageMeta } from "../app/seo/usePageMeta";
 import { Link } from "react-router-dom";
 
 export function LandingPage() {
   usePageMeta({
     title: "Upgrade Planner",
-    description: "Plan your WoW upgrades from a SimC export. See crest/FS costs and free watermarks.",
+    description: "Plan your WoW upgrades from a SimC export. See crest/FS costs and the fastest, most crest-efficient path to higher item level.",
     canonical: "/", // landing page canonical
     image: "/og/optimizer.png",
     ogType: "website",
@@ -14,61 +15,60 @@ export function LandingPage() {
   return (
     <main id="main" className={`${page.wrap} ${page.wrapWide}`}>
       {/* Hero */}
-      <header className={page.header}>
+      <header className={`${page.header} ${lp.headerDecor}`}>
         <h1 className={page.title}>Make better gear choices, faster</h1>
         <p className={page.subtitle}>
-          Drop in your SimC export. GearForge breaks down upgrades, crest costs,
-          and free bumps from watermarks—so you spend less time second-guessing.
+          Drop in your SimC export. GearForge breaks down upgrades and crest costs,
+          then orders the steps to reach higher item level faster with fewer crests.
         </p>
       </header>
 
       {/* Feature cards (2 per row) */}
+      {/* Feature cards (2 per row) */}
       <section aria-label="Tools">
         <div className={page.featureGrid2}>
           {/* Active: Optimizer */}
-          <Link to="/optimizer" className={`${page.navCard} ${page.navCardActive}`}>
+          <Link to="/optimizer" className={`${page.navCard} ${page.navCardActive} ${lp.navCardDecor}`}>
             <div className={page.featureHead}>
               <span className={page.iconDot} aria-hidden />
               <h3 className={page.navTitle}>Optimizer</h3>
             </div>
             <p className={page.navText}>
-              Paste SimC → get slot-by-slot upgrades with crest math and watermarks.
+              Paste SimC and get slot-by-slot upgrade suggestions for a faster path to higher ilvl.
             </p>
-            <span className={page.navCta}>Open →</span>
+            <span className={page.navCta}>Open &rarr;</span>
           </Link>
 
           {/* Link: Rewards */}
-          <Link to="/rewards" className={page.navCard} aria-label="Dungeon, Raid & Vault ilvls — view tables">
+          <Link to="/rewards" className={`${page.navCard} ${lp.navCardDecor}`} aria-label="Dungeon, Raid & Vault ilvls - view tables">
             <div className={page.featureHead}>
               <span className={page.iconDot} aria-hidden />
               <h3 className={page.navTitle}>Dungeon, Raid &amp; Vault item levels</h3>
             </div>
             <p className={page.navText}>Quick tables for Mythic+, Raid and Great Vault reward item levels.</p>
-            <span className={page.navCta}>View tables</span>
+            <span className={page.navCta}>View tables &rarr;</span>
           </Link>
 
-          {/* Under construction: Guides */}
-          <div className={`${page.navCard} ${page.navCardDisabled}`} aria-disabled="true" title="Under construction">
+          {/* Link: Guides */}
+          <Link to="/guides" className={`${page.navCard} ${lp.navCardDecor}`} aria-label="Browse guides">
             <div className={page.featureHead}>
               <span className={page.iconDot} aria-hidden />
-              <h3 className={page.navTitle}>
-                Guides <span className={page.ucBadge}>Under construction</span>
-              </h3>
+              <h3 className={page.navTitle}>Guides</h3>
             </div>
-            <p className={page.navText}>Short notes on crests &amp; upgrade paths.</p>
-            <span className={page.navCta}>Browse</span>
-          </div>
+            <p className={page.navText}>Handy WoW guides, tips, and macros to make your play smoother.</p>
+            <span className={page.navCta}>Browse &rarr;</span>
+          </Link>
 
           {/* Under construction: Changelog */}
-          <div className={`${page.navCard} ${page.navCardDisabled}`} aria-disabled="true" title="Under construction">
+          <div className={`${page.navCard} ${page.navCardDisabled} ${lp.navCardDecor}`} aria-disabled="true" title="Under construction">
             <div className={page.featureHead}>
               <span className={page.iconDot} aria-hidden />
               <h3 className={page.navTitle}>
                 Changelog <span className={page.ucBadge}>Under construction</span>
               </h3>
             </div>
-            <p className={page.navText}>What’s new in GearForge—fixes, tweaks, and data updates.</p>
-            <span className={page.navCta}>See updates</span>
+            <p className={page.navText}>What's new in GearForge - fixes, tweaks, and data updates.</p>
+            <span className={page.navCta}>See updates &rarr;</span>
           </div>
         </div>
       </section>

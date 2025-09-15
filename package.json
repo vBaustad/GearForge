@@ -8,6 +8,7 @@
     "dev:client": "vite",
     "dev:api": "cross-env API_PORT=8787 tsx watch server/index.ts",
     "build": "tsc -b && vite build",
+    "build:keyart": "node scripts/build-keyart-manifest.mjs",
     "lint": "eslint .",
     "preview": "vite preview"
   },
