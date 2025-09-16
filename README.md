@@ -145,3 +145,12 @@ Feedback
 --------
 
 Ideas, bugs, or 💡 suggestions? Open an issue or ping us---this tool grows with your feedback.
+
+* * * * *
+
+AdSense setup
+-------------
+
+-   Set `VITE_ADSENSE_CLIENT` in your environment (e.g. `.env`) to your Google AdSense client id (`ca-pub-xxxxxxxxxxxxxxxx`).
+-   Update slot ids in `src/config/ads.ts` to match the units you create in AdSense.
+-   In development, ad components render grey placeholders when the client id is missing; in production they stay hidden until a real client id is provided.

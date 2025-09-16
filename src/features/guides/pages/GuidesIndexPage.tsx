@@ -6,6 +6,8 @@ import { SpecIconRow } from "../components/SpecIconRow";
 import { ClassIconRow } from "../components/ClassIconRow";
 import s from "../components/components.module.css";
 import gi from "./guidesIndex.module.css";
+import { GoogleAd } from "../../../components/ads/GoogleAd";
+import { AD_SLOTS } from "../../../config/ads";
 
 export default function GuidesIndexPage() {
   const [selectedClass, setSelectedClass] = useState<string | null>(null);
@@ -42,8 +44,22 @@ export default function GuidesIndexPage() {
             </div>
           </div>
         </div>
+        <div style={{ margin: "24px auto", width: "100%", maxWidth: 760 }}>
+          <GoogleAd
+            slot={AD_SLOTS.guidesIndexTop}
+            style={{ minHeight: 120 }}
+            placeholderLabel="Guides selector"
+          />
+        </div>
         <div className={`featureCard ${gi.featureCardDecor}`} style={{ padding: 12, marginTop: 12 }}>
           <GuideGrid />
+          <div style={{ marginTop: 24 }}>
+            <GoogleAd
+              slot={AD_SLOTS.guidesIndexGrid}
+              style={{ minHeight: 250 }}
+              placeholderLabel="Guides grid"
+            />
+          </div>
         </div>
       </section>
     </main>

@@ -1,0 +1,42 @@
+AdSense Placement Notes
+=======================
+
+Global Shell
+- Insert a responsive leaderboard just below the InfoBar and before <main> in src/app/RootLayout.tsx so every route inherits a high-visibility unit without crowding navigation.
+- Consider an optional sticky sidebar or footer anchor that appears before <Footer /> for wide screens while reserving height to avoid layout shift.
+
+Landing Page
+- Keep the hero area clean for messaging; focus monetization on units that appear after the feature grid.
+- Add a native in-feed unit after the second row of feature cards so it blends with navigation cards.
+
+Optimizer Input Page
+- Keep the form above the fold; append a responsive rectangle beneath the form button row in src/features/optimizer/pages/OptimizerPage.tsx.
+- Optionally add a matched-content style card under the feature description for returning visitors.
+
+Optimizer Results Page
+- Position a medium rectangle below the KPI masthead but before the Recommended Upgrades card in src/features/optimizer/pages/OptimizerResultPage.tsx.
+- Inside the results card, add an in-article unit between <Paperdoll /> and <NarrativePlan />, and consider breaking long narrative sections with ads after every three to four upgrade steps.
+
+Rewards Page
+- Use the gaps between major sections in src/features/rewards/pages/RewardsPage.tsx for 336x280 or responsive blocks, especially after <VaultCards /> and before the raid cards.
+
+Guides Index
+- Place a horizontal unit between the class selector card and <GuideGrid /> in src/features/guides/pages/GuidesIndexPage.tsx.
+- Inject a native-style ad inside the grid after every second guide card via a placeholder component.
+
+Guide Articles
+- Reserve space between the hero image and the article body for a top-of-article leaderboard in src/features/guides/pages/GuidePostPage.tsx.
+- Insert in-article ads inside renderBlocks after the first paragraph and every four blocks to mimic Auto ads while avoiding adjacent calls to action.
+
+Informational Pages (FAQ, Terms, Privacy)
+- If these pages gain more content, place a single auto ad after the first section (src/features/faq/pages/FaqPage.tsx, legal pages) while keeping density low.
+
+Implementation Notes
+- Load AdSense with a consent-aware wrapper, use data-ad-format="auto" with explicit min-heights to prevent layout shift, and lazy-load below-the-fold units.
+- Throttle ad count per page (for example, three on results, two on landing) to preserve performance and stay within policy.
+
+Implementation Summary
+- Added `GoogleAd` component handling AdSense script loading, pushing display calls, and rendering placeholders when `VITE_ADSENSE_CLIENT` is absent.
+- Stored slot identifiers in `src/config/ads.ts` for reuse across pages.
+- Injected ad containers into RootLayout (top/footer), Landing grid, Optimizer form/results, Rewards sections, Guides index, and Guide post pages.
+- Documented setup steps in README (set `VITE_ADSENSE_CLIENT`, update slot ids, dev-only placeholders).
