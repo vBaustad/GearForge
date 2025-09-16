@@ -5,6 +5,8 @@ import op from "./optimizerPage.module.css";
 import { usePageMeta } from "../../../app/seo/usePageMeta";
 import { useNavigate, Link } from "react-router-dom";
 import { encodeToUrlHash } from "../services/urlCodec";
+import { GoogleAd } from "../../../components/ads/GoogleAd";
+import { AD_SLOTS } from "../../../config/ads";
 
 export function OptimizerPage() {
   usePageMeta({
@@ -97,6 +99,14 @@ export function OptimizerPage() {
             </div>
             {error && <p className={page.error}>{error}</p>}
           </form>
+
+          <div style={{ marginTop: 24 }}>
+            <GoogleAd
+              slot={AD_SLOTS.optimizerForm}
+              style={{ minHeight: 250 }}
+              placeholderLabel="Optimizer form"
+            />
+          </div>
         </article>
       </section>
     </main>

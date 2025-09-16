@@ -2,6 +2,8 @@
 import lp from "./landing.module.css";
 import { usePageMeta } from "../app/seo/usePageMeta";
 import { Link } from "react-router-dom";
+import { GoogleAd } from "../components/ads/GoogleAd";
+import { AD_SLOTS } from "../config/ads";
 
 export function LandingPage() {
   usePageMeta({
@@ -72,6 +74,14 @@ export function LandingPage() {
           </div>
         </div>
       </section>
+
+      <div style={{ margin: "32px auto", width: "100%", maxWidth: 760 }}>
+        <GoogleAd
+          slot={AD_SLOTS.landingGrid}
+          style={{ minHeight: 120 }}
+          placeholderLabel="Landing grid"
+        />
+      </div>
     </main>
   );
 }

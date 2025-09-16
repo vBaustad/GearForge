@@ -14,6 +14,8 @@ import { IconUrlsProvider, type IconUrlMap } from "../context/IconUrlContext";
 import { useNavigate } from "react-router-dom";
 import PageSplashGate from "../components/PageSplashGate";
 import orp from "./optimizerResultPage.module.css";
+import { GoogleAd } from "../../../components/ads/GoogleAd";
+import { AD_SLOTS } from "../../../config/ads";
 
 const cap = (s?: string | null) => (s ? s[0].toUpperCase() + s.slice(1) : "");
 const titleCase = (s?: string | null) =>
@@ -320,6 +322,14 @@ export default function OptimizerResultPage() {
           </div>
         </header>
 
+        <div style={{ margin: "24px auto", width: "100%", maxWidth: 760 }}>
+          <GoogleAd
+            slot={AD_SLOTS.optimizerResultHeader}
+            style={{ minHeight: 120 }}
+            placeholderLabel="Results header"
+          />
+        </div>
+
         {/* RESULTS HEADER sits closer to the paperdoll area */}
         <section className={page.results}>
           <div className={`featureCard ${orp.featureCardDecor}`} style={{ padding: 12 }}>
@@ -375,6 +385,13 @@ export default function OptimizerResultPage() {
           ) : (
             <IconUrlsProvider urls={iconMap}>
               <Paperdoll items={items} plans={plans} />
+              <div style={{ margin: "24px auto", width: "100%", maxWidth: 760 }}>
+                <GoogleAd
+                  slot={AD_SLOTS.optimizerResultInline}
+                  style={{ minHeight: 250 }}
+                  placeholderLabel="Results inline"
+                />
+              </div>
               <NarrativePlan plans={plans} ceilingIlvl={ceilingIlvl} />
             </IconUrlsProvider>
           )}

@@ -7,6 +7,8 @@ import { KEY_ART } from "../data/keyArtManifest";
 import { CodeBlock } from "../components/CodeBlock";
 import { Callout } from "../components/Callout";
 import { QuoteBox } from "../components/QuoteBox";
+import { GoogleAd } from "../../../components/ads/GoogleAd";
+import { AD_SLOTS } from "../../../config/ads";
 
 function withBase(url?: string | null): string | null {
   if (!url) return null;
@@ -80,10 +82,26 @@ export default function GuidePostPage() {
         <Link to="/guides" className="ghostBtn">← All guides</Link>
       </header>
 
+      <div style={{ margin: "24px auto", width: "100%", maxWidth: 760 }}>
+        <GoogleAd
+          slot={AD_SLOTS.guideArticleTop}
+          style={{ minHeight: 120 }}
+          placeholderLabel="Guide top"
+        />
+      </div>
+
       <section className={page.results}>
         {/* Wide, cropped hero image */}
         <div className={page.guideHero} aria-hidden>
           <img className={page.guideHeroImg} src={cover} alt="" />
+        </div>
+
+        <div style={{ margin: "24px auto", width: "100%", maxWidth: 760 }}>
+          <GoogleAd
+            slot={AD_SLOTS.guideArticleInline}
+            style={{ minHeight: 250 }}
+            placeholderLabel="Guide inline"
+          />
         </div>
 
         {/* Body */}

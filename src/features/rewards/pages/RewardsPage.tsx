@@ -8,6 +8,8 @@ import { usePageMeta } from "../../../app/seo/usePageMeta";
 import { Link } from "react-router-dom";
 import page from "../../../styles/page.module.css";
 import rp from "./rewardsPage.module.css";
+import { GoogleAd } from "../../../components/ads/GoogleAd";
+import { AD_SLOTS } from "../../../config/ads";
 
 export function RewardsPage() {
   const data = useRewardsData();
@@ -47,6 +49,14 @@ export function RewardsPage() {
         </div>
       </section>
 
+      <div style={{ margin: "24px auto", width: "100%", maxWidth: 760 }}>
+        <GoogleAd
+          slot={AD_SLOTS.rewardsTop}
+          style={{ minHeight: 120 }}
+          placeholderLabel="Rewards top"
+        />
+      </div>
+
       {/* Full table (collapsed by default) */}
       <div className={page.results}>
         <div className={`featureCard ${rp.featureCardDecor}`} style={{ padding: 12 }}>
@@ -67,6 +77,14 @@ export function RewardsPage() {
           <RaidCards />
         </div>
       </section>
+
+      <div style={{ margin: "24px auto", width: "100%", maxWidth: 760 }}>
+        <GoogleAd
+          slot={AD_SLOTS.rewardsMid}
+          style={{ minHeight: 120 }}
+          placeholderLabel="Rewards raid"
+        />
+      </div>
     </main>
   );
 }
