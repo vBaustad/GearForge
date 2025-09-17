@@ -89,21 +89,53 @@ export const SIMC_TO_USER_SLOT: Partial<Record<number, SlotIndex>> = {
   0: 1,
   1: 2,
   2: 3,
-  3: 15,
-  4: 5,
-  5: 9,
-  6: 10,
-  7: 6,
-  8: 7,
-  9: 8,
-  10: 11,
-  11: 12,
-  12: 13,
-  13: 14,
-  14: 16,
-  15: 17,
-  // 16 -> (none)
+  3: 5,
+  4: 6,
+  5: 7,
+  6: 8,
+  7: 9,
+  8: 10,
+  9: 11,
+  10: 13,
+  11: 15,
+  12: 16,
 };
+
+  // 1: "head",
+  // 2: "neck",
+  // 3: "shoulder",
+  // 5: "chest",
+  // 6: "waist",
+  // 7: "legs",
+  // 8: "feet",
+  // 9: "wrist",
+  // 10: "hands",
+  // 11: "finger1",
+  // 12: "finger2",
+  // 13: "trinket1",
+  // 14: "trinket2",
+  // 15: "back",
+  // 16: "main_hand",
+  // 17: "off_hand",
+
+
+
+  // 0: ["head"],
+  // 1: ["neck"],
+  // 2: ["shoulder"],
+  // 3: ["chest"],
+  // 4: ["waist"],
+  // 5: ["legs"],
+  // 6: ["feet"],
+  // 7: ["wrist"],
+  // 8: ["hands"],
+  // 9: ["finger1", "finger2"],      
+  // 10: ["trinket1", "trinket2"],   
+  // 11: ["back"],                  
+  // 12: ["main_hand", "off_hand"],  
+
+
+
 
 /** Convert a SimC 0-based slot number to your SlotKey (or null). */
 export function simcSlotToKey(simcIndex0: number): SlotKey | null {

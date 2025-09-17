@@ -145,8 +145,10 @@ export default function OptimizerResultPage() {
         dropCeilingIlvl: ceilingIlvl,
         ignoreCeiling,
         crestStock,
+        watermarks: upgradeCtx?.watermarks,
+        achievements: upgradeCtx?.achievements,
       }),
-    [itemStates, ceilingIlvl, ignoreCeiling, crestStock]
+    [itemStates, ceilingIlvl, ignoreCeiling, crestStock, upgradeCtx]
   );
 
   function copyLink() {
