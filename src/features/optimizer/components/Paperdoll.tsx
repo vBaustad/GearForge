@@ -1,5 +1,4 @@
-// src/features/optimizer/components/Paperdoll.tsx
-import { useEffect } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import styles from "./components.module.css";
 import { SLOT_DISPLAY, normalizeSlot } from "../services/slotMap";
 import type { ParsedItem, SlotKey, ItemPlan, Crest } from "../types/simc";
@@ -7,16 +6,17 @@ import { ItemIcon } from "./ItemIcon";
 import { WowheadLink } from "./WowheadLink";
 import { refreshWowheadTooltips } from "./WowheadProvider";
 import { useItemMeta } from "../hooks/useItemMeta";
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight } from "lucide-react";
+import type { DisplayRarity } from "../services/rarity";
+import { useDisplayRarity } from "../hooks/useDisplayRarity";
 
 type ItemBySlot = Partial<Record<SlotKey, ParsedItem>>;
 type PlanBySlot = Partial<Record<SlotKey, ItemPlan>>;
 
-type RarityToken =
-  | "poor" | "common" | "uncommon" | "rare" | "epic"
-  | "legendary" | "artifact" | "heirloom";
+/* ──────────────────────────────────────────────────────────────
+   Local helpers
+────────────────────────────────────────────────────────────── */
 
-/** Typed entries helper for Partial<Record<Crest, number>> */
 function crestTotalsEntries(
   totals: Partial<Record<Crest, number>> | undefined
 ): [Crest, number][] {
@@ -41,53 +41,9 @@ function crestTotalsText(plan?: ItemPlan) {
   return parts.join(" · ");
 }
 
-/** Numeric quality (0–7) → rarity token (fallback path) */
-function qualityToToken(q: number): RarityToken | undefined {
-  switch (q) {
-    case 0: return "poor";
-    case 1: return "common";
-    case 2: return "uncommon";
-    case 3: return "rare";
-    case 4: return "epic";
-    case 5: return "legendary";
-    case 6: return "artifact";
-    case 7: return "heirloom";
-    default: return undefined;
-  }
-}
-
-/** Fallback: try to derive rarity from ParsedItem if server meta is missing */
-function getRarityToken(item?: ParsedItem): RarityToken | undefined {
-  if (!item) return undefined;
-
-  const textFields = item as unknown as {
-    rarity?: unknown; qualityText?: unknown; qualityName?: unknown;
-  };
-  const text =
-    (typeof textFields.rarity === "string" && textFields.rarity) ||
-    (typeof textFields.qualityText === "string" && textFields.qualityText) ||
-    (typeof textFields.qualityName === "string" && textFields.qualityName) ||
-    undefined;
-
-  if (typeof text === "string") {
-    const t = text.trim().toLowerCase();
-    const allowed: ReadonlyArray<RarityToken> = [
-      "poor","common","uncommon","rare","epic","legendary","artifact","heirloom",
-    ];
-    return (allowed as readonly string[]).includes(t) ? (t as RarityToken) : undefined;
-  }
-
-  const numFields = item as unknown as {
-    quality?: unknown; itemQuality?: unknown; qualityId?: unknown;
-  };
-  const q =
-    (typeof numFields.quality === "number" && numFields.quality) ||
-    (typeof numFields.itemQuality === "number" && numFields.itemQuality) ||
-    (typeof numFields.qualityId === "number" && numFields.qualityId) ||
-    undefined;
-
-  return typeof q === "number" ? qualityToToken(q) : undefined;
-}
+/* ──────────────────────────────────────────────────────────────
+   Slot card
+────────────────────────────────────────────────────────────── */
 
 function SlotCard({
   slot,
@@ -102,24 +58,37 @@ function SlotCard({
   className?: string;
   showLabel?: boolean;
 }) {
-  const hasUpgrade = !!plan && typeof plan.toRank === "number" && typeof plan.fromRank === "number" && plan.toRank > plan.fromRank;
+  const hasUpgrade =
+    !!plan &&
+    typeof plan.toRank === "number" &&
+    typeof plan.fromRank === "number" &&
+    plan.toRank > plan.fromRank;
   const hasSecondary = (hasUpgrade && !!plan) || !!item?.crafted;
 
-  const meta = useItemMeta(item?.id);
+  // Variant-aware meta (Wowhead rarity + icon)
+  const meta = useItemMeta(item?.id, {
+    bonusIds: item?.bonusIds,
+    level: item?.ilvl,
+  });
 
-  // refresh Wowhead tooltips when the item changes
+  // keep deps simple for eslint
+  const bonusKey = useMemo(() => (item?.bonusIds ?? []).join(":"), [item?.bonusIds]);
+
   useEffect(() => {
     refreshWowheadTooltips();
-  }, [item?.id, item?.ilvl, (item?.bonusIds ?? []).join(":")]);
+  }, [item?.id, item?.ilvl, bonusKey]);
 
-  const nameText = item?.name ?? (item?.id ? `#${item.id}` : "—");
-  const rarity: RarityToken | undefined = meta?.rarity ?? getRarityToken(item);
+  // Use SimC name; ItemMeta intentionally doesn't expose a name
+  const nameText = item?.name || (item?.id ? `#${item.id}` : "—");
 
-  // Right-side pill: upgrade (preferred) or ilvl
   const RightPill = () => {
     const isUpgrade = hasUpgrade && !!plan;
     const displayIlvl =
-      isUpgrade && plan ? plan.toIlvl : (typeof item?.ilvl === "number" ? item.ilvl : undefined);
+      isUpgrade && plan
+        ? plan.toIlvl
+        : typeof item?.ilvl === "number"
+        ? item.ilvl
+        : undefined;
 
     return (
       <div className={isUpgrade ? styles.upgradePill : styles.ilvlPill}>
@@ -132,12 +101,7 @@ function SlotCard({
 
   const Icon = (
     <div className={styles.slotIcon}>
-      <ItemIcon
-        itemId={item?.id}
-        alt={nameText}
-        size={48}
-        iconUrl={meta?.iconUrl}
-      />
+      <ItemIcon itemId={item?.id} alt={nameText} size={48} iconUrl={meta?.iconUrl} />
     </div>
   );
 
@@ -147,46 +111,50 @@ function SlotCard({
     </div>
   );
 
-  // Pills row beneath the name: optional crafted/upgrade detail
-  const PillsRow = () => (
+  const PillsRow = () =>
     hasSecondary ? (
       <div className={styles.pillsRow}>
         {hasUpgrade && plan ? (
-          <div
-            className={styles.upgradePillSecondary}
-            title={crestTotalsText(plan)}
-          >
+          <div className={styles.upgradePillSecondary} title={crestTotalsText(plan)}>
             <span>Upgrade: {plan.fromIlvl}</span>
-            <ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
+            <ArrowRight size={14} strokeWidth={2} aria-hidden />
             <span>{plan.toIlvl}</span>
           </div>
         ) : (
           <div className={styles.craftedPill}>
             <span>Crafted item</span>
-            <ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
+            <ArrowRight size={14} strokeWidth={2} aria-hidden />
             <span>no crest upgrades</span>
           </div>
         )}
       </div>
-    ) : null
-  );
+    ) : null;
+
+  // hook up Wowhead rarity (q0..q8) via anchor ref
+  const linkRef = useRef<HTMLAnchorElement | null>(null);
+  const displayRarity: DisplayRarity | undefined = useDisplayRarity(linkRef.current, [
+    item?.id,
+    item?.ilvl,
+    bonusKey,
+  ]);
 
   return (
     <div
       className={`${styles.slotCard} ${!showLabel ? styles.noLabel : ""} ${className ?? ""}`}
-      data-rarity={rarity}
+      data-rarity={displayRarity} // ← drives CSS color/border
       data-has-upgrade={hasUpgrade || undefined}
       data-crafted={item?.crafted || undefined}
-      title={undefined}
     >
       {showLabel && <div className={styles.slotLabel}>{SLOT_DISPLAY[slot]}</div>}
-      {/* Always-fixed ilvl pill top-right */}
-      <div className={styles.pillTopRight}><RightPill /></div>
+      <div className={styles.pillTopRight}>
+        <RightPill />
+      </div>
 
       {item ? (
         item.id ? (
           <WowheadLink
-            id={item.id}
+            ref={linkRef}
+            itemId={item.id}          // ← renamed (was `id`)
             ilvl={item.ilvl}
             bonusIds={item.bonusIds}
             title={nameText}
@@ -214,6 +182,10 @@ function SlotCard({
   );
 }
 
+/* ──────────────────────────────────────────────────────────────
+   Paperdoll
+────────────────────────────────────────────────────────────── */
+
 export function Paperdoll({
   items,
   plans,
@@ -228,7 +200,6 @@ export function Paperdoll({
     planMap[p.slot] = p;
   }
 
-  // also refresh after the full list changes (SPA navigation, etc.)
   useEffect(() => {
     refreshWowheadTooltips();
   }, [items.length, plans?.length]);

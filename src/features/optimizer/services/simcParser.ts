@@ -22,6 +22,9 @@ const EQUIPPED_SLOTS = new Set([
 
 /* ---------- small helpers ---------- */
 
+const toArray = <T,>(v: T | T[] | null | undefined): T[] =>
+  v == null ? [] : Array.isArray(v) ? v : [v];
+
 /** Finds the line that looks like `# key=...` and returns everything after '=' */
 function extractAfterEquals(all: string[], key: string): string {
   // accept '#key=' OR '# key=' (some SimC variants)
@@ -57,18 +60,27 @@ function parseUpgradeWallet(line: string): UpgradeWalletEntry[] {
   }).filter((x): x is UpgradeWalletEntry => !!x);
 }
 
+// src/features/optimizer/services/simcParser.ts
 function parseWatermarksSimcToUser(line: string): SlotWatermark[] {
   if (!line) return [];
-  return line.split("/").filter(Boolean).map(seg => {
+  const out: SlotWatermark[] = [];
+
+  for (const seg of line.split("/").filter(Boolean)) {
     const [simcSlotStr, currentStr, maxStr] = seg.split(":");
     const simcSlot = Number(simcSlotStr);
-    const userSlot = SIMC_TO_USER_SLOT[simcSlot];
     const current = Number(currentStr);
     const max = Number(maxStr);
-    if (!userSlot || !Number.isFinite(current) || !Number.isFinite(max)) return null;
-    return { slot: userSlot, current, max };
-  }).filter((x): x is SlotWatermark => !!x);
+    if (!Number.isFinite(simcSlot) || !Number.isFinite(current) || !Number.isFinite(max)) continue;
+
+    const mapped = SIMC_TO_USER_SLOT[simcSlot];
+    for (const userSlot of toArray(mapped)) {
+      if (!Number.isFinite(userSlot)) continue;
+      out.push({ slot: userSlot, current, max });
+    }
+  }
+  return out;
 }
+
 
 function parseAchievements(line: string): AchievementId[] {
   if (!line) return [];
@@ -168,8 +180,8 @@ export function parseSimc(text: string): ParsedItem[] {
     const bonusIds: number[] = [];
 
     // Crafted markers (examples: crafted_stats=, crafting_quality=, titan_disc_id=, spark)
-    const crafted = /(?:\bcrafted_stats=|\bcrafting_quality=|\btitan_disc_id=|\bspark\b)/i.test(rhs);
-
+    const crafted = /(?:\bcrafted_stats=|\bcrafting_quality=|\bspark\b|crafted_stats\b)/i.test(rhs);
+    
     for (const kv of kvs) {
       const [key, valRaw] = kv.split("=");
       if (!key) continue;

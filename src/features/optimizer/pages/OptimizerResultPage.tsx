@@ -1,4 +1,5 @@
-﻿import { useEffect, useMemo, useState } from "react";
+﻿// src/features/optimizer/pages/OptimizerResultPage.tsx
+import { useEffect, useMemo, useState } from "react";
 import page from "../../../styles/page.module.css";
 import { usePageMeta } from "../../../app/seo/usePageMeta";
 import { parseSimc, parseCharacterUpgradeContext, parseCharacterMeta } from "../services/simcParser";
@@ -8,7 +9,7 @@ import type { SimcPayload, ItemState, ParsedItem, Crest, ItemPlan, SlotKey } fro
 import { buildShareUrl, decodeFromUrlHash } from "../services/urlCodec";
 import { toItemState } from "../services/upgradePlanner";
 import { planAll } from "../services/planner";
-import { watermarksToFreeIlvlBySlot, normalizeSlot } from "../services/slotMap";
+import { normalizeSlot } from "../services/slotMap";
 import { RotateCcw, ExternalLink, Copy } from "lucide-react";
 import { IconUrlsProvider, type IconUrlMap } from "../context/IconUrlContext";
 import { useNavigate } from "react-router-dom";
@@ -17,13 +18,84 @@ import orp from "./optimizerResultPage.module.css";
 import { GoogleAd } from "../../../components/ads/GoogleAd";
 import { AD_SLOTS } from "../../../config/ads";
 
-const cap = (s?: string | null) => (s ? s[0].toUpperCase() + s.slice(1) : "");
-const titleCase = (s?: string | null) =>
-  s ? s.replace(/\b\w+/g, w => w[0].toUpperCase() + w.slice(1).toLowerCase()) : "";
+// 🚫 removed: useItemMeta — we no longer fetch per-slot meta here
+
+// Local: UI rarity set we style for
+type DisplayRarity = "poor" | "common" | "uncommon" | "rare" | "epic" | "legendary";
+
+/* ──────────────────────────────────────────────────────────────
+   Helpers
+────────────────────────────────────────────────────────────── */
+
+// Prefer SimC quality info over nothing (while meta is loading)
+function extractFallbackRarityText(it?: ParsedItem): string | undefined {
+  if (!it) return undefined;
+  const f = it as unknown as { rarity?: unknown; qualityText?: unknown; qualityName?: unknown };
+  return (
+    (typeof f.rarity === "string" && f.rarity) ||
+    (typeof f.qualityText === "string" && f.qualityText) ||
+    (typeof f.qualityName === "string" && f.qualityName) ||
+    undefined
+  );
+}
+function extractFallbackRarityNum(it?: ParsedItem): number | undefined {
+  if (!it) return undefined;
+  const f = it as unknown as { quality?: unknown; itemQuality?: unknown; qualityId?: unknown };
+  return (
+    (typeof f.quality === "number" && f.quality) ||
+    (typeof f.itemQuality === "number" && f.itemQuality) ||
+    (typeof f.qualityId === "number" && f.qualityId) ||
+    undefined
+  );
+}
+
+// Map loose strings / SimC numeric qualities to our DisplayRarity
+function coerceDisplayRarity(
+  primary?: string,          // keep signature (unused here), stays for future flexibility
+  fallbackText?: string,     // e.g. "Epic"
+  fallbackNum?: number       // 0..7
+): DisplayRarity | undefined {
+  const fromStr = (s?: string): DisplayRarity | undefined => {
+    if (!s) return;
+    const t = s.toLowerCase();
+    if (t === "poor" || t === "common" || t === "uncommon" || t === "rare" || t === "epic" || t === "legendary") {
+      return t as DisplayRarity;
+    }
+    if (t === "artifact" || t === "heirloom") return "legendary";
+    return undefined;
+  };
+  const fromNum = (n?: number): DisplayRarity | undefined => {
+    switch (n) {
+      case 0: return "poor";
+      case 1: return "common";
+      case 2: return "uncommon";
+      case 3: return "rare";
+      case 4: return "epic";
+      case 5: return "legendary";
+      case 6: // artifact
+      case 7: // heirloom
+        return "legendary";
+      default:
+        return undefined;
+    }
+  };
+  return fromStr(primary) ?? fromStr(fallbackText) ?? fromNum(fallbackNum);
+}
+
+// SimC currency → crest tier
+const CURRENCY_TO_CREST: Record<number, Crest> = {
+  3284: "Weathered",
+  3286: "Carved",
+  3288: "Runed",
+  3290: "Gilded",
+};
 
 // small helpers
 const isFiniteNum = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
 const avg = (nums: number[]) => (nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : 0);
+const cap = (s?: string | null) => (s ? s[0].toUpperCase() + s.slice(1) : "");
+const titleCase = (s?: string | null) =>
+  s ? s.replace(/\b\w+/g, (w) => w[0].toUpperCase() + w.slice(1).toLowerCase()) : "";
 
 // Extract ilvl from either .ilvl or .level (ignore <=0)
 const getIlvl = (x: { ilvl?: number; level?: number } | undefined | null): number | null => {
@@ -43,19 +115,21 @@ function buildItemMap(items: ParsedItem[]): ItemBySlot {
   }
   return map;
 }
-
 function buildPlanMap(plans?: ItemPlan[]): PlanBySlot {
   const map: PlanBySlot = {};
-  for (const p of plans ?? []) {
-    map[p.slot] = p;
-  }
+  for (const p of plans ?? []) map[p.slot] = p;
   return map;
 }
+
+/* ──────────────────────────────────────────────────────────────
+   Page
+────────────────────────────────────────────────────────────── */
 
 export default function OptimizerResultPage() {
   usePageMeta({
     title: "Upgrade Planner",
-    description: "Plan your WoW upgrades from a SimC export. See crest costs and the fastest, most crest-efficient path to higher item level.",
+    description:
+      "Plan your WoW upgrades from a SimC export. See crest costs and the fastest, most crest-efficient path to higher item level.",
     canonical: "/optimizer",
     image: "/og/optimizer.png",
     ogType: "website",
@@ -73,10 +147,7 @@ export default function OptimizerResultPage() {
   const simcText = data?.simc ?? "";
 
   // --- Parse equipped items ---
-  const items: ParsedItem[] = useMemo(
-    () => (simcText ? parseSimc(simcText) : []),
-    [simcText]
-  );
+  const items: ParsedItem[] = useMemo(() => (simcText ? parseSimc(simcText) : []), [simcText]);
 
   // --- Parse upgrade context ---
   const upgradeCtx = useMemo(
@@ -85,46 +156,24 @@ export default function OptimizerResultPage() {
   );
 
   // --- Character meta ---
-  const meta = useMemo(
-    () => (simcText ? parseCharacterMeta(simcText) : null),
-    [simcText]
-  );
+  const meta = useMemo(() => (simcText ? parseCharacterMeta(simcText) : null), [simcText]);
 
-  // Helpers for header display
+  // Header bits
   const displaySpec = (meta?.spec ?? meta?.headerLineSpec) ?? null;
-  const subtitle =
-    meta
-      ? [
-          displaySpec ? cap(displaySpec) : null,
-          meta.region ? meta.region.toUpperCase() : null,
-          meta.server ? titleCase(meta.server) : null,
-        ].filter(Boolean).join(" - ")
-      : null;
+  const subtitle = meta
+    ? [displaySpec ? cap(displaySpec) : null, meta.region ? meta.region.toUpperCase() : null, meta.server ? titleCase(meta.server) : null]
+        .filter(Boolean)
+        .join(" - ")
+    : null;
 
-  // --- Item states for planner ---
+  // --- Planner inputs ---
   const itemStates: ItemState[] = useMemo(
     () => items.map(toItemState).filter((x): x is ItemState => !!x),
     [items]
   );
 
-  // --- Natural drop ceiling (Hero r3) ---
   const ceilingIlvl = data?.ceilingIlvl ?? 701;
   const ignoreCeiling = !!data?.ignoreCeiling;
-
-  // --- Watermarks -> free ranges (optional) ---
-  const freeIlvlBySlot = useMemo(
-    () => (upgradeCtx ? watermarksToFreeIlvlBySlot(upgradeCtx.watermarks) : {}),
-    [upgradeCtx]
-  );
-  void freeIlvlBySlot;
-
-  // --- Wallet â†’ crest counts (optional) ---
-  const CURRENCY_TO_CREST: Record<number, Crest> = {
-    3284: "Weathered",
-    3286: "Carved",
-    3288: "Runed",
-    3290: "Gilded",
-  };
 
   const crestStock = useMemo(() => {
     const stock: Partial<Record<Crest, number>> = {};
@@ -138,7 +187,6 @@ export default function OptimizerResultPage() {
     return stock;
   }, [upgradeCtx]);
 
-  // --- Plan ---
   const { plans } = useMemo(
     () =>
       planAll(itemStates, {
@@ -177,6 +225,7 @@ export default function OptimizerResultPage() {
     [items]
   );
 
+  // Kept from earlier code; harmless if not used elsewhere
   const plannedUpgradeIds = useMemo(() => {
     const out: number[] = [];
     const LIMIT = 12;
@@ -238,19 +287,14 @@ export default function OptimizerResultPage() {
 
   const navigate = useNavigate();
   const classToken =
-    meta?.className
-      ? (page as Record<string, string>)[`class-${meta.className}`] ?? ""
-      : "";
-      
-  // =========================
-  // Avg ilvl: current vs potential (mirror Paperdoll's per-slot rule)
-  // =========================
+    meta?.className ? (page as Record<string, string>)[`class-${meta.className}`] ?? "" : "";
 
-  // Build the same maps Paperdoll uses
+  // =========================
+  // Current vs potential avg ilvl (same rule as Paperdoll)
+  // =========================
   const bySlot = useMemo(() => buildItemMap(items), [items]);
   const planMap = useMemo(() => buildPlanMap(plans), [plans]);
 
-  // Current average: average of equipped items' ilvls by slot
   const currentAvgIlvl = useMemo(() => {
     const vals: number[] = [];
     for (const slot in bySlot) {
@@ -261,7 +305,6 @@ export default function OptimizerResultPage() {
     return Math.round(avg(vals));
   }, [bySlot]);
 
-  // Potential average: same display rule Paperdoll uses per slot
   const potentialAvgIlvl = useMemo(() => {
     const vals: number[] = [];
     const slots = Object.keys(bySlot) as SlotKey[];
@@ -272,15 +315,9 @@ export default function OptimizerResultPage() {
       if (!isFiniteNum(current) || current <= 0) continue;
 
       const hasUpgrade =
-        !!plan &&
-        isFiniteNum(plan.toRank) &&
-        isFiniteNum(plan.fromRank) &&
-        plan.toRank > plan.fromRank;
+        !!plan && isFiniteNum(plan.toRank) && isFiniteNum(plan.fromRank) && plan.toRank > plan.fromRank;
 
-      const display =
-        hasUpgrade && isFiniteNum(plan?.toIlvl) && plan!.toIlvl > 0
-          ? plan!.toIlvl
-          : current;
+      const display = hasUpgrade && isFiniteNum(plan?.toIlvl) && plan!.toIlvl > 0 ? plan!.toIlvl : current;
 
       vals.push(display);
     }
@@ -289,10 +326,37 @@ export default function OptimizerResultPage() {
 
   const ilvlDelta = (potentialAvgIlvl ?? 0) - (currentAvgIlvl ?? 0);
 
+  // =========================
+  // Visuals for NarrativePlan — Icons (prefetched) + rarity from SimC fallback
+  // =========================
+
+  const visualsBySlot = useMemo(() => {
+    const choose = (slot: SlotKey): DisplayRarity => {
+      const it = bySlot[slot];
+      const text = extractFallbackRarityText(it);
+      const num  = extractFallbackRarityNum(it);
+      return coerceDisplayRarity(undefined, text, num) ?? "epic";
+    };
+
+    const v: Partial<Record<SlotKey, { icon?: string; rarity?: DisplayRarity; label?: string }>> = {};
+    const slots: SlotKey[] = [
+      "head","neck","shoulder","back","chest","wrist","hands","waist","legs","feet",
+      "finger1","finger2","trinket1","trinket2","main_hand","off_hand"
+    ];
+
+    for (const slot of slots) {
+      const it = bySlot[slot];
+      if (!it) continue;
+      const icon = typeof it.id === "number" ? iconMap[it.id] : undefined;
+      const rarity = choose(slot);
+      v[slot] = { icon, rarity, label: it.name };
+    }
+    return v;
+  }, [bySlot, iconMap]);
+
   return (
     <PageSplashGate durationMs={2000} oncePerSession={false} storageKey="gf-opt-splash-seen">
       <main className={`${page.wrap} ${page.wrapWide}`}>
-
         {/* MASTHEAD: centered identity + KPIs */}
         <header className={`${page.mast} ${classToken} ${orp.headerDecor}`}>
           <h1 className={page.mastName}>{meta?.name ?? "Upgrade Planner"}</h1>
@@ -301,102 +365,78 @@ export default function OptimizerResultPage() {
           <div className={`${page.mastKpis} ${page.kpiRow}`} aria-live="polite">
             <div className={page.kpiPill} title="Average of equipped items">
               <span className={page.kpiLabel}>Current ilvl</span>
-              <strong className={page.kpiValue}>{currentAvgIlvl || "â€”"}</strong>
+              <strong className={page.kpiValue}>{currentAvgIlvl || "—"}</strong>
             </div>
 
             <div
-              className={[
-                page.kpiPill,
-                ilvlDelta > 0 ? page.kpiUp : "",
-                ilvlDelta < 0 ? page.kpiDown : "",
-              ].join(" ")}
+              className={[page.kpiPill, ilvlDelta > 0 ? page.kpiUp : "", ilvlDelta < 0 ? page.kpiDown : ""].join(" ")}
               title="If you apply the recommended upgrades"
             >
               <span className={page.kpiLabel}>Potential ilvl</span>
-              <strong className={page.kpiValue}>{potentialAvgIlvl || "â€”"}</strong>
-              {ilvlDelta !== 0 && (
-                <span className={page.kpiDelta}>
-                  {ilvlDelta > 0 ? "+" : ""}
-                  {ilvlDelta}
-                </span>
-              )}
+              <strong className={page.kpiValue}>{potentialAvgIlvl || "—"}</strong>
+              {ilvlDelta !== 0 && <span className={page.kpiDelta}>{ilvlDelta > 0 ? "+" : ""}{ilvlDelta}</span>}
             </div>
           </div>
         </header>
 
         <div style={{ margin: "24px auto", width: "100%", maxWidth: 760 }}>
-          <GoogleAd
-            slot={AD_SLOTS.optimizerResultHeader}
-            style={{ minHeight: 120 }}
-            placeholderLabel="Results header"
-          />
+          <GoogleAd slot={AD_SLOTS.optimizerResultHeader} style={{ minHeight: 120 }} placeholderLabel="Results header" />
         </div>
 
-        {/* RESULTS HEADER sits closer to the paperdoll area */}
+        {/* RESULTS */}
         <section className={page.results}>
           <div className={`featureCard ${orp.featureCardDecor}`} style={{ padding: 12 }}>
-          <header className={page.resultsHeader}>
-            <div className={page.resultsHeaderBar}>
-              {/* Left: title */}
-              <h2>Recommended Upgrades</h2>
-
-              {/* Center: date */}
-              {meta?.headerLineTimestamp ? (
-                <div className={page.exportStamp}>Exported: {meta.headerLineTimestamp}</div>
-              ) : (
-                <div />
-              )}
-
-              {/* Right: actions */}
-              <div className={page.actions}>
-                <button
-                  className={page.primaryBtn}
-                  onClick={() => navigate("/optimizer")}
-                  aria-label="Start over and return to the optimizer input page"
-                >
-                  <RotateCcw className={page.btnIcon} />
-                  Start Over
-                </button>
-
-                {meta?.armoryUrl && (
-                  <a
+            <header className={page.resultsHeader}>
+              <div className={page.resultsHeaderBar}>
+                <h2>Recommended Upgrades</h2>
+                {meta?.headerLineTimestamp ? <div className={page.exportStamp}>Exported: {meta.headerLineTimestamp}</div> : <div />}
+                <div className={page.actions}>
+                  <button
                     className={page.primaryBtn}
-                    href={meta.armoryUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Open character on the official Armory"
+                    onClick={() => navigate("/optimizer")}
+                    aria-label="Start over and return to the optimizer input page"
                   >
-                    <ExternalLink className={page.btnIcon} />
-                    Armory
-                  </a>
-                )}
+                    <RotateCcw className={page.btnIcon} />
+                    Start Over
+                  </button>
 
-                <button className={page.primaryBtn} onClick={copyLink}>
-                  <Copy className={page.btnIcon} />
-                  Copy Link
-                </button>
-              </div>
-            </div>
-          </header>
+                  {meta?.armoryUrl && (
+                    <a
+                      className={page.primaryBtn}
+                      href={meta.armoryUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="Open character on the official Armory"
+                    >
+                      <ExternalLink className={page.btnIcon} />
+                      Armory
+                    </a>
+                  )}
 
-          {items.length === 0 ? (
-            <div className={page.empty}>
-              <div className={page.emptyBadge}>No data</div>
-              <p className={page.emptyText}>This link doesnâ€™t contain a SimC payload.</p>
-            </div>
-          ) : (
-            <IconUrlsProvider urls={iconMap}>
-              <Paperdoll items={items} plans={plans} />
-              <div style={{ margin: "24px auto", width: "100%", maxWidth: 760 }}>
-                <GoogleAd
-                  slot={AD_SLOTS.optimizerResultInline}
-                  style={{ minHeight: 250 }}
-                  placeholderLabel="Results inline"
-                />
+                  <button className={page.primaryBtn} onClick={copyLink}>
+                    <Copy className={page.btnIcon} />
+                    Copy Link
+                  </button>
+                </div>
               </div>
-              <NarrativePlan plans={plans} ceilingIlvl={ceilingIlvl} />
-            </IconUrlsProvider>
-          )}
+            </header>
+
+            {items.length === 0 ? (
+              <div className={page.empty}>
+                <div className={page.emptyBadge}>No data</div>
+                <p className={page.emptyText}>This link doesn’t contain a SimC payload.</p>
+              </div>
+            ) : (
+              <IconUrlsProvider urls={iconMap}>
+                <Paperdoll items={items} plans={plans} />
+
+                <div style={{ margin: "24px auto", width: "100%", maxWidth: 760 }}>
+                  <GoogleAd slot={AD_SLOTS.optimizerResultInline} style={{ minHeight: 250 }} placeholderLabel="Results inline" />
+                </div>
+
+                <NarrativePlan plans={plans} ceilingIlvl={ceilingIlvl} visualsBySlot={visualsBySlot} />
+              </IconUrlsProvider>
+            )}
           </div>
         </section>
       </main>

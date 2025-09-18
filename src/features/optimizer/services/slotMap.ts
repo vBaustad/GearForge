@@ -81,11 +81,13 @@ export const KEY_TO_SLOT_INDEX: Record<SlotKey, SlotIndex> = Object.entries(
   return acc;
 }, {} as Record<SlotKey, SlotIndex>);
 
+const toArray = <T,>(v: T | T[] | undefined | null): T[] =>
+  v == null ? [] : Array.isArray(v) ? v : [v];
 /**
  * SimC (0-based) → Your (1-based) indices.
  * 16 (ranged/relic) intentionally dropped.
  */
-export const SIMC_TO_USER_SLOT: Partial<Record<number, SlotIndex>> = {
+export const SIMC_TO_USER_SLOT: Partial<Record<number, SlotIndex | SlotIndex[]>> = {
   0: 1,
   1: 2,
   2: 3,
@@ -95,12 +97,13 @@ export const SIMC_TO_USER_SLOT: Partial<Record<number, SlotIndex>> = {
   6: 8,
   7: 9,
   8: 10,
-  9: 11,
-  10: 13,
-  11: 15,
-  12: 16,
+  9:  [11, 12], // fingers -> Ring 1, Ring 2
+  10: [13, 14], // trinkets -> Trinket 1, Trinket 2
+  11: 15,       // back
+  12: [16, 17], // weapons -> Main Hand, Off Hand
 };
 
+  //WOW SLOTS
   // 1: "head",
   // 2: "neck",
   // 3: "shoulder",
@@ -119,7 +122,7 @@ export const SIMC_TO_USER_SLOT: Partial<Record<number, SlotIndex>> = {
   // 17: "off_hand",
 
 
-
+  //FROM SIMC:
   // 0: ["head"],
   // 1: ["neck"],
   // 2: ["shoulder"],
@@ -138,12 +141,21 @@ export const SIMC_TO_USER_SLOT: Partial<Record<number, SlotIndex>> = {
 
 
 /** Convert a SimC 0-based slot number to your SlotKey (or null). */
-export function simcSlotToKey(simcIndex0: number): SlotKey | null {
-  const idx = SIMC_TO_USER_SLOT[simcIndex0];
-  if (!idx) return null;
-  const key = SLOT_INDEX_TO_KEY[idx];
-  return key ?? null;
+// src/features/optimizer/services/slotMap.ts
+
+/** Convert a SimC 0-based slot number to one or more SlotKeys. */
+export function simcSlotToKeys(simcIndex0: number): SlotKey[] {
+  const idxs = toArray(SIMC_TO_USER_SLOT[simcIndex0]);
+  return idxs
+    .map(i => SLOT_INDEX_TO_KEY[i])
+    .filter((k): k is SlotKey => !!k);
 }
+
+/** Back-compat: first key (use simcSlotToKeys for multi-slot-aware code). */
+export function simcSlotToKey(simcIndex0: number): SlotKey | null {
+  return simcSlotToKeys(simcIndex0)[0] ?? null;
+}
+
 
 /**
  * Fold parsed watermarks (1-based SlotIndex) into a mapping the planner can use:

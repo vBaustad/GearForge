@@ -1,18 +1,20 @@
 // src/features/optimizer/services/itemMeta.ts
-export type RarityToken =
-  | "poor" | "common" | "uncommon" | "rare" | "epic"
-  | "legendary" | "artifact" | "heirloom";
+export type ItemMeta = { iconUrl?: string; iconName?: string };
+export type ItemMetaOpts = { bonusIds?: number[]; level?: number; context?: string };
 
-export interface ItemMeta { iconUrl: string; iconName?: string; rarity?: RarityToken }
+export async function getItemMeta(
+  id?: number,
+  opts: ItemMetaOpts = {}
+): Promise<ItemMeta | undefined> {
+  if (!id) return undefined;
 
-const cache = new Map<number, ItemMeta>();
+  const qs = new URLSearchParams();
+  // kept for signature stability; server ignores for icons
+  if (typeof opts.level === "number") qs.set("level", String(opts.level));
+  if (opts.bonusIds?.length) qs.set("bonus", opts.bonusIds.join(":"));
+  if (opts.context) qs.set("context", opts.context);
 
-export async function getItemMeta(id: number): Promise<ItemMeta> {
-  const hit = cache.get(id);
-  if (hit) return hit;
-  const r = await fetch(`/api/wow/item/${id}/meta`);
-  const j = (await r.json()) as ItemMeta & { error?: string };
-  if (!r.ok || !j.iconUrl) throw new Error(j.error || `meta failed for ${id}`);
-  cache.set(id, j);
-  return j;
+  const r = await fetch(`$/api/wow/item/${id}/meta${qs.size ? `?${qs}` : ""}`);
+  if (!r.ok) throw new Error(await r.text());
+  return r.json() as Promise<ItemMeta>;
 }
