@@ -1,7 +1,7 @@
 // src/config/seasons/the_war_within/season_3/season.ts
 import { composeSeason } from "../../utils/composeSeason";
 import { trackTemplates } from "../../../../data/trackDefinitions";
-import { bonusUpgradeIndex } from "../../../../data/upgradeIndex";
+import { bonusUpgradeIndex } from "./bonusUpgradeIndex";
 
 import { ilvlByRank_tww_s3 as ilvlByRank } from "./ilvlByRank";
 import { seasonMeta as meta } from "./season.meta";
