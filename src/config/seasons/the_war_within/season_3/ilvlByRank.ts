@@ -1,3 +1,4 @@
+// src/config/seasons/the_war_within/season_3/ilvlByRank.ts
 export const ilvlByRank_tww_s3 = {
   Explorer:   { 1:642, 2:645, 3:649, 4:652, 5:655, 6:658, 7:662, 8:665 },
   Adventurer: { 1:655, 2:658, 3:662, 4:665, 5:668, 6:671, 7:675, 8:678 },

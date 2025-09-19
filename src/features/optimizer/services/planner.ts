@@ -1,22 +1,26 @@
+// src/features/optimizer/services/planner.ts
+
 import { tracks } from "../proxy/registry"; // import track definitions for upgrade logic
 import { season } from "../../../config/seasons/currentSeason"; // import current season configuration for limits
 import { watermarksToFreeIlvlBySlot } from "./slotMap"; // import slot helper to map watermarks to slot keys
 import { crestDiscountsFromAchievements } from "./achievementDiscounts"; // import helper for crest discount lookup
-import type { // import type-only symbols used by the planner
-  TrackKey, // track identifier type
-  Crest, // crest tier identifier type
-  ItemState, // shape describing an item's current state
-  PlayerContext, // shape describing player-specific inputs
-  StepPlan, // shape describing a single upgrade step
-  ItemPlan, // shape describing the plan for one item
-  PlanAllResult, // shape describing the combined plan output
-  SlotKey, // slot identifier type used for watermark lookup
-  SlotWatermark, // watermark payload for each slot
-  AchievementId, // achievement identifier type for discounts
-  TrackStep,
-} from "../types/simc"; // location of shared optimizer types
+import { findUpgradeByBonusIds } from "../../../data/upgradeIndex"; // season-scoped bonusId matcher
 
-const NO_CREST_UPGRADE_ITEM_IDS = new Set(season.noCrestUpgradeItemIds ?? []); // set of item ids that cannot be crest upgraded
+import type {
+  TrackKey,
+  Crest,
+  ItemState,
+  PlayerContext,
+  StepPlan,
+  ItemPlan,
+  PlanAllResult,
+  SlotKey,
+  SlotWatermark,
+  AchievementId,
+  TrackStep,
+} from "../types/simc";
+
+const NO_CREST_UPGRADE_ITEM_IDS = new Set(season.noCrestUpgradeItemIds ?? []);
 
 /* ------------------------- helpers ------------------------- */
 
@@ -52,6 +56,26 @@ function hasNextStepAtRank(steps: TrackStep[], rank: number): boolean {
   return steps.some(s => s.from === rank);
 }
 
+/** Produce a blocked/legacy plan (no steps). */
+function makeBlockedPlan(item: ItemState, reason: string): ItemPlan {
+  // Use the item's declared track if possible, else default to Hero (arbitrary) for ilvl lookup safety
+  const declaredTrack: TrackKey = item.track ?? "Hero";
+  const t = tracks[declaredTrack];
+  const from = Math.min(Math.max(1, item.rank), t.maxRank);
+  const ilvl = t.ilvlByRank[from];
+
+  return {
+    slot: item.slot,
+    fromRank: from,
+    toRank: from,
+    fromIlvl: ilvl,
+    toIlvl: ilvl,
+    steps: [],
+    crestTotals: {},
+    note: reason,
+  };
+}
+
 /**
  * Determine target rank using your rules:
  * - If watermark exists → target=watermark rank (free baseline).
@@ -64,7 +88,7 @@ function hasNextStepAtRank(steps: TrackStep[], rank: number): boolean {
  */
 function chooseTargetRank(
   item: ItemState,
-  _dropCeilingIlvl: number, // not used by these rules now; kept for signature compatibility
+  _dropCeilingIlvl: number,
   opts: { watermarkIlvl?: number } = {}
 ): number {
   const t = tracks[item.track];
@@ -96,28 +120,23 @@ function chooseTargetRank(
 
   switch (next.crest) {
     case "Weathered": {
-      // Push through all contiguous Weathered steps
       target = endOfCrestStreak(stepsByFrom, target, "Weathered");
       break;
     }
     case "Carved": {
-      // Push through all contiguous Carved steps
       target = endOfCrestStreak(stepsByFrom, target, "Carved");
       break;
     }
     case "Runed": {
-      // Only if we are exactly at the 701 breakpoint → allow one step to 704
       const ilvlAtBaseline = t.ilvlByRank[baseline];
       if (ilvlAtBaseline === 701) {
         const s = stepsByFrom.get(target);
         if (s && s.crest === "Runed") target = Math.min(s.to, t.maxRank);
       }
-      // else: stay at baseline
       break;
     }
     case "Gilded": {
       // Non-Myth should not spend Gilded → stay at baseline
-      // (Myth handled above)
       break;
     }
   }
@@ -129,6 +148,12 @@ function chooseTargetRank(
 
 /**
  * Construct a detailed crest upgrade plan for a single item.
+ *
+ * Order of checks:
+ *  1) Crafted?                  → block with crafted note.
+ *  2) Explicit no-crest list?   → block with season note.
+ *  3) No current-season bonus?  → block as legacy.
+ *  4) Otherwise: plan normally using decoded (track, rank).
  */
 export function planItemUpgrade(
   item: ItemState,
@@ -138,31 +163,52 @@ export function planItemUpgrade(
     crestDiscounts?: Partial<Record<Crest, number>>;
   }
 ): ItemPlan {
-  const t = tracks[item.track];
-  const from = Math.min(Math.max(1, item.rank), t.maxRank);
-  const dropCeilingIlvl = ctx.dropCeilingIlvl ?? season.defaultDropCeilingIlvl;
-  const watermarkIlvlRaw = ctx.watermarkIlvlBySlot?.[item.slot];
+  // 1) Crafted items never use crest upgrades
+  if (item.crafted) {
+    return makeBlockedPlan(item, "Crafted item — upgrades use crafting systems, not crests.");
+  }
 
-  // BLOCKING RULES
-  const inNoCrestList = (item.id != null && NO_CREST_UPGRADE_ITEM_IDS.has(item.id));
-  const nextStepExists = hasNextStepAtRank(t.steps, from); // legacy / maxed items won't have this
-  // Anything not actually crest-upgradeable from the current rank is "blocked" for our purposes
-  const isBlocked = inNoCrestList || item.crafted || !nextStepExists;
+  // 2) Explicitly disabled by season rules
+  if (item.id != null && NO_CREST_UPGRADE_ITEM_IDS.has(item.id)) {
+    return makeBlockedPlan(item, "This item is not crest-upgradable this season.");
+  }
+
+  // 3) Require a season bonus-id hit; otherwise legacy/ambiguous.
+  const bonusHit = findUpgradeByBonusIds(item.bonusIds ?? null);
+  if (!bonusHit) {
+    return makeBlockedPlan(item, "Legacy — no current-season upgrade bonus in bonus_ids.");
+  }
+
+  // Use decoded (track, rank) from bonus-hit for all logic
+  const itemEff: ItemState = {
+    ...item,
+    track: bonusHit.name as TrackKey,
+    rank: bonusHit.level,
+  };
+
+  const t = tracks[itemEff.track];
+  const from = Math.min(Math.max(1, itemEff.rank), t.maxRank);
+  const dropCeilingIlvl = ctx.dropCeilingIlvl ?? season.defaultDropCeilingIlvl;
+  const watermarkIlvlRaw = ctx.watermarkIlvlBySlot?.[itemEff.slot];
+
+  // BLOCKING RULES (contextual)
+  const nextStepExists = hasNextStepAtRank(t.steps, from);
+  const isBlocked = !nextStepExists; // crafted/no-crest already returned above
 
   // Watermark → rank (only applies to non-blocked items)
   const watermarkRank =
     !isBlocked &&
     typeof watermarkIlvlRaw === "number" &&
     Number.isFinite(watermarkIlvlRaw)
-      ? highestRankAtOrBelowIlvl(item.track, watermarkIlvlRaw)
+      ? highestRankAtOrBelowIlvl(itemEff.track, watermarkIlvlRaw)
       : undefined;
 
   const baseline = Math.max(from, watermarkRank ?? from);
 
-  // Proposed target
-  let target = chooseTargetRank(item, dropCeilingIlvl, { watermarkIlvl: watermarkIlvlRaw });
+  // Proposed target using effective track/rank
+  let target = chooseTargetRank(itemEff, dropCeilingIlvl, { watermarkIlvl: watermarkIlvlRaw });
 
-  // Never lift blocked items via watermark; otherwise, enforce baseline
+  // Enforce baseline; never lift blocked via watermark
   if (isBlocked) {
     target = from;
   } else if (target < baseline) {
@@ -198,18 +244,13 @@ export function planItemUpgrade(
 
   // NOTES (ordered by specificity)
   let note: string | undefined;
-  if (inNoCrestList) {
-    // e.g., belts flagged by season rules
-    note = "This item is not crest-upgradable this season.";
-  } else if (item.crafted) {
-    note = "Crafted item — upgrades use crafting systems, not crests.";
-  } else if (!nextStepExists) {
-    // Legacy or already max
+  // crafted / no-crest handled earlier
+  if (!nextStepExists) {
     note = from >= t.maxRank
       ? "Already at the maximum rank for this track."
       : "Legacy item — no crest upgrade path available from its current rank.";
-  } else if (item.track === "Hero") {
-    const ilvlNow = item.ilvl ?? fromIlvl;
+  } else if (itemEff.track === "Hero") {
+    const ilvlNow = itemEff.ilvl ?? fromIlvl;
     const runedStepCost = t.steps.find((s) => s.crest === "Runed")?.cost ?? 15;
     if (baseline === from && target === baseline && ilvlNow < dropCeilingIlvl) {
       note =
@@ -219,7 +260,7 @@ export function planItemUpgrade(
     } else if (target === from) {
       note = "Already beyond the efficient Runed breakpoint — save Gilded for Myth upgrades.";
     }
-  } else if (item.track === "Champion" && target === from) {
+  } else if (itemEff.track === "Champion" && target === from) {
     note = "Champion past the cheap breakpoint spends Runed — save those for better slots.";
   }
 
@@ -228,7 +269,7 @@ export function planItemUpgrade(
   }
 
   return {
-    slot: item.slot,
+    slot: itemEff.slot,
     fromRank: from,
     toRank: target,
     fromIlvl,
@@ -243,50 +284,57 @@ export function planItemUpgrade(
 /**
  * Generate upgrade plans for all items and aggregate crest totals.
  */
-export function planAll( // export bulk planner
-  items: ItemState[], // full list of items to evaluate
-  ctx: PlayerContext & { // optional planning context
-    crestStock?: Partial<Record<Crest, number>>; // optional crest inventory context
-    watermarks?: SlotWatermark[]; // optional slot watermarks
-    achievements?: AchievementId[]; // optional achievements for crest discounts
+export function planAll(
+  items: ItemState[],
+  ctx: PlayerContext & {
+    crestStock?: Partial<Record<Crest, number>>;
+    watermarks?: SlotWatermark[];
+    achievements?: AchievementId[];
   }
-): PlanAllResult { // return aggregated result
-  const dropCeilingIlvl = ctx.dropCeilingIlvl ?? season.defaultDropCeilingIlvl; // resolve drop ceiling constraint
-  const heroCeilingRank = highestRankAtOrBelowIlvl("Hero", dropCeilingIlvl); // derive hero rank matching ceiling
-  const heroTrack = tracks.Hero; // cache hero track info
-  const watermarkIlvlBySlot = ctx.watermarks ? watermarksToFreeIlvlBySlot(ctx.watermarks) : {}; // map watermarks to slot keys
-  const crestDiscounts = crestDiscountsFromAchievements(ctx.achievements); // derive crest discounts from achievements
+): PlanAllResult {
+  const dropCeilingIlvl = ctx.dropCeilingIlvl ?? season.defaultDropCeilingIlvl;
+  const heroTrack = tracks.Hero;
+  const watermarkIlvlBySlot = ctx.watermarks ? watermarksToFreeIlvlBySlot(ctx.watermarks) : {};
+  const crestDiscounts = crestDiscountsFromAchievements(ctx.achievements);
 
-  let heroAtCeiling = 0; // count hero items at the ceiling rank
-  for (const it of items) { // scan each item
-    if (it.track !== "Hero") continue; // skip non-hero entries
-    const t = tracks[it.track]; // fetch track for hero item
-    const from = Math.min(Math.max(1, it.rank), t.maxRank); // clamp hero rank within track
-    if (from === heroCeilingRank) heroAtCeiling++; // increment when hero item sits at ceiling
+  // Count Hero items at ceiling using *effective* (track, rank) and skipping legacy items
+  let heroAtCeiling = 0;
+  for (const it of items) {
+    // Skip crafted and explicit no-crest here; they don't consume Runed
+    if (it.crafted) continue;
+    if (it.id != null && NO_CREST_UPGRADE_ITEM_IDS.has(it.id)) continue;
+
+    const hit = findUpgradeByBonusIds(it.bonusIds ?? null);
+    if (!hit) continue; // legacy — skip
+    if (hit.name !== "Hero") continue;
+
+    const t = tracks.Hero;
+    const from = Math.min(Math.max(1, hit.level), t.maxRank);
+    const heroCeilingRank = highestRankAtOrBelowIlvl("Hero", dropCeilingIlvl);
+    if (from === heroCeilingRank) heroAtCeiling++;
   }
 
-  const runedStepCostFromCeiling = // derive cost of first Runed bump past ceiling
-    heroTrack.steps // inspect hero steps
-      .find((s) => s.crest === "Runed" && s.from === heroCeilingRank)?.cost // prefer step starting at ceiling rank
-    ?? heroTrack.steps.find((s) => s.crest === "Runed")?.cost // otherwise use any Runed step cost
-    ?? 15; // fallback to default cost
+  const runedStepCostFromCeiling =
+    heroTrack.steps.find((s) => s.crest === "Runed" && s.from === highestRankAtOrBelowIlvl("Hero", dropCeilingIlvl))?.cost
+    ?? heroTrack.steps.find((s) => s.crest === "Runed")?.cost
+    ?? 15;
 
-  const baselineRuned = heroAtCeiling * runedStepCostFromCeiling; // estimate Runed needed to push all ceiling items
-  const availableRuned = ctx.crestStock?.Runed ?? 0; // check current Runed inventory
-  const surplusRuned = Math.max(0, availableRuned - baselineRuned); // compute surplus Runed beyond baseline
+  const baselineRuned = heroAtCeiling * runedStepCostFromCeiling;
+  const availableRuned = ctx.crestStock?.Runed ?? 0;
+  const surplusRuned = Math.max(0, availableRuned - baselineRuned);
 
-  const plans = items.map((it) => // build per-item plans with surplus and discounts
-    planItemUpgrade(it, { ...ctx, surplusRuned, watermarkIlvlBySlot, crestDiscounts }) // include derived helpers
+  const plans = items.map((it) =>
+    planItemUpgrade(it, { ...ctx, surplusRuned, watermarkIlvlBySlot, crestDiscounts })
   );
-  const totals: Partial<Record<Crest, number>> = {}; // prepare crest total aggregator
 
-  for (const p of plans) { // accumulate costs across item plans
-    for (const [crest, cost] of Object.entries(p.crestTotals)) { // iterate crest totals per item
-      const value = cost ?? 0; // normalise possibly undefined costs
-      if (!value) continue; // skip zero values
-      totals[crest as Crest] = (totals[crest as Crest] ?? 0) + value; // add crest cost to aggregate
+  const totals: Partial<Record<Crest, number>> = {};
+  for (const p of plans) {
+    for (const [crest, cost] of Object.entries(p.crestTotals)) {
+      const value = cost ?? 0;
+      if (!value) continue;
+      totals[crest as Crest] = (totals[crest as Crest] ?? 0) + value;
     }
   }
 
-  return { plans, totals }; // expose plan list and crest totals
+  return { plans, totals };
 }
