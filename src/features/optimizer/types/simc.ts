@@ -93,7 +93,7 @@ export interface StepPlan {
   from: number;
   to: number;
   crest: Crest;
-  cost: number;      // always 15 (S3)
+  cost: number;      // crest cost after discounts (0 when free)
   newIlvl: number;   // ilvl at 'to'
 }
 

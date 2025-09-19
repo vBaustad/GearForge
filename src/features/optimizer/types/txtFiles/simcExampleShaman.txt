@@ -1,6 +1,6 @@
-# Sykkeltyven - Restoration - 2025-09-02 13:36 - EU/Stormscale
+# Sykkeltyven - Elemental - 2025-09-17 04:17 - EU/Stormscale
 # SimC Addon 11.2.0-alpha06
-# WoW 11.2.0.62876, TOC 110200
+# WoW 11.2.0.63163, TOC 110200
 # Requires SimulationCraft 1000-01 or newer
 
 shaman="Sykkeltyven"
@@ -8,73 +8,91 @@ level=80
 race=dwarf
 region=eu
 server=stormscale
-role=attack
+role=spell
 professions=tailoring=55/enchanting=1
-spec=restoration
-# loot_spec=restoration
+spec=elemental
+# loot_spec=elemental
 
-talents=CgQAL+iDLHPJSLC+6fqMJ8tubCAAAAAGAAAAAjZmZZmtZmZMWsNWMgFYBmxmGbDIzE2YmZWsM2mZmZystYmZaMDzshlZGDGDzyYAAwA
+talents=CYQAL+iDLHPJSLC+6fqMJ8tubCAAAAAMbz2yMzMzY2mlxMgZmZAAAAA2Mz2mZmhNTWY2mZaoZ2AAz20MgNMz0wMzMbzYZGzgZZsYZmxghZ2GA
 
-# Saved Loadout: totemic raid
-# talents=CgQAL+iDLHPJSLC+6fqMJ8tubCAAAAAGAAAAAjZmZZmtZmZMWsNWMgFYBmxGjtBwMwGzMzilx2MzMDz2iZmxYGmZDLzMGMGmlxAAgB
+# Saved Loadout: M+
+# talents=CYQAL+iDLHPJSLC+6fqMJ8tubCAAAAAMbz2yMzMzY2mlxMgZmZAAAAA2Mz2mZmhNDLMbzMGMzGAY2GzA2wMjhZmZ2mxyMmBzyYxyMjBDzsNA
 
-# Sanitized Scraphood (629)
-head=,id=228859,bonus_id=6652/12176/11965/10353/11971/1478/10255
-# Reshii Magi's Pendant (655)
-neck=,id=246064,bonus_id=12274/11311/6652/10395/10878/3184/10254
-# Reshii Skirmisher's Pauldrons (655)
-shoulder=,id=239469,bonus_id=12274/11311/6652/3184/10254
+# Aspect of Channeled Fury (694)
+head=,id=237637,bonus_id=12350/6652/12921/10390/12231/12676/1504
+# Void-Scarred Choker (701)
+neck=,id=237962,gem_id=213743/213491,bonus_id=6652/12352/9922/10255/10879/10396
+# Fangs of Channeled Fury (701)
+shoulder=,id=237635,bonus_id=12233/12675/12352/1511/10255
 # Reshii Wraps (730)
-back=,id=235499,bonus_id=12401/9893
-# Nightfall Shadowalker's Chainmail (642)
-chest=,id=237453,bonus_id=12265/6652/10844/1504
+back=,id=235499,enchant_id=7403,gem_id=238042,bonus_id=12401/9893/12259
+# Furs of Channeled Fury (694)
+chest=,id=237640,enchant_id=7364,bonus_id=12350/6652/10390/12229/12676/1504
 # Guild Tabard (1)
 tabard=,id=5976
-# Nightfall Shadowalker's Bracers (642)
-wrist=,id=237460,bonus_id=12265/6652/12921/10844/1504
-# Reshii Skirmisher's Gauntlets (655)
-hands=,id=239466,bonus_id=12274/11311/6652/3184/10254
-# Colossal Lifetether (671)
-waist=,id=237522,bonus_id=6652/12365/12239/10353/12283/1481/10255
-# Gale Sovereign's Pantaloons (623)
-legs=,id=229261,bonus_id=11969/11961/43/12178/1472/10255
-# Reshii Skirmisher's Boots (655)
-feet=,id=239465,bonus_id=12274/11311/6652/3184/10254
-# Signet of Repose (632)
-finger1=,id=239009,bonus_id=6652/8812/11972/11311/10394/10878/12090/10067/10255
-# Malleable Band (590)
-finger2=,id=215130,bonus_id=11295/11296/4785/10878/10394/9627/8793/11142,crafted_stats=49/32,crafting_quality=5
-# Depleted K'areshi Battery (655)
-trinket1=,id=240172,bonus_id=12274/11311/6652/3184/10254
-# Automatic Footbomb Dispenser (671)
-trinket2=,id=242867,bonus_id=12283/40/11215/1533/10255
-# Mandibular Bonewhacker (688)
-main_hand=,id=242470,bonus_id=12292/6652/10384/11215/3180/10255
-# Ward of the Weaving-Beast (671)
-off_hand=,id=237723,bonus_id=6652/10353/12283/1481/10255
+# Glyph-Etched Vambraces (720)
+wrist=,id=219342,enchant_id=7385,bonus_id=10421/9633/8902/9627/12053/11109/8960/8793/12050/12921,crafted_stats=40/36,crafting_quality=5
+# Claws of Channeled Fury (691)
+hands=,id=237638,bonus_id=10353/12230/6652/12675/12289/1501/10255
+# Durable Information Securing Container (701)
+waist=,id=245965,gem_id=213494,bonus_id=12533/1489,titan_disc_id=1236275
+# Swampface's Oozewalkers (701)
+legs=,id=246277,enchant_id=7534,bonus_id=12352/10390/6652/12239/10383/1550/10255
+# Interloper's Chain Boots (691)
+feet=,id=243308,enchant_id=7424,bonus_id=6652/12239/10354/13502/12293/1501/10255
+# Malleable Band (675)
+finger1=,id=215130,enchant_id=7346,gem_id=213473/213494,bonus_id=11295/11296/4785/10879/10396/9627/8792/12051,crafted_stats=32/49,crafting_quality=5
+# High Nerubian Signet (694)
+finger2=,id=221141,enchant_id=7346,gem_id=213482/213458,bonus_id=12350/10390/6652/10383/3186/10255/10879/10396
+# Incorporeal Warpclaw (694)
+trinket1=,id=242495,bonus_id=12350/10390/6652/10383/3186/10255
+# Azhiccaran Parapodia (707)
+trinket2=,id=242497,bonus_id=12356/10390/6652/10383/3199/10255
+# Charged Runeaxe (720)
+main_hand=,id=222445,enchant_id=7448,bonus_id=10421/9633/8902/9627/8793/12050/12053/11300/8960,crafted_stats=40/32,crafting_quality=5
+# Package Protector (694)
+off_hand=,id=185811,bonus_id=12350/10390/6652/10383/10006/10255
 
 ### Gear from Bags
 #
-# Vestments of the Forgotten Reservoir (616)
-# chest=,id=212014,bonus_id=10263/10355/10373/6652/1517/10255
+# Cabochon of the Infinite Flight (701)
+# neck=,id=185820,bonus_id=12352/10390/42/10394/10392/10383/10013/10255
 #
-# Pyremail Wristguards (600)
-# wrist=,id=231405,bonus_id=6652/10877/10376/10272/12093/10383/1488/10255
+# Heartstone of Rhyolith (694)
+# neck=,id=171682,gem_id=213746/213494,bonus_id=7756/10383/40/10879/10396/12294/11374/10255
 #
-# Unmelting Ironworker Clasp (597)
-# waist=,id=223307,bonus_id=10273/10377/10876/1669/10255
+# Claws of Tainted Ichor (694)
+# hands=,id=221162,bonus_id=12350/10390/6652/12239/10383/3186/10255
 #
-# Brilliant Beacon (671)
-# off_hand=,id=211041,bonus_id=12283/6652/11215/1576/10255
+# Signet of Collapsing Stars (701)
+# finger1=,id=185813,bonus_id=12352/10390/6652/10395/10393/10383/10013/10255
+#
+# So'leah's Secret Technique (701)
+# trinket1=,id=190958,bonus_id=12352/10390/6652/10383/10013/10255
+#
+# Automatic Footbomb Dispenser (671)
+# trinket1=,id=242867,bonus_id=12283/40/11215/1533/10255
+#
+# Diamantine Voidcore (701)
+# trinket1=,id=242392,bonus_id=6652/10354/12296/1511/10255
+#
+# Mana-Seamster's Arcane-Needle (681)
+# main_hand=,id=246071,bonus_id=12290/6652/1491/10255
+#
+# Exile's Beacon (684)
+# main_hand=,id=238004,bonus_id=12291/6652/9881/10255
+#
+# Bulwark of the Great Dark (694)
+# off_hand=,id=238007,bonus_id=12350/6652/9891/10255
 
 ### Additional Character Info
 #
-# catalyst_currencies=3269:2/2813:8/3116:8
+# catalyst_currencies=3269:1/2813:8/3116:8
 #
-# upgrade_currencies=c:3284:65/c:3286:15/c:3008:428/i:228338:1/i:224072:1/i:211296:1/i:231769:1
+# upgrade_currencies=c:3284:33/c:3290:126/c:3288:168/c:3286:75/c:3008:1856/i:224072:4/i:230936:1/i:231769:1
 #
-# slot_high_watermarks=0:629:704/1:655:704/2:655:704/3:642:704/4:671:704/5:623:704/6:655:704/7:642:720/8:655:704/9:590:704/10:655:704/11:730:730/12:270:701/13:619:710/14:619:675/15:610:610/16:671:720
+# slot_high_watermarks=0:694:723/1:701:704/2:701:723/3:694:704/4:701:704/5:701:704/6:691:704/7:720:720/8:694:704/9:694:704/10:701:704/11:730:730/12:684:704/13:720:720/14:619:675/15:610:675/16:694:720
 #
 # upgrade_achievements=19326/19397/19398/19577/19578/19579/40107/40115/40118/40942/40943/41886/41887/41888
 
-# Checksum: 9fe052d4
+# Checksum: 938b57b7

@@ -1,34 +1,34 @@
-type LinkProps = {
-  id: number;
+// src/features/optimizer/components/WowheadLink.tsx
+import { forwardRef, type ComponentPropsWithoutRef } from "react";
+
+function buildWowheadHref(itemId: number, opts: { ilvl?: number; bonusIds?: number[] }) {
+  const params: string[] = [];
+  if (opts.ilvl && Number.isFinite(opts.ilvl)) params.push(`ilevel=${opts.ilvl}`);
+  if (opts.bonusIds?.length) params.push(`bonus=${opts.bonusIds.join(":")}`);
+  const qs = params.length ? `?${params.join("&")}` : "";
+  return `https://www.wowhead.com/item=${itemId}${qs}`;
+}
+
+type AnchorBaseProps = Omit<ComponentPropsWithoutRef<"a">, "href" | "id">;
+
+export type WowheadLinkProps = AnchorBaseProps & {
+  /** Numeric item id for Wowhead (renamed from `id` to avoid clash with HTML `id` string) */
+  itemId: number;
   ilvl?: number;
-  bonusIds?: number[]; // value is colon-separated, e.g. 123:456
-  className?: string;
+  bonusIds?: number[];
   title?: string;
-  children: React.ReactNode;
+  className?: string;
 };
 
-function buildParams({ ilvl, bonusIds }: { ilvl?: number; bonusIds?: number[] }) {
-  const parts: string[] = [];
-  if (ilvl) parts.push(`ilvl=${ilvl}`);
-  if (bonusIds?.length) parts.push(`bonus=${bonusIds.join(":")}`);
-  return parts.join("&"); // keys use &, only bonus value uses :
-}
+export const WowheadLink = forwardRef<HTMLAnchorElement, WowheadLinkProps>(
+  ({ itemId, ilvl, bonusIds, title, className, children, ...rest }, ref) => {
+    const href = buildWowheadHref(itemId, { ilvl, bonusIds });
+    return (
+      <a ref={ref} href={href} title={title} className={className} {...rest}>
+        {children}
+      </a>
+    );
+  }
+);
 
-export function WowheadLink({ id, ilvl, bonusIds, className, title, children }: LinkProps) {
-  const params = buildParams({ ilvl, bonusIds });
-  const href = `https://www.wowhead.com/item=${id}${params ? `?${params}` : ""}`;
-
-  return (
-    <a
-      href={href}
-      data-wowhead={params || undefined}      // tooltips read this
-      data-wh-rename-link="false"
-      target="_blank"
-      rel="noopener noreferrer"
-      className={className}
-      title={title}
-    >
-      {children}
-    </a>
-  );
-}
+WowheadLink.displayName = "WowheadLink";

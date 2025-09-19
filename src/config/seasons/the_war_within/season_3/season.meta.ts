@@ -31,7 +31,7 @@ export const seasonMeta = {
     catalyst: { startISO: "2025-07-30", cadenceWeeks: 2 },
   },
 
-  noCrestUpgradeItemIds: [235499, 245964],
+  noCrestUpgradeItemIds: [235499, 245965],
 } satisfies Pick<
   SeasonConfig,
   | "id"
