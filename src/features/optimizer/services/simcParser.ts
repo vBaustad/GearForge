@@ -10,6 +10,8 @@ import type {
   ProfessionRank,
 } from "../types/simc";
 import { SIMC_TO_USER_SLOT } from "./slotMap";
+// NEW: season-aware decoder for (track, rank) from bonus IDs
+import { decodeTrackRankFromBonusIds } from "../../../data/upgradeIndex";
 
 /* ---------- constants ---------- */
 
@@ -60,7 +62,6 @@ function parseUpgradeWallet(line: string): UpgradeWalletEntry[] {
   }).filter((x): x is UpgradeWalletEntry => !!x);
 }
 
-// src/features/optimizer/services/simcParser.ts
 function parseWatermarksSimcToUser(line: string): SlotWatermark[] {
   if (!line) return [];
   const out: SlotWatermark[] = [];
@@ -80,7 +81,6 @@ function parseWatermarksSimcToUser(line: string): SlotWatermark[] {
   }
   return out;
 }
-
 
 function parseAchievements(line: string): AchievementId[] {
   if (!line) return [];
@@ -181,7 +181,7 @@ export function parseSimc(text: string): ParsedItem[] {
 
     // Crafted markers (examples: crafted_stats=, crafting_quality=, titan_disc_id=, spark)
     const crafted = /(?:\bcrafted_stats=|\bcrafting_quality=|\bspark\b|crafted_stats\b)/i.test(rhs);
-    
+
     for (const kv of kvs) {
       const [key, valRaw] = kv.split("=");
       if (!key) continue;
@@ -204,6 +204,9 @@ export function parseSimc(text: string): ParsedItem[] {
     }
 
     if (typeof id === "number") {
+      // NEW: try to decode (track, rank) from bonus IDs using the active season
+      const decoded = decodeTrackRankFromBonusIds(bonusIds);
+
       items.push({
         slot,
         id,
@@ -214,6 +217,9 @@ export function parseSimc(text: string): ParsedItem[] {
         bonusIds: bonusIds.length ? bonusIds : undefined,
         raw,
         crafted,
+        // NEW: attach decoded values when present
+        track: decoded?.track,
+        rank: decoded?.rank,
       });
       seenSlots.add(slot);
     }

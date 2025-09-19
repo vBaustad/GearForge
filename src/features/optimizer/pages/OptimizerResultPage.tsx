@@ -18,8 +18,6 @@ import orp from "./optimizerResultPage.module.css";
 import { GoogleAd } from "../../../components/ads/GoogleAd";
 import { AD_SLOTS } from "../../../config/ads";
 
-// 🚫 removed: useItemMeta — we no longer fetch per-slot meta here
-
 // Local: UI rarity set we style for
 type DisplayRarity = "poor" | "common" | "uncommon" | "rare" | "epic" | "legendary";
 
@@ -354,89 +352,121 @@ export default function OptimizerResultPage() {
     return v;
   }, [bySlot, iconMap]);
 
-  return (
+   return (
     <PageSplashGate durationMs={2000} oncePerSession={false} storageKey="gf-opt-splash-seen">
       <main className={`${page.wrap} ${page.wrapWide}`}>
-        {/* MASTHEAD: centered identity + KPIs */}
-        <header className={`${page.mast} ${classToken} ${orp.headerDecor}`}>
-          <h1 className={page.mastName}>{meta?.name ?? "Upgrade Planner"}</h1>
-          {meta && <div className={page.mastSubline}>{subtitle}</div>}
+        {/* ONE continuous panel (mast + ad + results) */}
+        <section aria-label="Upgrade results" className={orp.board}>
+          <div className={orp.boardBody}>
+            {/* Mast section */}
+            <div className={orp.section}>
+              <header className={`${page.mast} ${classToken}`}>
+                <h1 className={page.mastName}>{meta?.name ?? "Upgrade Planner"}</h1>
+                {meta && <div className={page.mastSubline}>{subtitle}</div>}
 
-          <div className={`${page.mastKpis} ${page.kpiRow}`} aria-live="polite">
-            <div className={page.kpiPill} title="Average of equipped items">
-              <span className={page.kpiLabel}>Current ilvl</span>
-              <strong className={page.kpiValue}>{currentAvgIlvl || "—"}</strong>
-            </div>
+                <div className={`${page.mastKpis} ${page.kpiRow}`} aria-live="polite">
+                  <div className={page.kpiPill} title="Average of equipped items">
+                    <span className={page.kpiLabel}>Current ilvl</span>
+                    <strong className={page.kpiValue}>{currentAvgIlvl || "—"}</strong>
+                  </div>
 
-            <div
-              className={[page.kpiPill, ilvlDelta > 0 ? page.kpiUp : "", ilvlDelta < 0 ? page.kpiDown : ""].join(" ")}
-              title="If you apply the recommended upgrades"
-            >
-              <span className={page.kpiLabel}>Potential ilvl</span>
-              <strong className={page.kpiValue}>{potentialAvgIlvl || "—"}</strong>
-              {ilvlDelta !== 0 && <span className={page.kpiDelta}>{ilvlDelta > 0 ? "+" : ""}{ilvlDelta}</span>}
-            </div>
-          </div>
-        </header>
-
-        <div style={{ margin: "24px auto", width: "100%", maxWidth: 760 }}>
-          <GoogleAd slot={AD_SLOTS.optimizerResultHeader} style={{ minHeight: 120 }} placeholderLabel="Results header" />
-        </div>
-
-        {/* RESULTS */}
-        <section className={page.results}>
-          <div className={`featureCard ${orp.featureCardDecor}`} style={{ padding: 12 }}>
-            <header className={page.resultsHeader}>
-              <div className={page.resultsHeaderBar}>
-                <h2>Recommended Upgrades</h2>
-                {meta?.headerLineTimestamp ? <div className={page.exportStamp}>Exported: {meta.headerLineTimestamp}</div> : <div />}
-                <div className={page.actions}>
-                  <button
-                    className={page.primaryBtn}
-                    onClick={() => navigate("/optimizer")}
-                    aria-label="Start over and return to the optimizer input page"
+                  <div
+                    className={[
+                      page.kpiPill,
+                      ilvlDelta > 0 ? page.kpiUp : "",
+                      ilvlDelta < 0 ? page.kpiDown : "",
+                    ].join(" ")}
+                    title="If you apply the recommended upgrades"
                   >
-                    <RotateCcw className={page.btnIcon} />
-                    Start Over
-                  </button>
-
-                  {meta?.armoryUrl && (
-                    <a
-                      className={page.primaryBtn}
-                      href={meta.armoryUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label="Open character on the official Armory"
-                    >
-                      <ExternalLink className={page.btnIcon} />
-                      Armory
-                    </a>
-                  )}
-
-                  <button className={page.primaryBtn} onClick={copyLink}>
-                    <Copy className={page.btnIcon} />
-                    Copy Link
-                  </button>
+                    <span className={page.kpiLabel}>Potential ilvl</span>
+                    <strong className={page.kpiValue}>{potentialAvgIlvl || "—"}</strong>
+                    {ilvlDelta !== 0 && (
+                      <span className={page.kpiDelta}>{ilvlDelta > 0 ? "+" : ""}{ilvlDelta}</span>
+                    )}
+                  </div>
                 </div>
+              </header>
+            </div>
+
+            {/* Ad section */}
+            <div className={orp.sectionAd}>
+              <div className={orp.adFrame}>
+                <GoogleAd
+                  slot={AD_SLOTS.optimizerResultHeader}
+                  style={{ minHeight: 120 }}
+                  placeholderLabel="Results header"
+                />
               </div>
-            </header>
+            </div>
 
-            {items.length === 0 ? (
-              <div className={page.empty}>
-                <div className={page.emptyBadge}>No data</div>
-                <p className={page.emptyText}>This link doesn’t contain a SimC payload.</p>
+            {/* Results card inside the board */}
+            <div className={orp.section}>
+              <div className={orp.innerCard}>
+                <header className={page.resultsHeader}>
+                  <div className={page.resultsHeaderBar}>
+                    <h2>Recommended Upgrades</h2>
+                    {meta?.headerLineTimestamp ? (
+                      <div className={page.exportStamp}>Exported: {meta.headerLineTimestamp}</div>
+                    ) : (
+                      <div />
+                    )}
+                    <div className={page.actions}>
+                      <button
+                        className={page.primaryBtn}
+                        onClick={() => navigate("/optimizer")}
+                        aria-label="Start over and return to the optimizer input page"
+                      >
+                        <RotateCcw className={page.btnIcon} />
+                        Start Over
+                      </button>
+
+                      {meta?.armoryUrl && (
+                        <a
+                          className={page.primaryBtn}
+                          href={meta.armoryUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label="Open character on the official Armory"
+                        >
+                          <ExternalLink className={page.btnIcon} />
+                          Armory
+                        </a>
+                      )}
+
+                      <button className={page.primaryBtn} onClick={copyLink}>
+                        <Copy className={page.btnIcon} />
+                        Copy Link
+                      </button>
+                    </div>
+                  </div>
+                </header>
+
+                {items.length === 0 ? (
+                  <div className={page.empty}>
+                    <div className={page.emptyBadge}>No data</div>
+                    <p className={page.emptyText}>This link doesn’t contain a SimC payload.</p>
+                  </div>
+                ) : (
+                  <IconUrlsProvider urls={iconMap}>
+                    <Paperdoll items={items} plans={plans} />
+
+                    <div style={{ margin: "24px auto", width: "100%", maxWidth: 760 }}>
+                      <GoogleAd
+                        slot={AD_SLOTS.optimizerResultInline}
+                        style={{ minHeight: 250 }}
+                        placeholderLabel="Results inline"
+                      />
+                    </div>
+
+                    <NarrativePlan
+                      plans={plans}
+                      ceilingIlvl={ceilingIlvl}
+                      visualsBySlot={visualsBySlot}
+                    />
+                  </IconUrlsProvider>
+                )}
               </div>
-            ) : (
-              <IconUrlsProvider urls={iconMap}>
-                <Paperdoll items={items} plans={plans} />
-
-                <div style={{ margin: "24px auto", width: "100%", maxWidth: 760 }}>
-                  <GoogleAd slot={AD_SLOTS.optimizerResultInline} style={{ minHeight: 250 }} placeholderLabel="Results inline" />
-                </div>
-
-                <NarrativePlan plans={plans} ceilingIlvl={ceilingIlvl} visualsBySlot={visualsBySlot} />
-              </IconUrlsProvider>
-            )}
+            </div>
           </div>
         </section>
       </main>

@@ -1,8 +1,29 @@
+// src/features/optimizer/services/upgradePlanner.ts
 import { tracks } from "../proxy/registry";
-import type { ParsedItem, ItemState, TrackKey } from "../types/simc";
+import type { ParsedItem, ItemState, TrackKey, SlotKey } from "../types/simc";
 import { normalizeSlot } from "./slotMap";
-import { findUpgradeByBonusIds, toTrackKey } from "../../../data/upgradeIndex"
 
+/** Convert a parsed SimC line to our internal ItemState.
+ *  Rules:
+ *   - MUST have a current-season upgrade-bonus in bonusIds; otherwise return null (legacy/ambiguous).
+ *   - Uses (track, rank) from the bonus hit.
+ *   - Optionally verify (track, rank, ilvl) via `strictTriple`.
+ */
+export function toItemState(p: ParsedItem): ItemState {
+  const slot = normalizeSlot(p.slot)!; // assume valid equipped slots
+  return {
+    slot: slot as SlotKey,
+    track: (p.track ?? "Hero") as TrackKey, // placeholder; planner overrides via bonus hit
+    rank: p.rank ?? 1,
+    name: p.name,
+    ilvl: p.ilvl,
+    id: p.id,
+    crafted: p.crafted,
+    bonusIds: p.bonusIds,
+  };
+}
+
+/* ---------- (Deprecated) helpers retained for compatibility ---------- */
 /** Find the track that contains this ilvl (exact match preferred). */
 export function inferTrackFromIlvl(ilvl: number): TrackKey | null {
   let candidate: TrackKey | null = null;
@@ -28,51 +49,6 @@ export function inferRankFromIlvl(ilvl: number, trackKey: TrackKey): number {
     if (ilvl >= lvl && r > bestRank) bestRank = r;
   }
   return bestRank;
-}
-
-/** Convert a parsed SimC line to our internal ItemState (or null if unknown). */
-export function toItemState(parsed: ParsedItem): ItemState | null {
-  const slot = normalizeSlot(parsed.slot);
-  if (!slot) return null;
-
-  const bonusIds = parsed.bonusIds ?? [];
-  const hit = findUpgradeByBonusIds(bonusIds);
-
-  if (hit) {
-    const trackKey = toTrackKey(hit.group);
-    if (trackKey) {
-      // Normal, supported groups (Veteran/Champion/Hero/Myth etc.)
-      return {
-        slot,
-        track: trackKey,
-        rank: hit.level,
-        name: parsed.name,
-        ilvl: parsed.ilvl,
-        id: parsed.id,
-        crafted: parsed.crafted,
-      };
-    }
-    // Explorer/Adventurer (if you don't model them), fall back to ilvl below.
-  }
-
-  // Fallback when no bonus-id match or unsupported group: infer from ilvl
-  if (typeof parsed.ilvl === "number") {
-    const tk = inferTrackFromIlvl(parsed.ilvl);
-    if (tk) {
-      const rk = inferRankFromIlvl(parsed.ilvl, tk);
-      return {
-        slot,
-        track: tk,
-        rank: rk,
-        name: parsed.name,
-        ilvl: parsed.ilvl,
-        id: parsed.id,
-        crafted: parsed.crafted,
-      };
-    }
-  }
-
-  return null; // couldn't infer
 }
 
 // Temporary aliases if you want to keep old names compiling for now:

@@ -1,4 +1,4 @@
-import page from "../../../styles/page.module.css";
+import style from "./guidePost.module.css";
 import { Link, useParams } from "react-router-dom";
 import { POSTS } from "../data/posts";
 import type { GuideBlock, GuidePost } from "../types";
@@ -13,7 +13,6 @@ import { AD_SLOTS } from "../../../config/ads";
 function withBase(url?: string | null): string | null {
   if (!url) return null;
   if (/^(?:https?:|data:)/.test(url)) return url;
-  // Vite provides a typed BASE_URL on import.meta.env
   const base = (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.BASE_URL) || "/";
   const b = base.endsWith("/") ? base.slice(0, -1) : base;
   const u = url.startsWith("/") ? url : `/${url}`;
@@ -22,10 +21,7 @@ function withBase(url?: string | null): string | null {
 
 function hashSeed(seed: string): number {
   let h = 2166136261 >>> 0;
-  for (let i = 0; i < seed.length; i++) {
-    h ^= seed.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
+  for (let i = 0; i < seed.length; i++) { h ^= seed.charCodeAt(i); h = Math.imul(h, 16777619); }
   return h >>> 0;
 }
 
@@ -35,17 +31,23 @@ export default function GuidePostPage() {
 
   if (!post) {
     return (
-      <main className={page.wrap}>
-        <div className="featureCard">
-          <div className="cardHeader">
-            <span className="iconDot" aria-hidden />
-            <h3 className="cardTitle">Guide not found</h3>
+      <main className={`${style.wrap} ${style.wrapWide}`}>
+        <section className={style.board}>
+          <div className={style.boardBody}>
+            <div className={style.section}>
+              <div className={style.innerCard}>
+                <div className={style.cardHeadRow}>
+                  <div className={style.iconDot} aria-hidden />
+                  <h3 className={style.cardTitle}>Guide not found</h3>
+                </div>
+                <p className={style.dim}>We couldn’t find that guide.</p>
+                <div className={style.actions} style={{ marginTop: 10 }}>
+                  <Link to="/guides" className={style.ghostBtn}>← Back to Guides</Link>
+                </div>
+              </div>
+            </div>
           </div>
-          <p className="navText">We couldn’t find that guide.</p>
-          <div className="actions" style={{ marginTop: 10 }}>
-            <Link to="/guides" className="ghostBtn">← Back to Guides</Link>
-          </div>
-        </div>
+        </section>
       </main>
     );
   }
@@ -56,58 +58,84 @@ export default function GuidePostPage() {
     const url = KEY_ART[idx];
     return url ? encodeURI(url) : null;
   })();
+
   const cover = withBase(post.cover) || picked || makeGuidePlaceholder(post.imageTitle, post.tags);
   const published = post.published ? new Date(post.published) : null;
   const updated = new Date(post.updated);
   const daysAgo = published ? Math.max(0, Math.round((Date.now() - published.getTime()) / 86400000)) : null;
 
   return (
-    <main className={`${page.wrap} ${page.wrapWide}`}>
-      <header className={page.headerRow}>
-        <div>
-          <h1 className={page.title}>{post.title}</h1>
-          <p className={page.subtitle}>
-            {published ? (
-              <>
-                Posted {daysAgo} day{daysAgo === 1 ? "" : "s"} ago{post.author ? <> by <strong>{post.author}</strong></> : null} · Updated {updated.toLocaleDateString()}
-              </>
-            ) : (
-              <>Updated {updated.toLocaleDateString()}</>
-            )}
-          </p>
-          <div className={page.pills} style={{ marginTop: 8 }}>
-            {post.tags.map(t => <span key={t} className={page.pill}>{t}</span>)}
+    <main className={`${style.wrap} ${style.wrapWide}`}>
+      {/* One continuous board: header + content */}
+      <section aria-label="Guide" className={style.board}>
+        {/* Intro row inside the same surface */}
+        <div className={style.introRow}>
+          <div className={style.introCopy}>
+            <h1 className={style.introTitle}>{post.title}</h1>
+            <p className={style.introSubtitle}>
+              {published ? (
+                <>
+                  Posted {daysAgo} day{daysAgo === 1 ? "" : "s"} ago
+                  {post.author ? <> by <strong>{post.author}</strong></> : null}
+                  {" · "}Updated {updated.toLocaleDateString()}
+                </>
+              ) : (
+                <>Updated {updated.toLocaleDateString()}</>
+              )}
+            </p>
+
+            {post.tags?.length ? (
+              <div className={style.pills} aria-label="Tags">
+                {post.tags.map(t => <span key={t} className={style.pill}>{t}</span>)}
+              </div>
+            ) : null}
+          </div>
+
+          <Link to="/guides" className={style.ghostBtn} aria-label="Back to all guides">
+            ← All guides
+          </Link>
+        </div>
+
+        {/* Body sections */}
+        <div className={style.boardBody}>
+          {/* Ad near top */}
+          <div className={style.sectionAd}>
+            <div className={style.adFrame}>
+              <GoogleAd
+                slot={AD_SLOTS.guideArticleTop}
+                style={{ minHeight: 120 }}
+                placeholderLabel="Guide top"
+              />
+            </div>
+          </div>
+
+          {/* Full-bleed hero inside the board */}
+          {cover ? (
+            <div className={style.sectionHero} aria-hidden>
+              <div className={style.heroFrame}>
+                <img className={style.heroImg} src={cover} alt="" />
+              </div>
+            </div>
+          ) : null}
+
+          {/* Inline ad */}
+          <div className={style.sectionAd}>
+            <div className={style.adFrame}>
+              <GoogleAd
+                slot={AD_SLOTS.guideArticleInline}
+                style={{ minHeight: 250 }}
+                placeholderLabel="Guide inline"
+              />
+            </div>
+          </div>
+
+          {/* Article content as an inner card */}
+          <div className={style.section}>
+            <article className={style.innerCard}>
+              {renderBlocks(post.content ?? [{ type: "p", text: post.excerpt }])}
+            </article>
           </div>
         </div>
-        <Link to="/guides" className="ghostBtn">← All guides</Link>
-      </header>
-
-      <div style={{ margin: "24px auto", width: "100%", maxWidth: 760 }}>
-        <GoogleAd
-          slot={AD_SLOTS.guideArticleTop}
-          style={{ minHeight: 120 }}
-          placeholderLabel="Guide top"
-        />
-      </div>
-
-      <section className={page.results}>
-        {/* Wide, cropped hero image */}
-        <div className={page.guideHero} aria-hidden>
-          <img className={page.guideHeroImg} src={cover} alt="" />
-        </div>
-
-        <div style={{ margin: "24px auto", width: "100%", maxWidth: 760 }}>
-          <GoogleAd
-            slot={AD_SLOTS.guideArticleInline}
-            style={{ minHeight: 250 }}
-            placeholderLabel="Guide inline"
-          />
-        </div>
-
-        {/* Body */}
-        <article className="featureCard" style={{ marginTop: 14 }}>
-          {renderBlocks(post.content ?? [{ type: "p", text: post.excerpt }])}
-        </article>
       </section>
     </main>
   );
@@ -121,9 +149,9 @@ function renderBlocks(blocks: GuideBlock[]) {
     if (b.type === "quote") return <QuoteBox key={i} source={b.source} originalUrl={b.originalUrl} html={b.html} text={b.text} />;
     if (b.type === "img") {
       return (
-        <figure key={i} className={page.guideImgWrap}>
-          <img className={page.guideImg} src={b.src} alt={b.alt || ""} />
-          {b.caption ? <figcaption className={page.guideImgCaption}>{b.caption}</figcaption> : null}
+        <figure key={i} className={style.guideImgWrap}>
+          <img className={style.guideImg} src={b.src} alt={b.alt || ""} />
+          {b.caption ? <figcaption className={style.guideImgCaption}>{b.caption}</figcaption> : null}
         </figure>
       );
     }

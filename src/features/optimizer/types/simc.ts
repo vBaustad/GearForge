@@ -67,6 +67,8 @@ export interface ParsedItem {
   bonusIds?: number[];
   raw?: string;
   crafted?: boolean;
+  track?: TrackKey; // from decode (optional)
+  rank?: number;    // from decode (optional)
 }
 
 export interface ItemState {
@@ -77,6 +79,9 @@ export interface ItemState {
   ilvl?: number;
   id?: number;
   crafted?: boolean;
+
+  // NEW: let the planner see the raw bonus IDs
+  bonusIds?: number[];
 }
 
 

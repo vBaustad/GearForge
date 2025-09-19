@@ -19,7 +19,7 @@ export function RootLayout() {
         </div>
 
         <main className="flex-1 shrink-0">
-            <div className="max-w-7xl mx-auto w-full px-6 py-8">
+            <div className="max-w-7xl mx-auto w-full px-6">
                 <Outlet />
             </div>
         </main>

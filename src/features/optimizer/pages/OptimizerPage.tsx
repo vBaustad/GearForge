@@ -1,4 +1,3 @@
-// src/features/optimizer/pages/OptimizerPage.tsx
 import { useEffect, useState } from "react";
 import page from "../../../styles/page.module.css";
 import op from "./optimizerPage.module.css";
@@ -11,7 +10,8 @@ import { AD_SLOTS } from "../../../config/ads";
 export function OptimizerPage() {
   usePageMeta({
     title: "Upgrade Planner",
-    description: "Plan your WoW upgrades from a SimC export. See crest costs and the fastest, most crest-efficient path to higher item level.",
+    description:
+      "Plan your WoW upgrades from a SimC export. See crest costs and the fastest, most crest-efficient path to higher item level.",
     canonical: "/optimizer",
     image: "/og/optimizer.png",
     ogType: "website",
@@ -44,70 +44,74 @@ export function OptimizerPage() {
 
   return (
     <main id="main" className={`${page.wrap} ${page.wrapWide}`}>
-      {/* Header row matches Rewards/Guides styling */}
-      <header className={`${page.headerRow} ${op.headerDecor}`}>
-        <div>
-          <h1 className={page.title}>Optimize your gear in seconds</h1>
-          <p className={page.subtitle}>
-            Paste your SimC (or export) and get clear, prioritized upgrade recommendations.
-          </p>
+      <section aria-label="Upgrade Planner" className={op.board}>
+        <div className={op.introRow}>
+          <div className={op.introCopy}>
+            <h1 className={op.introTitle}>Optimize your gear in seconds</h1>
+            <p className={op.introSubtitle}>
+              Paste your SimC (or export) and get clear, prioritized upgrade recommendations.
+            </p>
+          </div>
+
+          <Link to="/" className={`${page.homeBtn} ${op.introHome}`} aria-label="Go to home">
+            <svg viewBox="0 0 20 20" className={page.homeIcon} aria-hidden="true">
+              <path fill="currentColor" d="M12.5 4 6 10l6.5 6 1.5-1.5L9 10l5-4.5z" />
+            </svg>
+            Home
+          </Link>
         </div>
 
-        <Link to="/" className={page.homeBtn} aria-label="Go to home">
-          <svg viewBox="0 0 20 20" className={page.homeIcon} aria-hidden="true">
-            <path fill="currentColor" d="M12.5 4 6 10l6.5 6 1.5-1.5L9 10l5-4.5z" />
-          </svg>
-          Home
-        </Link>
-      </header>
+        <div className={op.boardBody}>
+          {/* Form section inside an inner card */}
+          <div className={op.section}>
+            <div className={op.innerCard}>
+              <div className={page.cardHeader}>
+                <div className={page.iconDot} aria-hidden />
+                <h3 className={page.cardTitle}>Optimizer</h3>
+                <p className={page.cardSub}>Find the best upgrades for your character</p>
+              </div>
 
-      <section className={page.featuresGridSingle}>
-        <article className={`featureCard ${op.featureCardDecor}`} style={{ padding: 12 }}>
-          <div className={page.cardHeader}>
-            <div className={page.iconDot} aria-hidden />
-            <h3 className={page.cardTitle}>OPTIMIZER</h3>
-            <p className={page.cardSub}>Find the best upgrades for your character</p>
-          </div>
-
-          <form onSubmit={handleAnalyze} className={page.inputForm} aria-label="Optimization form">
-            <label htmlFor="optimizer-input" className={page.label}>
-              Paste your SimC / export string
-            </label>
-            <textarea
-              id="optimizer-input"
-              className={page.textarea}
-              placeholder="Paste here…"
-              value={rawInput}
-              onChange={(e) => setRawInput(e.target.value)}
-              rows={8}
-              spellCheck={false}
-            />
-            <div className={page.formRow}>
-              <button className={page.primaryBtn} disabled={isParsing}>
-                {isParsing ? "Analyzing…" : "Analyze"}
-              </button>
-              <button
-                type="button"
-                className={page.ghostBtn}
-                onClick={() => {
-                  setRawInput("");
-                  setError(null);
-                }}
-              >
-                Clear
-              </button>
+              <form onSubmit={handleAnalyze} className={page.inputForm} aria-label="Optimization form">
+                <label htmlFor="optimizer-input" className={page.label}>
+                  Paste your SimC / export string
+                </label>
+                <textarea
+                  id="optimizer-input"
+                  className={page.textarea}
+                  placeholder="Paste here…"
+                  value={rawInput}
+                  onChange={(e) => setRawInput(e.target.value)}
+                  rows={8}
+                  spellCheck={false}
+                />
+                <div className={page.formRow}>
+                  <button className={page.primaryBtn} disabled={isParsing}>
+                    {isParsing ? "Analyzing…" : "Analyze"}
+                  </button>
+                  <button
+                    type="button"
+                    className={page.ghostBtn}
+                    onClick={() => { setRawInput(""); setError(null); }}
+                  >
+                    Clear
+                  </button>
+                </div>
+                {error && <p className={page.error}>{error}</p>}
+              </form>
             </div>
-            {error && <p className={page.error}>{error}</p>}
-          </form>
-
-          <div style={{ marginTop: 24 }}>
-            <GoogleAd
-              slot={AD_SLOTS.optimizerForm}
-              style={{ minHeight: 250 }}
-              placeholderLabel="Optimizer form"
-            />
           </div>
-        </article>
+
+          {/* Ad section inside panel */}
+          <div className={op.sectionAd}>
+            <div className={op.adFrame}>
+              <GoogleAd
+                slot={AD_SLOTS.optimizerForm}
+                style={{ minHeight: 250 }}
+                placeholderLabel="Optimizer form"
+              />
+            </div>
+          </div>
+        </div>
       </section>
     </main>
   );

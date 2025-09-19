@@ -52,10 +52,12 @@
 /* Rarity → color variable + (for Paperdoll) border tint */
 .slotCard[data-rarity="poor"],     .recRow[data-rarity="poor"],     .row[data-rarity="poor"]      { --rarity-color:#9ca3af; }
 .slotCard[data-rarity="common"],   .recRow[data-rarity="common"],   .row[data-rarity="common"]    { --rarity-color:#d1d5db; }
-.slotCard[data-rarity="uncommon"], .recRow[data-rarity="uncommon"], .row[data-rarity="uncommon"]  { --rarity-color:#22c55e; }
-.slotCard[data-rarity="rare"],     .recRow[data-rarity="rare"],     .row[data-rarity="rare"]      { --rarity-color:#60a5fa; }
-.slotCard[data-rarity="epic"],     .recRow[data-rarity="epic"],     .row[data-rarity="epic"]      { --rarity-color:#c084fc; }
-.slotCard[data-rarity="legendary"],.recRow[data-rarity="legendary"],.row[data-rarity="legendary"] { --rarity-color:#f59e0b; }
+.slotCard[data-rarity="uncommon"], .recRow[data-rarity="uncommon"], .row[data-rarity="uncommon"]  { --rarity-color:#1eff00; }
+.slotCard[data-rarity="rare"],     .recRow[data-rarity="rare"],     .row[data-rarity="rare"]      { --rarity-color:#0070dd; }
+.slotCard[data-rarity="epic"],     .recRow[data-rarity="epic"],     .row[data-rarity="epic"]      { --rarity-color:#a335ee; }
+.slotCard[data-rarity="legendary"],.recRow[data-rarity="legendary"],.row[data-rarity="legendary"] { --rarity-color:#ff8000; }
+.slotCard[data-rarity="artifact"], .recRow[data-rarity="artifact"], .row[data-rarity="artifact"]  { --rarity-color:#e6cc80; }
+.slotCard[data-rarity="artifact"], .recRow[data-rarity="artifact"], .row[data-rarity="artifact"]  { --rarity-color:#e6cc80; }
 
 .slotCard{
   background: linear-gradient(180deg, #181a20, #121318);
@@ -70,21 +72,21 @@
 /* Subtle border tint by rarity (Paperdoll) */
 .slotCard[data-rarity="poor"]{       border-color:#404247; }
 .slotCard[data-rarity="common"]{     border-color:#2a2c31; }
-.slotCard[data-rarity="uncommon"]{   border-color:rgba(34,197,94,.35); }
-.slotCard[data-rarity="rare"]{       border-color:rgba(59,130,246,.35); }
-.slotCard[data-rarity="epic"]{       border-color:rgba(168,85,247,.35); }
-.slotCard[data-rarity="legendary"]{  border-color:rgba(245,158,11,.40); }
-.slotCard[data-rarity="artifact"]  { border-color: rgba(230, 204, 128, .45); }
-.slotCard[data-rarity="heirloom"]  { border-color: rgba(0, 204, 255, .40); }
+.slotCard[data-rarity="uncommon"]{   border-color:rgba(30, 255, 0, 1); }
+.slotCard[data-rarity="rare"]{       border-color:rgba(0, 112, 221, 1); }
+.slotCard[data-rarity="epic"]{       border-color:rgba(163, 53, 238, 1); }
+.slotCard[data-rarity="legendary"]{  border-color:rgba(255, 128, 0, 1); }
+.slotCard[data-rarity="artifact"]  { border-color: rgba(230, 204, 128, 1); }
+.slotCard[data-rarity="heirloom"]  { border-color: rgba(0, 204, 255, 1); }
 
 /* Item name coloring (Paperdoll + Narrative) */
-.slotCard[data-rarity="artifact"] .itemName,
+/* .slotCard[data-rarity="artifact"] .itemName,
 .recRow[data-rarity="artifact"] .itemName,
-.recRow[data-rarity="artifact"] .itemTitle { color: #e6cc80; } /* Artifact gold */
+.recRow[data-rarity="artifact"] .itemTitle { color: #e6cc80; }
 
 .slotCard[data-rarity="heirloom"] .itemName,
 .recRow[data-rarity="heirloom"] .itemName,
-.recRow[data-rarity="heirloom"] .itemTitle { color: #00ccff; } /* Heirloom cyan */
+.recRow[data-rarity="heirloom"] .itemTitle { color: #00ccff; } */
 
 /* Upgrade state accent */
 .slotCard[data-has-upgrade]{

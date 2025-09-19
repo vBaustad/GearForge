@@ -1,7 +1,75 @@
-/* Page-specific styling for GuidesIndexPage */
+/* ===== Continuous panel (header + content) ===== */
+.board {
+  max-width: var(--page-max);
+  margin-top: 18px;
+  border: 1px solid #1f2024;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #181a20, #121318);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.02);
+}
 
+/* merged header row inside panel */
+.introRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #1f2024;
+}
+.introCopy { min-width: 0; }
+.introTitle {
+  margin: 0 0 6px;
+  font-weight: 900;
+  letter-spacing: .2px;
+  color: var(--ink);
+  font-size: 22px;
+}
+.introSubtitle {
+  margin: 0;
+  color: var(--ink-dim);
+  max-width: 70ch;
+}
+.introHome { justify-self: end; }
+
+/* inner sections */
+.boardBody {
+  display: grid;
+  gap: 0; /* section borders create rhythm */
+}
+
+/* each block inside the board */
+.section {
+  padding: 2px;
+  border-top: 1px solid #1f2024;
+}
+.section:first-child { border-top: 0; }
+
+/* ad rows sit flush with the panel */
+.sectionAd {
+  padding: 8px 16px 14px;
+  border-top: 1px solid #1f2024;
+}
+.adFrame {
+  margin: 0 auto;
+  width: 100%;
+  max-width: 760px;
+}
+
+/* inner card (box inside the board), like other pages */
+.innerCard {
+  background: rgba(0,0,0,.60);
+  border: 1px solid #2a2c31;
+  border-radius: 12px;
+  padding: 16px;
+  color: var(--ink);
+  box-shadow: 0 1px 0 rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.02);
+}
+.innerCard:hover { border-color: #343842; }
+
+/* Existing styles you had — keep them */
 .headerDecor{
-  /* Subtle neutral backdrop to separate header */
+  /* no longer used on this page, but safe to keep */
   background: linear-gradient(180deg, rgba(12,13,16,.65), rgba(10,11,14,.35));
   border: 1px solid #1f2024;
   border-radius: 10px;
@@ -9,6 +77,7 @@
 }
 
 .featureCardDecor{
+  /* legacy from earlier layout; not used now */
   border:1px solid #1f2024;
   border-radius:10px;
   background: linear-gradient(180deg, #181a20, #121318);
@@ -23,3 +92,11 @@
   letter-spacing: .2px;
 }
 
+/* responsive */
+@media (max-width: 720px) {
+  .introRow { grid-template-columns: 1fr; padding: 10px 12px; gap: 8px; }
+  .introHome { justify-self: start; }
+  .section { padding: 12px; }
+  .sectionAd { padding: 8px 12px 12px; }
+  .innerCard { padding: 14px; }
+}
