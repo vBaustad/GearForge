@@ -172,6 +172,7 @@ export default function OptimizerResultPage() {
     [items]
   );
 
+  console.log(itemStates);
   const ceilingIlvl = data?.ceilingIlvl ?? 701;
   const ignoreCeiling = !!data?.ignoreCeiling;
 
