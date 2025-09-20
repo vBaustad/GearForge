@@ -32,7 +32,7 @@ export function LandingPage() {
 
         {/* Body sections */}
         <div className={lp.boardBody}>
-          {/* Feature cards (2 per row) */}
+          {/* Feature cards */}
           <div className={lp.section}>
             <div className={page.featureGrid2}>
               {/* Optimizer */}
