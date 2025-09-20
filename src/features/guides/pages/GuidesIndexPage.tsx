@@ -16,49 +16,71 @@ export default function GuidesIndexPage() {
   useEffect(() => {
     if (selectedClass) setVisibleClass(selectedClass);
   }, [selectedClass]);
+
   return (
     <main className={`${page.wrap} ${page.wrapWide}`}>
-      <header className={`${page.headerRow} ${gi.headerDecor}`}>
-        <div>
-          <h1 className={page.title}>Guides</h1>
-          <p className={page.subtitle}>
-            Small but useful WoW tips, QoL tricks, and time-saving scripts — plus quick links to trusted class guides on Wowhead, Icy Veins, and more.
-          </p>
+      {/* One continuous panel (header merged in) */}
+      <section aria-label="Guides" className={gi.board}>
+        {/* Intro row inside the same surface */}
+        <div className={gi.introRow}>
+          <div className={gi.introCopy}>
+            <h1 className={gi.introTitle}>Guides</h1>
+            <p className={gi.introSubtitle}>
+              Small but useful WoW tips, QoL tricks, and time-saving scripts — plus quick links to trusted
+              class guides on Wowhead, Icy Veins, and more.
+            </p>
+          </div>
+          <Link to="/" className={`${page.homeBtn} ${gi.introHome}`} aria-label="Go to home">
+            <svg viewBox="0 0 20 20" className={page.homeIcon} aria-hidden="true">
+              <path fill="currentColor" d="M12.5 4 6 10l6.5 6 1.5-1.5L9 10l5-4.5z" />
+            </svg>
+            Home
+          </Link>
         </div>
-        <Link to="/" className={page.homeBtn} aria-label="Go to home">
-          <svg viewBox="0 0 20 20" className={page.homeIcon} aria-hidden="true">
-            <path fill="currentColor" d="M12.5 4 6 10l6.5 6 1.5-1.5L9 10l5-4.5z" />
-          </svg>
-          Home
-        </Link>
-      </header>
 
-      <section className={page.results}>
-        <div className={`featureCard ${gi.featureCardDecor}`}>
-          <div className={`navText ${gi.leadLabel}`}>Select your Class</div>
-          <ClassIconRow selected={selectedClass} onSelect={setSelectedClass} />
-          <div className={[s.specSection, selectedClass ? s.specSectionShow : ""].join(" ")} aria-hidden={!selectedClass}>
-            {/* <div className={s.specHeader}>Select your Specialization</div> */}
-            <div className={s.specPanel}>
-              <SpecIconRow classFilter={visibleClass} />
+        {/* Body sections */}
+        <div className={gi.boardBody}>
+          {/* Selector card */}
+          <div className={gi.section}>
+            <div className={gi.innerCard}>
+              <div className={`navText ${gi.leadLabel}`}>Select your Class</div>
+              <ClassIconRow selected={selectedClass} onSelect={setSelectedClass} />
+              <div
+                className={[s.specSection, selectedClass ? s.specSectionShow : ""].join(" ")}
+                aria-hidden={!selectedClass}
+              >
+                <div className={s.specPanel}>
+                  <SpecIconRow classFilter={visibleClass} />
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-        <div style={{ margin: "24px auto", width: "100%", maxWidth: 760 }}>
-          <GoogleAd
-            slot={AD_SLOTS.guidesIndexTop}
-            style={{ minHeight: 120 }}
-            placeholderLabel="Guides selector"
-          />
-        </div>
-        <div className={`featureCard ${gi.featureCardDecor}`} style={{ padding: 12, marginTop: 12 }}>
-          <GuideGrid />
-          <div style={{ marginTop: 24 }}>
-            <GoogleAd
-              slot={AD_SLOTS.guidesIndexGrid}
-              style={{ minHeight: 250 }}
-              placeholderLabel="Guides grid"
-            />
+
+          {/* Ad between cards */}
+          <div className={gi.sectionAd}>
+            <div className={gi.adFrame}>
+              <GoogleAd
+                slot={AD_SLOTS.guidesIndexTop}
+                style={{ minHeight: 120 }}
+                placeholderLabel="Guides selector"
+              />
+            </div>
+          </div>
+
+          {/* Guides grid card */}
+          <div className={gi.section}>
+            <div className={gi.innerCard}>
+              <GuideGrid />
+
+              {/* Optional ad inside the card, like before */}
+              <div style={{ marginTop: 24 }}>
+                <GoogleAd
+                  slot={AD_SLOTS.guidesIndexGrid}
+                  style={{ minHeight: 250 }}
+                  placeholderLabel="Guides grid"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </section>

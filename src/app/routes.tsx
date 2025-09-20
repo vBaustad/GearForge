@@ -5,6 +5,7 @@ import { LandingPage } from "./LandingPage";
 import { OptimizerPage } from "../features/optimizer/pages/OptimizerPage";
 import OptimizerResultPage from "../features/optimizer/pages/OptimizerResultPage";
 import { RewardsPage } from "../features/rewards/pages/RewardsPage";
+import { ChangelogPage } from "../features/changelog/pages/ChangelogPage";
 
 /* eslint-disable react-refresh/only-export-components */
 // Route-level lazy loaders (each returns { Component })
@@ -27,12 +28,19 @@ export const router = createBrowserRouter([
       // Feature: Optimizer
       { path: "optimizer", element: <OptimizerPage /> },
       { path: "optimizer/view", element: <OptimizerResultPage /> },
+
+      // Feature: Rewards
       { path: "rewards", element: <RewardsPage /> },
 
-      // Site pages (lazy)
+      // Feature: Guides
       { path: "guides",        lazy: GuidesPage },
       { path: "guides/classes/:class/:spec", lazy: GuideClassSpecPage },
       { path: "guides/:slug",  lazy: GuidePostPage },
+
+      // Feature: Changelog
+      { path: "changelog",     element: <ChangelogPage /> },
+
+      // Misc informational pages
       { path: "faq",           lazy: FaqPage },
       { path: "terms",         lazy: TermsPage },
       { path: "privacy",       lazy: PrivacyPage },
