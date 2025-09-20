@@ -1,4 +1,4 @@
-import style from "./guidePost.module.css";
+import style from "./guidepost.module.css";
 import { Link, useParams } from "react-router-dom";
 import { POSTS } from "../data/posts";
 import type { GuideBlock, GuidePost } from "../types";
