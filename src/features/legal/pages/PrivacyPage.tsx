@@ -10,8 +10,8 @@ export default function PrivacyPage() {
     >
       <p><em>Last updated: {new Date().toISOString().slice(0,10)}</em></p>
       <p>We process your SimC text locally in your browser. We do not store your character data.</p>
-      <p>We may collect anonymous analytics (page views, perf metrics) to improve the site.</p>
-      <p>Questions? Email: hello@your-domain</p>
+      <p>We may collect anonymous analytics (page views, performance metrics) to improve the site.</p>
+      <p>Questions? Open an issue on Github for now!</p>
     </SimpleDocPage>
   );
 }

@@ -8,8 +8,18 @@ import s from "../components/components.module.css";
 import gi from "./guidesIndex.module.css";
 import { GoogleAd } from "../../../components/ads/GoogleAd";
 import { AD_SLOTS } from "../../../config/ads";
+import { usePageMeta } from "../../../app/seo/usePageMeta";
 
 export default function GuidesIndexPage() {
+    usePageMeta({
+      title: "Guides",
+      description:
+        "Small but useful WoW tips, QoL tricks, and time-saving scripts — plus quick links to trusted class guides.",
+      canonical: "/guides",
+      image: "/og/guides.png",
+      ogType: "website",
+    });
+  
   const [selectedClass, setSelectedClass] = useState<string | null>(null);
   // Keep the last selected class while the section animates closed to avoid flash-of-all-specs
   const [visibleClass, setVisibleClass] = useState<string | null>(null);

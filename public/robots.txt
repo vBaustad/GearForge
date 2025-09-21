@@ -2,4 +2,8 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://gearforge.vercel.app/sitemap.xml
+# Ensure ad crawling works
+User-agent: AdsBot-Google
+Allow: /
+
+Sitemap: https://gearforge.io/sitemap.xml
