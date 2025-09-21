@@ -6,6 +6,7 @@ import { getGuideLinks } from "../data/guideLinks";
 import { GuideLinkCard } from "../components/GuideLinkCard";
 import comp from "../components/components.module.css";
 import cs from "./classSpec.module.css";
+import { usePageMeta } from "../../../app/seo/usePageMeta";
 
 export default function ClassSpecGuidesPage() {
   const params = useParams<{ class: string; spec: string }>();
@@ -15,6 +16,13 @@ export default function ClassSpecGuidesPage() {
   // Assume these always exist
   const specEntry = SPECS.find((s) => s.classSlug === clazz && s.specSlug === spec)!;
   const links = getGuideLinks(specEntry.classSlug, specEntry.specSlug);
+
+  usePageMeta({
+    title: `${specEntry.specName} ${specEntry.className} — Community Guide Links`,
+    description: `Curated external guides for ${specEntry.specName} ${specEntry.className} (Wowhead, Icy Veins, Method, etc.).`,
+    canonical: `/guides/classes/${specEntry.classSlug}/${specEntry.specSlug}`,
+    noindex: true, // keep out of search to avoid thin-content flags
+  });
 
   return (
     <main className={`${page.wrap} ${page.wrapWide}`}>

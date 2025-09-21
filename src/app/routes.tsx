@@ -34,19 +34,19 @@ export const router = createBrowserRouter([
 
       // Feature: Guides
       { path: "guides",        lazy: GuidesPage },
-      { path: "guides/classes/:class/:spec", lazy: GuideClassSpecPage },
-      { path: "guides/:slug",  lazy: GuidePostPage },
+      { path: "guides/classes/:class/:spec", lazy: GuideClassSpecPage, handle: { noAds: true} },
+      { path: "guides/:slug",  lazy: GuidePostPage, handle: { noAds: true}  },
 
       // Feature: Changelog
       { path: "changelog",     element: <ChangelogPage /> },
 
       // Misc informational pages
-      { path: "faq",           lazy: FaqPage },
-      { path: "terms",         lazy: TermsPage },
-      { path: "privacy",       lazy: PrivacyPage },
+      { path: "faq",           lazy: FaqPage, handle: { noAds: true}   },
+      { path: "terms",         lazy: TermsPage, handle: { noAds: true}   },
+      { path: "privacy",       lazy: PrivacyPage, handle: { noAds: true}   },
 
       // 404
-      { path: "*", lazy: NotFound },
+      { path: "*", lazy: NotFound, handle: {noAds: true}  },
     ],
   },
 ]);

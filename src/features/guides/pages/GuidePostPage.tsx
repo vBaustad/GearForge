@@ -9,6 +9,7 @@ import { Callout } from "../components/Callout";
 import { QuoteBox } from "../components/QuoteBox";
 import { GoogleAd } from "../../../components/ads/GoogleAd";
 import { AD_SLOTS } from "../../../config/ads";
+import { usePageMeta } from "../../../app/seo/usePageMeta";
 
 function withBase(url?: string | null): string | null {
   if (!url) return null;
@@ -28,6 +29,40 @@ function hashSeed(seed: string): number {
 export default function GuidePostPage() {
   const { slug } = useParams();
   const post: GuidePost | undefined = POSTS.find(p => p.slug === slug);
+
+ // ---- derive values safely (post may be undefined) ----
+  let cover: string | undefined;
+  let published: Date | null = null;
+  let updated: Date | null = null;
+  let daysAgo: number | null = null;
+
+  if (post) {
+    const picked = (() => {
+      if (!Array.isArray(KEY_ART) || KEY_ART.length === 0) return null;
+      const idx = hashSeed(post.slug) % KEY_ART.length;
+      const url = KEY_ART[idx];
+      return url ? encodeURI(url) : null;
+    })();
+
+    const resolved = withBase(post.cover) || picked || makeGuidePlaceholder(post.imageTitle, post.tags);
+    cover = resolved || undefined;
+
+    published = post.published ? new Date(post.published) : null;
+    updated = new Date(post.updated);
+    daysAgo = published ? Math.max(0, Math.round((Date.now() - published.getTime()) / 86400000)) : null;
+  } else {
+    updated = new Date();
+  }
+
+  // ---- call the hook once, unconditionally ----
+  usePageMeta({
+    title: post?.title ?? "Guide not found",
+    description: post?.excerpt ?? "We couldn’t find that guide.",
+    canonical: `/guides/${slug}`,
+    image: cover,
+    ogType: post ? "article" : "website",
+    noindex: !post, // keep 404s out of search
+  });
 
   if (!post) {
     return (
@@ -51,18 +86,6 @@ export default function GuidePostPage() {
       </main>
     );
   }
-
-  const picked = (() => {
-    if (!Array.isArray(KEY_ART) || KEY_ART.length === 0) return null;
-    const idx = hashSeed(post.slug) % KEY_ART.length;
-    const url = KEY_ART[idx];
-    return url ? encodeURI(url) : null;
-  })();
-
-  const cover = withBase(post.cover) || picked || makeGuidePlaceholder(post.imageTitle, post.tags);
-  const published = post.published ? new Date(post.published) : null;
-  const updated = new Date(post.updated);
-  const daysAgo = published ? Math.max(0, Math.round((Date.now() - published.getTime()) / 86400000)) : null;
 
   return (
     <main className={`${style.wrap} ${style.wrapWide}`}>
