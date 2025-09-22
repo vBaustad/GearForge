@@ -4,8 +4,8 @@ import op from "./optimizerPage.module.css";
 import { usePageMeta } from "../../../app/seo/usePageMeta";
 import { useNavigate, Link } from "react-router-dom";
 import { encodeToUrlHash } from "../services/urlCodec";
-import { GoogleAd } from "../../../components/ads/GoogleAd";
-import { AD_SLOTS } from "../../../config/ads";
+// import { GoogleAd } from "../../../components/ads/GoogleAd";
+// import { AD_SLOTS } from "../../../config/ads";
 
 export function OptimizerPage() {
   usePageMeta({
