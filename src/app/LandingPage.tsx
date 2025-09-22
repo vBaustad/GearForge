@@ -2,8 +2,8 @@
 import lp from "./landingPage.module.css";
 import { usePageMeta } from "../app/seo/usePageMeta";
 import { Link } from "react-router-dom";
-import { GoogleAd } from "../components/ads/GoogleAd";
-import { AD_SLOTS } from "../config/ads";
+// import { GoogleAd } from "../components/ads/GoogleAd";
+// import { AD_SLOTS } from "../config/ads";
 
 export function LandingPage() {
   usePageMeta({
