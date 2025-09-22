@@ -84,11 +84,11 @@ export function LandingPage() {
           </div>
 
           {/* Ad row inside the board */}
-          <div className={lp.sectionAd}>
+          {/* <div className={lp.sectionAd}>
             <div className={lp.adFrame}>
               <GoogleAd slot={AD_SLOTS.landingGrid} style={{ minHeight: 120 }} placeholderLabel="Landing grid" />
             </div>
-          </div>
+          </div> */}
         </div>
       </section>
     </main>

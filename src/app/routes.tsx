@@ -23,10 +23,10 @@ export const router = createBrowserRouter([
   {
     element: <RootLayout />,
     children: [
-      { index: true, element: <LandingPage /> },
+      { index: true, element: <LandingPage />, handle: { noAds: true} },
 
       // Feature: Optimizer
-      { path: "optimizer", element: <OptimizerPage /> },
+      { path: "optimizer", element: <OptimizerPage />, handle: { noAds: true} },
       { path: "optimizer/view", element: <OptimizerResultPage /> },
 
       // Feature: Rewards
