@@ -102,7 +102,7 @@ export function OptimizerPage() {
           </div>
 
           {/* Ad section inside panel */}
-          <div className={op.sectionAd}>
+          {/* <div className={op.sectionAd}>
             <div className={op.adFrame}>
               <GoogleAd
                 slot={AD_SLOTS.optimizerForm}
@@ -110,7 +110,7 @@ export function OptimizerPage() {
                 placeholderLabel="Optimizer form"
               />
             </div>
-          </div>
+          </div> */}
         </div>
       </section>
     </main>
