@@ -12,14 +12,24 @@ import { planAll } from "../services/planner";
 import { normalizeSlot } from "../services/slotMap";
 import { RotateCcw, ExternalLink, Copy } from "lucide-react";
 import { IconUrlsProvider, type IconUrlMap } from "../context/IconUrlContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useMatches, type UIMatch } from "react-router-dom";
 import PageSplashGate from "../components/PageSplashGate";
 import orp from "./optimizerResultPage.module.css";
-import { GoogleAd } from "../../../components/ads/GoogleAd";
+import GoogleAd from "../../../components/ads/GoogleAd";
 import { AD_SLOTS } from "../../../config/ads";
 
 // Local: UI rarity set we style for
 type DisplayRarity = "poor" | "common" | "uncommon" | "rare" | "epic" | "legendary";
+
+/* ──────────────────────────────────────────────────────────────
+   Ad gating helper (respects route handles)
+────────────────────────────────────────────────────────────── */
+type RouteHandle = { noAds?: boolean };
+function useAllowAds() {
+  const matches = useMatches() as UIMatch<RouteHandle>[];
+  const noAdsFromHandle = matches.some(m => (m.handle as RouteHandle)?.noAds);
+  return !noAdsFromHandle;
+}
 
 /* ──────────────────────────────────────────────────────────────
    Helpers
@@ -49,9 +59,9 @@ function extractFallbackRarityNum(it?: ParsedItem): number | undefined {
 
 // Map loose strings / SimC numeric qualities to our DisplayRarity
 function coerceDisplayRarity(
-  primary?: string,          // keep signature (unused here), stays for future flexibility
-  fallbackText?: string,     // e.g. "Epic"
-  fallbackNum?: number       // 0..7
+  primary?: string, // keep signature (unused here), stays for future flexibility
+  fallbackText?: string, // e.g. "Epic"
+  fallbackNum?: number // 0..7
 ): DisplayRarity | undefined {
   const fromStr = (s?: string): DisplayRarity | undefined => {
     if (!s) return;
@@ -64,12 +74,18 @@ function coerceDisplayRarity(
   };
   const fromNum = (n?: number): DisplayRarity | undefined => {
     switch (n) {
-      case 0: return "poor";
-      case 1: return "common";
-      case 2: return "uncommon";
-      case 3: return "rare";
-      case 4: return "epic";
-      case 5: return "legendary";
+      case 0:
+        return "poor";
+      case 1:
+        return "common";
+      case 2:
+        return "uncommon";
+      case 3:
+        return "rare";
+      case 4:
+        return "epic";
+      case 5:
+        return "legendary";
       case 6: // artifact
       case 7: // heirloom
         return "legendary";
@@ -133,6 +149,8 @@ export default function OptimizerResultPage() {
     ogType: "website",
   });
 
+  const allowAds = useAllowAds();
+
   const data: SimcPayload | null = useMemo(() => {
     if (typeof window === "undefined") return null;
     const byHash = decodeFromUrlHash(window.location.hash);
@@ -148,10 +166,7 @@ export default function OptimizerResultPage() {
   const items: ParsedItem[] = useMemo(() => (simcText ? parseSimc(simcText) : []), [simcText]);
 
   // --- Parse upgrade context ---
-  const upgradeCtx = useMemo(
-    () => (simcText ? parseCharacterUpgradeContext(simcText) : null),
-    [simcText]
-  );
+  const upgradeCtx = useMemo(() => (simcText ? parseCharacterUpgradeContext(simcText) : null), [simcText]);
 
   // --- Character meta ---
   const meta = useMemo(() => (simcText ? parseCharacterMeta(simcText) : null), [simcText]);
@@ -165,10 +180,7 @@ export default function OptimizerResultPage() {
     : null;
 
   // --- Planner inputs ---
-  const itemStates: ItemState[] = useMemo(
-    () => items.map(toItemState).filter((x): x is ItemState => !!x),
-    [items]
-  );
+  const itemStates: ItemState[] = useMemo(() => items.map(toItemState).filter((x): x is ItemState => !!x), [items]);
 
   const ceilingIlvl = data?.ceilingIlvl ?? 701;
   const ignoreCeiling = !!data?.ignoreCeiling;
@@ -199,8 +211,7 @@ export default function OptimizerResultPage() {
 
   function copyLink() {
     if (typeof window === "undefined") return;
-    const current: SimcPayload | null =
-      data ?? (simcText ? { simc: simcText, ceilingIlvl, ignoreCeiling } : null);
+    const current: SimcPayload | null = data ?? (simcText ? { simc: simcText, ceilingIlvl, ignoreCeiling } : null);
     if (!current) {
       navigator.clipboard.writeText(window.location.href);
       return;
@@ -284,8 +295,7 @@ export default function OptimizerResultPage() {
   }, [fetchTotal, allIconIds]);
 
   const navigate = useNavigate();
-  const classToken =
-    meta?.className ? (page as Record<string, string>)[`class-${meta.className}`] ?? "" : "";
+  const classToken = meta?.className ? (page as Record<string, string>)[`class-${meta.className}`] ?? "" : "";
 
   // =========================
   // Current vs potential avg ilvl (same rule as Paperdoll)
@@ -312,8 +322,7 @@ export default function OptimizerResultPage() {
       const current = getIlvl(item);
       if (!isFiniteNum(current) || current <= 0) continue;
 
-      const hasUpgrade =
-        !!plan && isFiniteNum(plan.toRank) && isFiniteNum(plan.fromRank) && plan.toRank > plan.fromRank;
+      const hasUpgrade = !!plan && isFiniteNum(plan.toRank) && isFiniteNum(plan.fromRank) && plan.toRank > plan.fromRank;
 
       const display = hasUpgrade && isFiniteNum(plan?.toIlvl) && plan!.toIlvl > 0 ? plan!.toIlvl : current;
 
@@ -332,14 +341,28 @@ export default function OptimizerResultPage() {
     const choose = (slot: SlotKey): DisplayRarity => {
       const it = bySlot[slot];
       const text = extractFallbackRarityText(it);
-      const num  = extractFallbackRarityNum(it);
+      const num = extractFallbackRarityNum(it);
       return coerceDisplayRarity(undefined, text, num) ?? "epic";
     };
 
     const v: Partial<Record<SlotKey, { icon?: string; rarity?: DisplayRarity; label?: string }>> = {};
     const slots: SlotKey[] = [
-      "head","neck","shoulder","back","chest","wrist","hands","waist","legs","feet",
-      "finger1","finger2","trinket1","trinket2","main_hand","off_hand"
+      "head",
+      "neck",
+      "shoulder",
+      "back",
+      "chest",
+      "wrist",
+      "hands",
+      "waist",
+      "legs",
+      "feet",
+      "finger1",
+      "finger2",
+      "trinket1",
+      "trinket2",
+      "main_hand",
+      "off_hand",
     ];
 
     for (const slot of slots) {
@@ -352,7 +375,7 @@ export default function OptimizerResultPage() {
     return v;
   }, [bySlot, iconMap]);
 
-   return (
+  return (
     <PageSplashGate durationMs={2000} oncePerSession={false} storageKey="gf-opt-splash-seen">
       <main className={`${page.wrap} ${page.wrapWide}`}>
         {/* ONE continuous panel (mast + ad + results) */}
@@ -380,9 +403,7 @@ export default function OptimizerResultPage() {
                   >
                     <span className={page.kpiLabel}>Potential ilvl</span>
                     <strong className={page.kpiValue}>{potentialAvgIlvl || "—"}</strong>
-                    {ilvlDelta !== 0 && (
-                      <span className={page.kpiDelta}>{ilvlDelta > 0 ? "+" : ""}{ilvlDelta}</span>
-                    )}
+                    {ilvlDelta !== 0 && <span className={page.kpiDelta}>{ilvlDelta > 0 ? "+" : ""}{ilvlDelta}</span>}
                   </div>
                 </div>
               </header>
@@ -392,6 +413,7 @@ export default function OptimizerResultPage() {
             <div className={orp.sectionAd}>
               <div className={orp.adFrame}>
                 <GoogleAd
+                  enabled={allowAds}
                   slot={AD_SLOTS.optimizerResultHeader}
                   style={{ minHeight: 120 }}
                   placeholderLabel="Results header"
@@ -452,17 +474,14 @@ export default function OptimizerResultPage() {
 
                     <div style={{ margin: "24px auto", width: "100%", maxWidth: 760 }}>
                       <GoogleAd
+                        enabled={allowAds}
                         slot={AD_SLOTS.optimizerResultInline}
                         style={{ minHeight: 250 }}
                         placeholderLabel="Results inline"
                       />
                     </div>
 
-                    <NarrativePlan
-                      plans={plans}
-                      ceilingIlvl={ceilingIlvl}
-                      visualsBySlot={visualsBySlot}
-                    />
+                    <NarrativePlan plans={plans} ceilingIlvl={ceilingIlvl} visualsBySlot={visualsBySlot} />
                   </IconUrlsProvider>
                 )}
               </div>

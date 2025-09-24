@@ -1,37 +1,41 @@
 import page from "../../../styles/page.module.css";
-import { Link } from "react-router-dom";
+import { Link, useMatches, type UIMatch } from "react-router-dom";
 import { GuideGrid } from "../components/GuideGrid";
 import { useEffect, useState } from "react";
 import { SpecIconRow } from "../components/SpecIconRow";
 import { ClassIconRow } from "../components/ClassIconRow";
 import s from "../components/components.module.css";
 import gi from "./guidesIndex.module.css";
-import { GoogleAd } from "../../../components/ads/GoogleAd";
+import GoogleAd from "../../../components/ads/GoogleAd";   // ← default import
 import { AD_SLOTS } from "../../../config/ads";
 import { usePageMeta } from "../../../app/seo/usePageMeta";
 
+type RouteHandle = { noAds?: boolean };
+function useAllowAds() {
+  const matches = useMatches() as UIMatch<RouteHandle>[];
+  const noAdsFromHandle = matches.some(m => (m.handle as RouteHandle)?.noAds);
+  return !noAdsFromHandle; // true on Guides index, false on routes with handle:{noAds:true}
+}
+
 export default function GuidesIndexPage() {
-    usePageMeta({
-      title: "Guides",
-      description:
-        "Small but useful WoW tips, QoL tricks, and time-saving scripts — plus quick links to trusted class guides.",
-      canonical: "/guides",
-      image: "/og/guides.png",
-      ogType: "website",
-    });
-  
+  usePageMeta({
+    title: "Guides",
+    description:
+      "Small but useful WoW tips, QoL tricks, and time-saving scripts — plus quick links to trusted class guides.",
+    canonical: "/guides",
+    image: "/og/guides.png",
+    ogType: "website",
+  });
+
+  const allowAds = useAllowAds();
+
   const [selectedClass, setSelectedClass] = useState<string | null>(null);
-  // Keep the last selected class while the section animates closed to avoid flash-of-all-specs
   const [visibleClass, setVisibleClass] = useState<string | null>(null);
-  useEffect(() => {
-    if (selectedClass) setVisibleClass(selectedClass);
-  }, [selectedClass]);
+  useEffect(() => { if (selectedClass) setVisibleClass(selectedClass); }, [selectedClass]);
 
   return (
     <main className={`${page.wrap} ${page.wrapWide}`}>
-      {/* One continuous panel (header merged in) */}
       <section aria-label="Guides" className={gi.board}>
-        {/* Intro row inside the same surface */}
         <div className={gi.introRow}>
           <div className={gi.introCopy}>
             <h1 className={gi.introTitle}>Guides</h1>
@@ -48,7 +52,6 @@ export default function GuidesIndexPage() {
           </Link>
         </div>
 
-        {/* Body sections */}
         <div className={gi.boardBody}>
           {/* Selector card */}
           <div className={gi.section}>
@@ -66,10 +69,11 @@ export default function GuidesIndexPage() {
             </div>
           </div>
 
-          {/* Ad between cards */}
+          {/* Ad between cards (gated) */}
           <div className={gi.sectionAd}>
             <div className={gi.adFrame}>
               <GoogleAd
+                enabled={allowAds}
                 slot={AD_SLOTS.guidesIndexTop}
                 style={{ minHeight: 120 }}
                 placeholderLabel="Guides selector"
@@ -82,9 +86,10 @@ export default function GuidesIndexPage() {
             <div className={gi.innerCard}>
               <GuideGrid />
 
-              {/* Optional ad inside the card, like before */}
+              {/* Optional ad inside the card (gated) */}
               <div style={{ marginTop: 24 }}>
                 <GoogleAd
+                  enabled={allowAds}
                   slot={AD_SLOTS.guidesIndexGrid}
                   style={{ minHeight: 250 }}
                   placeholderLabel="Guides grid"

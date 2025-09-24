@@ -5,7 +5,8 @@ import { InfoBar } from "../components/InfoBar";
 import { GoogleAd } from "../components/ads/GoogleAd";
 import { AD_SLOTS } from "../config/ads";
 import type { UIMatch } from "react-router-dom";
-
+import { AdGate } from "../components/ads/AdGate";
+import { ADS_ENABLED } from "../components/ads/GoogleAd";
 
 
 export function RootLayout() {
@@ -24,30 +25,36 @@ export function RootLayout() {
 
   const noAds = noAdsFromHandle || noAdsByPath;
 
+  const isOptimizerInput = pathname === "/optimizer";
+  const noAdsStrict = noAds || isOptimizerInput;
+
   return (
     <div className="min-h-screen flex flex-col">
-        <Header />
-        <InfoBar />  
+      {/* Load/remove AdSense script based on route */}
+      <AdGate client={import.meta.env.VITE_ADSENSE_CLIENT ?? ""} enabled={ADS_ENABLED && !noAdsStrict} />
 
-        <div className="px-6 mt-6">
-          <div className="max-w-5xl mx-auto">
-            {!noAds && <GoogleAd slot={AD_SLOTS.layoutTop} placeholderLabel="Top banner" />}
-          </div>
+      <Header />
+      <InfoBar />
+
+      <div className="px-6 mt-6">
+        <div className="max-w-5xl mx-auto">
+          {!noAdsStrict && <GoogleAd slot={AD_SLOTS.layoutTop} placeholderLabel="Top banner" />}
         </div>
+      </div>
 
-        <main className="flex-1 shrink-0">
-            <div className="max-w-7xl mx-auto w-full px-6">
-                <Outlet />
-            </div>
-        </main>
-
-        <div className="px-6 mb-6">
-          <div className="max-w-5xl mx-auto">
-            {!noAds && <GoogleAd slot={AD_SLOTS.layoutFooter} placeholderLabel="Footer banner" />}
-          </div>
+      <main className="flex-1 shrink-0">
+        <div className="max-w-7xl mx-auto w-full px-6">
+          <Outlet />
         </div>
+      </main>
 
-        <Footer />
+      <div className="px-6 mb-6">
+        <div className="max-w-5xl mx-auto">
+          {!noAdsStrict && <GoogleAd slot={AD_SLOTS.layoutFooter} placeholderLabel="Footer banner" />}
+        </div>
+      </div>
+
+      <Footer />
     </div>
   );
 }
