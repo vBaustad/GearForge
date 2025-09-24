@@ -1,46 +1,31 @@
 // src/app/RootLayout.tsx
-import { Outlet, useMatches, useLocation } from "react-router-dom";
+import { Outlet, useMatches, useLocation, type UIMatch } from "react-router-dom";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
 import { InfoBar } from "../components/InfoBar";
-import GoogleAd from "../components/ads/GoogleAd"; // use default import (optional)
+import GoogleAd from "../components/ads/GoogleAd";
 import { AD_SLOTS } from "../config/ads";
-import type { UIMatch } from "react-router-dom";
-import { AdGate } from "../components/ads/AdGate";
+
+type RouteHandle = { noAds?: boolean; allowLayoutAds?: boolean };
+
+// Type-safe extractor so TS doesn't see handle as {}
+function getHandle(m: UIMatch<unknown>): RouteHandle {
+  return (m.handle ?? {}) as RouteHandle;
+}
 
 export function RootLayout() {
-  type RouteHandle = { noAds?: boolean };
-  const matches = useMatches() as UIMatch<RouteHandle>[];
+  // Cast the matches array to a generic UIMatch to keep strong typing
+  const matches = useMatches() as UIMatch<unknown>[];
   const { pathname } = useLocation();
 
-  const noAdsFromHandle = matches.some(m => (m.handle as RouteHandle)?.noAds);
-  const noAdsByPath =
-    pathname.startsWith("/guides/classes") ||
-    pathname === "/faq" ||
-    pathname === "/terms" ||
-    pathname === "/privacy";
-  const noAds = noAdsFromHandle || noAdsByPath;
-
-  const isOptimizerInput = pathname === "/optimizer";
-  const noAdsStrict = noAds || isOptimizerInput;
-
-  // 🔑 Compute env + flag LOCALLY (don’t import ADS_ENABLED)
-  const client = import.meta.env.VITE_ADSENSE_CLIENT ?? "";
-  const adsEnabled = client.length > 0;
+  const noAds = matches.some(m => Boolean(getHandle(m).noAds));
+  const allowLayoutAds = matches.some(m => Boolean(getHandle(m).allowLayoutAds));
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Inject/remove script only when allowed */}
-      <AdGate client={client} enabled={adsEnabled && !noAdsStrict} />
-
+      {/* AdSense loader stays in index.html */}
       <Header />
       <InfoBar />
-
-      <div className="px-6 mt-6">
-        <div className="max-w-5xl mx-auto">
-          {!noAdsStrict && <GoogleAd slot={AD_SLOTS.layoutTop} placeholderLabel="Top banner" />}
-        </div>
-      </div>
 
       <main className="flex-1 shrink-0">
         <div className="max-w-7xl mx-auto w-full px-6">
@@ -48,13 +33,22 @@ export function RootLayout() {
         </div>
       </main>
 
-      <div className="px-6 mb-6">
-        <div className="max-w-5xl mx-auto">
-          {!noAdsStrict && <GoogleAd slot={AD_SLOTS.layoutFooter} placeholderLabel="Footer banner" />}
+      {!noAds && allowLayoutAds && (
+        <div className="px-6 mb-6">
+          <div className="max-w-5xl mx-auto">
+            <GoogleAd
+              key={`layout-footer-${pathname}`}
+              slot={AD_SLOTS.layoutFooter}
+              placeholderLabel="Footer banner"
+              enabled
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       <Footer />
     </div>
   );
 }
+
+export default RootLayout;

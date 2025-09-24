@@ -12,30 +12,26 @@ import { planAll } from "../services/planner";
 import { normalizeSlot } from "../services/slotMap";
 import { RotateCcw, ExternalLink, Copy } from "lucide-react";
 import { IconUrlsProvider, type IconUrlMap } from "../context/IconUrlContext";
-import { useNavigate, useMatches, type UIMatch } from "react-router-dom";
+import { useNavigate, useMatches, useLocation, type UIMatch } from "react-router-dom";
 import PageSplashGate from "../components/PageSplashGate";
 import orp from "./optimizerResultPage.module.css";
 import GoogleAd from "../../../components/ads/GoogleAd";
 import { AD_SLOTS } from "../../../config/ads";
 
-// Local: UI rarity set we style for
-type DisplayRarity = "poor" | "common" | "uncommon" | "rare" | "epic" | "legendary";
-
-/* ──────────────────────────────────────────────────────────────
-   Ad gating helper (respects route handles)
-────────────────────────────────────────────────────────────── */
+// ----- Route handle gating (type-safe) -----
 type RouteHandle = { noAds?: boolean };
+function getHandle(m: UIMatch<unknown>): RouteHandle {
+  return (m.handle ?? {}) as RouteHandle;
+}
 function useAllowAds() {
-  const matches = useMatches() as UIMatch<RouteHandle>[];
-  const noAdsFromHandle = matches.some(m => (m.handle as RouteHandle)?.noAds);
+  const matches = useMatches() as UIMatch<unknown>[];
+  const noAdsFromHandle = matches.some(m => Boolean(getHandle(m).noAds));
   return !noAdsFromHandle;
 }
 
-/* ──────────────────────────────────────────────────────────────
-   Helpers
-────────────────────────────────────────────────────────────── */
+// ----- Helpers -----
+type DisplayRarity = "poor" | "common" | "uncommon" | "rare" | "epic" | "legendary";
 
-// Prefer SimC quality info over nothing (while meta is loading)
 function extractFallbackRarityText(it?: ParsedItem): string | undefined {
   if (!it) return undefined;
   const f = it as unknown as { rarity?: unknown; qualityText?: unknown; qualityName?: unknown };
@@ -56,19 +52,11 @@ function extractFallbackRarityNum(it?: ParsedItem): number | undefined {
     undefined
   );
 }
-
-// Map loose strings / SimC numeric qualities to our DisplayRarity
-function coerceDisplayRarity(
-  primary?: string,
-  fallbackText?: string, // e.g. "Epic"
-  fallbackNum?: number // 0..7
-): DisplayRarity | undefined {
+function coerceDisplayRarity(primary?: string, fallbackText?: string, fallbackNum?: number): DisplayRarity | undefined {
   const fromStr = (s?: string): DisplayRarity | undefined => {
     if (!s) return;
     const t = s.toLowerCase();
-    if (t === "poor" || t === "common" || t === "uncommon" || t === "rare" || t === "epic" || t === "legendary") {
-      return t as DisplayRarity;
-    }
+    if (t === "poor" || t === "common" || t === "uncommon" || t === "rare" || t === "epic" || t === "legendary") return t as DisplayRarity;
     if (t === "artifact" || t === "heirloom") return "legendary";
     return undefined;
   };
@@ -79,7 +67,7 @@ function coerceDisplayRarity(
       case 2: return "uncommon";
       case 3: return "rare";
       case 4: return "epic";
-      case 5: return "legendary";
+      case 5: // legendary
       case 6: // artifact
       case 7: // heirloom
         return "legendary";
@@ -90,21 +78,11 @@ function coerceDisplayRarity(
   return fromStr(primary) ?? fromStr(fallbackText) ?? fromNum(fallbackNum);
 }
 
-// SimC currency → crest tier
-const CURRENCY_TO_CREST: Record<number, Crest> = {
-  3284: "Weathered",
-  3286: "Carved",
-  3288: "Runed",
-  3290: "Gilded",
-};
-
-// small helpers
+const CURRENCY_TO_CREST: Record<number, Crest> = { 3284: "Weathered", 3286: "Carved", 3288: "Runed", 3290: "Gilded" };
 const isFiniteNum = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
 const avg = (nums: number[]) => (nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : 0);
 const cap = (s?: string | null) => (s ? s[0].toUpperCase() + s.slice(1) : "");
 const titleCase = (s?: string | null) => (s ? s.replace(/\b\w+/g, w => w[0].toUpperCase() + w.slice(1).toLowerCase()) : "");
-
-// Extract ilvl from either .ilvl or .level (ignore <=0)
 const getIlvl = (x: { ilvl?: number; level?: number } | undefined | null): number | null => {
   if (!x) return null;
   const v = isFiniteNum(x.ilvl) ? x.ilvl : isFiniteNum(x.level) ? x.level : null;
@@ -113,7 +91,6 @@ const getIlvl = (x: { ilvl?: number; level?: number } | undefined | null): numbe
 
 type ItemBySlot = Partial<Record<SlotKey, ParsedItem>>;
 type PlanBySlot = Partial<Record<SlotKey, ItemPlan>>;
-
 function buildItemMap(items: ParsedItem[]): ItemBySlot {
   const map: ItemBySlot = {};
   for (const it of items) {
@@ -128,15 +105,11 @@ function buildPlanMap(plans?: ItemPlan[]): PlanBySlot {
   return map;
 }
 
-/* ──────────────────────────────────────────────────────────────
-   Page
-────────────────────────────────────────────────────────────── */
-
+// ----- Page -----
 export default function OptimizerResultPage() {
   usePageMeta({
     title: "Upgrade Planner",
-    description:
-      "Plan your WoW upgrades from a SimC export. See crest costs and the fastest, most crest-efficient path to higher item level.",
+    description: "Plan your WoW upgrades from a SimC export. See crest costs and the fastest, most crest-efficient path to higher item level.",
     canonical: "/optimizer",
     image: "/og/optimizer.png",
     ogType: "website",
@@ -144,6 +117,7 @@ export default function OptimizerResultPage() {
 
   const allowAds = useAllowAds();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const data: SimcPayload | null = useMemo(() => {
     if (typeof window === "undefined") return null;
@@ -157,16 +131,11 @@ export default function OptimizerResultPage() {
   const simcText = data?.simc ?? "";
   const hasContent = !!simcText; // only show ads when a payload exists
 
-  // --- Parse equipped items ---
+  // Parse equipped / context / meta
   const items: ParsedItem[] = useMemo(() => (simcText ? parseSimc(simcText) : []), [simcText]);
-
-  // --- Parse upgrade context ---
   const upgradeCtx = useMemo(() => (simcText ? parseCharacterUpgradeContext(simcText) : null), [simcText]);
-
-  // --- Character meta ---
   const meta = useMemo(() => (simcText ? parseCharacterMeta(simcText) : null), [simcText]);
 
-  // Header bits
   const displaySpec = (meta?.spec ?? meta?.headerLineSpec) ?? null;
   const subtitle = meta
     ? [displaySpec ? cap(displaySpec) : null, meta.region ? meta.region.toUpperCase() : null, meta.server ? titleCase(meta.server) : null]
@@ -174,9 +143,7 @@ export default function OptimizerResultPage() {
         .join(" - ")
     : null;
 
-  // --- Planner inputs ---
   const itemStates: ItemState[] = useMemo(() => items.map(toItemState).filter((x): x is ItemState => !!x), [items]);
-
   const ceilingIlvl = data?.ceilingIlvl ?? 701;
   const ignoreCeiling = !!data?.ignoreCeiling;
 
@@ -207,11 +174,7 @@ export default function OptimizerResultPage() {
   function copyLink() {
     if (typeof window === "undefined") return;
     const current: SimcPayload | null = data ?? (simcText ? { simc: simcText, ceilingIlvl, ignoreCeiling } : null);
-    if (!current) {
-      navigator.clipboard.writeText(window.location.href);
-      return;
-    }
-    const url = buildShareUrl(current);
+    const url = current ? buildShareUrl(current) : window.location.href;
     navigator.clipboard.writeText(url);
     window.history.replaceState(null, "", url);
   }
@@ -222,14 +185,13 @@ export default function OptimizerResultPage() {
       Array.from(
         new Set(
           items
-            .map((it) => (typeof it.id === "number" && Number.isFinite(it.id) ? it.id : null))
+            .map(it => (typeof it.id === "number" && Number.isFinite(it.id) ? it.id : null))
             .filter((n): n is number => n !== null)
         )
       ),
     [items]
   );
 
-  // Kept from earlier code; harmless if not used elsewhere
   const plannedUpgradeIds = useMemo(() => {
     const out: number[] = [];
     const LIMIT = 12;
@@ -244,9 +206,7 @@ export default function OptimizerResultPage() {
           const item = (up as { item?: unknown }).item ?? up;
           if (!item || typeof item !== "object") continue;
           const id = (item as Record<string, unknown>).id;
-          if (typeof id === "number" && Number.isFinite(id) && !out.includes(id)) {
-            out.push(id);
-          }
+          if (typeof id === "number" && Number.isFinite(id) && !out.includes(id)) out.push(id);
         }
       }
     }
@@ -260,18 +220,16 @@ export default function OptimizerResultPage() {
     return Array.from(s);
   }, [equippedIds, plannedUpgradeIds]);
 
-  // Stage 1: FETCH icon URLs once for all IDs
+  // Fetch icon URLs
   const [iconMap, setIconMap] = useState<IconUrlMap>({});
-  const fetchTotal = allIconIds.length;
-
   useEffect(() => {
     let canceled = false;
     setIconMap({});
-    if (fetchTotal === 0) return;
+    if (allIconIds.length === 0) return;
     (async () => {
       const pairs: Array<[number, string]> = [];
       await Promise.all(
-        allIconIds.map(async (id) => {
+        allIconIds.map(async id => {
           try {
             const r = await fetch(`/api/wow/item/${id}/icon`);
             const j = (await r.json()) as { iconUrl?: string };
@@ -281,17 +239,14 @@ export default function OptimizerResultPage() {
           }
         })
       );
-      if (canceled) return;
-      setIconMap(Object.fromEntries(pairs));
+      if (!canceled) setIconMap(Object.fromEntries(pairs));
     })();
     return () => {
       canceled = true;
     };
-  }, [fetchTotal, allIconIds]);
+  }, [allIconIds]);
 
-  // =========================
-  // Current vs potential avg ilvl (same rule as Paperdoll)
-  // =========================
+  // Averages and potential gains
   const bySlot = useMemo(() => buildItemMap(items), [items]);
   const planMap = useMemo(() => buildPlanMap(plans), [plans]);
 
@@ -314,12 +269,8 @@ export default function OptimizerResultPage() {
       const current = getIlvl(item);
       if (!isFiniteNum(current) || current <= 0) continue;
 
-      const hasUpgrade =
-        !!plan && isFiniteNum(plan.toRank) && isFiniteNum(plan.fromRank) && plan.toRank > plan.fromRank;
-
-      const display =
-        hasUpgrade && isFiniteNum(plan?.toIlvl) && plan!.toIlvl > 0 ? plan!.toIlvl : current;
-
+      const hasUpgrade = !!plan && isFiniteNum(plan.toRank) && isFiniteNum(plan.fromRank) && plan.toRank > plan.fromRank;
+      const display = hasUpgrade && isFiniteNum(plan?.toIlvl) && plan!.toIlvl > 0 ? plan!.toIlvl : current;
       vals.push(display);
     }
     return Math.round(avg(vals));
@@ -327,10 +278,7 @@ export default function OptimizerResultPage() {
 
   const ilvlDelta = (potentialAvgIlvl ?? 0) - (currentAvgIlvl ?? 0);
 
-  // =========================
-  // Visuals for NarrativePlan — Icons (prefetched) + rarity from SimC fallback
-  // =========================
-
+  // Visuals for NarrativePlan
   const visualsBySlot = useMemo(() => {
     const choose = (slot: SlotKey): DisplayRarity => {
       const it = bySlot[slot];
@@ -341,22 +289,8 @@ export default function OptimizerResultPage() {
 
     const v: Partial<Record<SlotKey, { icon?: string; rarity?: DisplayRarity; label?: string }>> = {};
     const slots: SlotKey[] = [
-      "head",
-      "neck",
-      "shoulder",
-      "back",
-      "chest",
-      "wrist",
-      "hands",
-      "waist",
-      "legs",
-      "feet",
-      "finger1",
-      "finger2",
-      "trinket1",
-      "trinket2",
-      "main_hand",
-      "off_hand",
+      "head","neck","shoulder","back","chest","wrist","hands","waist","legs","feet",
+      "finger1","finger2","trinket1","trinket2","main_hand","off_hand",
     ];
 
     for (const slot of slots) {
@@ -372,10 +306,9 @@ export default function OptimizerResultPage() {
   return (
     <PageSplashGate durationMs={2000} oncePerSession={false} storageKey="gf-opt-splash-seen">
       <main className={`${page.wrap} ${page.wrapWide}`}>
-        {/* ONE continuous panel (mast + ad + results) */}
         <section aria-label="Upgrade results" className={orp.board}>
           <div className={orp.boardBody}>
-            {/* Mast section */}
+            {/* Mast (real content first) */}
             <div className={orp.section}>
               <header className={`${page.mast} ${meta?.className ? (page as Record<string, string>)[`class-${meta.className}`] ?? "" : ""}`}>
                 <h1 className={page.mastName}>{meta?.name ?? "Upgrade Planner"}</h1>
@@ -403,10 +336,11 @@ export default function OptimizerResultPage() {
               </header>
             </div>
 
-            {/* Ad section (only when we have real content) */}
+            {/* Ad (only when there’s real content) */}
             <div className={orp.sectionAd}>
               <div className={orp.adFrame}>
                 <GoogleAd
+                  key={`opt-res-header-${location.pathname}`}
                   enabled={allowAds && hasContent}
                   slot={AD_SLOTS.optimizerResultHeader}
                   style={{ minHeight: 120 }}
@@ -415,7 +349,7 @@ export default function OptimizerResultPage() {
               </div>
             </div>
 
-            {/* Results card inside the board */}
+            {/* Results */}
             <div className={orp.section}>
               <div className={orp.innerCard}>
                 <header className={page.resultsHeader}>
@@ -423,32 +357,18 @@ export default function OptimizerResultPage() {
                     <h2>Recommended Upgrades</h2>
                     {meta?.headerLineTimestamp ? (
                       <div className={page.exportStamp}>Exported: {meta.headerLineTimestamp}</div>
-                    ) : (
-                      <div />
-                    )}
+                    ) : <div />}
                     <div className={page.actions}>
-                      <button
-                        className={page.primaryBtn}
-                        onClick={() => navigate("/optimizer")}
-                        aria-label="Start over and return to the optimizer input page"
-                      >
+                      <button className={page.primaryBtn} onClick={() => navigate("/optimizer")} aria-label="Return to optimizer">
                         <RotateCcw className={page.btnIcon} />
                         Start Over
                       </button>
-
                       {meta?.armoryUrl && (
-                        <a
-                          className={page.primaryBtn}
-                          href={meta.armoryUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          aria-label="Open character on the official Armory"
-                        >
+                        <a className={page.primaryBtn} href={meta.armoryUrl} target="_blank" rel="noopener noreferrer" aria-label="Open on Armory">
                           <ExternalLink className={page.btnIcon} />
                           Armory
                         </a>
                       )}
-
                       <button className={page.primaryBtn} onClick={copyLink}>
                         <Copy className={page.btnIcon} />
                         Copy Link
@@ -468,6 +388,7 @@ export default function OptimizerResultPage() {
 
                     <div style={{ margin: "24px auto", width: "100%", maxWidth: 760 }}>
                       <GoogleAd
+                        key={`opt-res-inline-${location.pathname}`}
                         enabled={allowAds && hasContent}
                         slot={AD_SLOTS.optimizerResultInline}
                         style={{ minHeight: 250 }}

@@ -23,30 +23,28 @@ export const router = createBrowserRouter([
   {
     element: <RootLayout />,
     children: [
-      { index: true, element: <LandingPage />, handle: { noAds: true} },
+      { index: true, element: <LandingPage />, handle: { noAds: true } },
 
-      // Feature: Optimizer
-      { path: "optimizer", element: <OptimizerPage />, handle: { noAds: true} },
+      { path: "optimizer", element: <OptimizerPage />, handle: { noAds: true } },
       { path: "optimizer/view", element: <OptimizerResultPage /> },
 
-      // Feature: Rewards
-      { path: "rewards", element: <RewardsPage /> },
+      // Content-rich: Rewards page opts in
+      { path: "rewards", element: <RewardsPage />, handle: { allowLayoutAds: true } },
 
-      // Feature: Guides
-      { path: "guides",        lazy: GuidesPage },
-      { path: "guides/classes/:class/:spec", lazy: GuideClassSpecPage, handle: { noAds: true} },
-      { path: "guides/:slug",  lazy: GuidePostPage },
+      // Guides
+      { path: "guides", lazy: GuidesPage }, // only opt in if it has long-form content
+      { path: "guides/classes/:class/:spec", lazy: GuideClassSpecPage, handle: { noAds: true } },
+      { path: "guides/:slug", lazy: GuidePostPage, handle: { allowLayoutAds: true } },
 
-      // Feature: Changelog
-      { path: "changelog",     element: <ChangelogPage /> },
+      // Changelog likely contentful; opt-in if it’s detailed posts
+      { path: "changelog", element: <ChangelogPage />, handle: { allowLayoutAds: true } },
 
-      // Misc informational pages
-      { path: "faq",           lazy: FaqPage, handle: { noAds: true}   },
-      { path: "terms",         lazy: TermsPage, handle: { noAds: true}   },
-      { path: "privacy",       lazy: PrivacyPage, handle: { noAds: true}   },
+      // Thin/utility pages — keep ad-free
+      { path: "faq",     lazy: FaqPage,     handle: { noAds: true } },
+      { path: "terms",   lazy: TermsPage,   handle: { noAds: true } },
+      { path: "privacy", lazy: PrivacyPage, handle: { noAds: true } },
 
-      // 404
-      { path: "*", lazy: NotFound, handle: {noAds: true}  },
+      { path: "*", lazy: NotFound, handle: { noAds: true } },
     ],
   },
 ]);
