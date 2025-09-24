@@ -1,5 +1,5 @@
 // src/features/rewards/pages/RewardsPage.tsx
-import { Link, useMatches, type UIMatch } from "react-router-dom";
+import { Link, useMatches, useLocation, type UIMatch } from "react-router-dom";
 import page from "../../../styles/page.module.css";
 import rp from "./rewardsPage.module.css";
 
@@ -10,39 +10,35 @@ import { RaidCards } from "../components/RaidCards";
 import { CollapsibleSection } from "../components/CollapsibleSection";
 import { usePageMeta } from "../../../app/seo/usePageMeta";
 
-import GoogleAd from "../../../components/ads/GoogleAd"; // default export
+import GoogleAd from "../../../components/ads/GoogleAd";
 import { AD_SLOTS } from "../../../config/ads";
 
-/* Respect route handles for ad gating */
+/** Respect route handles for ad gating (e.g. { handle: { noAds: true } }) */
 type RouteHandle = { noAds?: boolean };
 function useAllowAds() {
   const matches = useMatches() as UIMatch<RouteHandle>[];
-  const noAdsFromHandle = matches.some(m => (m.handle as RouteHandle)?.noAds);
-  return !noAdsFromHandle;
+  return !matches.some(m => (m.handle as RouteHandle)?.noAds);
 }
 
 export function RewardsPage() {
   const data = useRewardsData();
   const allowAds = useAllowAds();
+  const location = useLocation();
 
   usePageMeta({
     title: "Mythic+, Raid & Great Vault Rewards",
-    description: "Instant lookup of end-of-dungeon, raid boss groups, and Great Vault item levels.",
+    description:
+      "Instant lookup of end-of-dungeon, raid boss groups, and Great Vault item levels.",
     image: "/images/og/gearforge-wide-dark.png",
     ogType: "website",
     canonical: "/rewards",
   });
 
-  // Extra safety: only show ads when we truly have content to show
-  const hasContent =
-    Boolean(data?.seasonName) &&
-    // if you have arrays here, feel free to expand the checks:
-    // e.g., (data?.mplus?.length ?? 0) > 0 || (data?.raids?.length ?? 0) > 0
-    true;
+  // Only show ads when we truly have content
+  const hasContent = Boolean(data?.seasonName);
 
   return (
     <main className={`${page.wrap} ${page.wrapWide}`}>
-      {/* One continuous panel (header + content) */}
       <section aria-label="Rewards" className={rp.board}>
         <div className={rp.introRow}>
           <div className={rp.introCopy}>
@@ -66,10 +62,12 @@ export function RewardsPage() {
             <VaultCards data={data} />
           </div>
 
-          {/* Ad inside panel (gated + only when content exists) */}
+          {/* Ad inside panel */}
           <div className={rp.sectionAd}>
             <div className={rp.adFrame}>
               <GoogleAd
+                // key includes route so SPA navigations re-request a fill even if the component persists
+                key={`rewards-top-${location.pathname}`}
                 enabled={allowAds && hasContent}
                 slot={AD_SLOTS.rewardsTop}
                 style={{ minHeight: 120 }}
@@ -95,14 +93,15 @@ export function RewardsPage() {
             <RaidCards />
           </div>
 
-          {/* Mid-page ad (gated + only when content exists) */}
+          {/* Mid-page ad */}
           <div className={rp.sectionAd}>
             <div className={rp.adFrame}>
               <GoogleAd
+                key={`rewards-mid-${location.pathname}`}
                 enabled={allowAds && hasContent}
                 slot={AD_SLOTS.rewardsMid}
                 style={{ minHeight: 120 }}
-                placeholderLabel="Rewards raid"
+                placeholderLabel="Rewards mid"
               />
             </div>
           </div>
