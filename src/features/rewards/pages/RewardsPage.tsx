@@ -1,17 +1,29 @@
+// src/features/rewards/pages/RewardsPage.tsx
+import { Link, useMatches, type UIMatch } from "react-router-dom";
+import page from "../../../styles/page.module.css";
+import rp from "./rewardsPage.module.css";
+
 import { useRewardsData } from "../hooks/useRewardsData";
 import { VaultCards } from "../components/VaultCards";
 import { DungeonLootTable } from "../components/DungeonLootTable";
 import { RaidCards } from "../components/RaidCards";
 import { CollapsibleSection } from "../components/CollapsibleSection";
 import { usePageMeta } from "../../../app/seo/usePageMeta";
-import { Link } from "react-router-dom";
-import page from "../../../styles/page.module.css";
-import rp from "./rewardsPage.module.css";
-import { GoogleAd } from "../../../components/ads/GoogleAd";
+
+import GoogleAd from "../../../components/ads/GoogleAd"; // default export
 import { AD_SLOTS } from "../../../config/ads";
+
+/* Respect route handles for ad gating */
+type RouteHandle = { noAds?: boolean };
+function useAllowAds() {
+  const matches = useMatches() as UIMatch<RouteHandle>[];
+  const noAdsFromHandle = matches.some(m => (m.handle as RouteHandle)?.noAds);
+  return !noAdsFromHandle;
+}
 
 export function RewardsPage() {
   const data = useRewardsData();
+  const allowAds = useAllowAds();
 
   usePageMeta({
     title: "Mythic+, Raid & Great Vault Rewards",
@@ -47,10 +59,11 @@ export function RewardsPage() {
             <VaultCards data={data} />
           </div>
 
-          {/* Ad inside panel (optional) */}
+          {/* Ad inside panel (gated) */}
           <div className={rp.sectionAd}>
             <div className={rp.adFrame}>
               <GoogleAd
+                enabled={allowAds}
                 slot={AD_SLOTS.rewardsTop}
                 style={{ minHeight: 120 }}
                 placeholderLabel="Rewards top"
@@ -75,10 +88,11 @@ export function RewardsPage() {
             <RaidCards />
           </div>
 
-          {/* Mid-page ad */}
+          {/* Mid-page ad (gated) */}
           <div className={rp.sectionAd}>
             <div className={rp.adFrame}>
               <GoogleAd
+                enabled={allowAds}
                 slot={AD_SLOTS.rewardsMid}
                 style={{ minHeight: 120 }}
                 placeholderLabel="Rewards raid"
@@ -90,3 +104,5 @@ export function RewardsPage() {
     </main>
   );
 }
+
+export default RewardsPage;

@@ -1,5 +1,5 @@
 import style from "./guidepost.module.css";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useMatches, type UIMatch } from "react-router-dom";
 import { POSTS } from "../data/posts";
 import type { GuideBlock, GuidePost } from "../types";
 import { makeGuidePlaceholder } from "../lib/placeholder";
@@ -7,9 +7,17 @@ import { KEY_ART } from "../data/keyArtManifest";
 import { CodeBlock } from "../components/CodeBlock";
 import { Callout } from "../components/Callout";
 import { QuoteBox } from "../components/QuoteBox";
-import { GoogleAd } from "../../../components/ads/GoogleAd";
+import GoogleAd from "../../../components/ads/GoogleAd";             // <-- default import
 import { AD_SLOTS } from "../../../config/ads";
 import { usePageMeta } from "../../../app/seo/usePageMeta";
+
+/* small helper to respect route handles + paths */
+type RouteHandle = { noAds?: boolean };
+function useAllowAds() {
+  const matches = useMatches() as UIMatch<RouteHandle>[];
+  const noAdsFromHandle = matches.some(m => (m.handle as RouteHandle)?.noAds);
+  return !noAdsFromHandle; // this page is handle:{noAds:true} so this becomes false
+}
 
 function withBase(url?: string | null): string | null {
   if (!url) return null;
@@ -27,10 +35,11 @@ function hashSeed(seed: string): number {
 }
 
 export default function GuidePostPage() {
+  const allowAds = useAllowAds();                                     // <-- use it
   const { slug } = useParams();
   const post: GuidePost | undefined = POSTS.find(p => p.slug === slug);
 
- // ---- derive values safely (post may be undefined) ----
+  // ---- derive values safely (post may be undefined) ----
   let cover: string | undefined;
   let published: Date | null = null;
   let updated: Date | null = null;
@@ -54,14 +63,13 @@ export default function GuidePostPage() {
     updated = new Date();
   }
 
-  // ---- call the hook once, unconditionally ----
   usePageMeta({
     title: post?.title ?? "Guide not found",
     description: post?.excerpt ?? "We couldn’t find that guide.",
     canonical: `/guides/${slug}`,
     image: cover,
     ogType: post ? "article" : "website",
-    noindex: !post, // keep 404s out of search
+    noindex: !post,
   });
 
   if (!post) {
@@ -89,9 +97,7 @@ export default function GuidePostPage() {
 
   return (
     <main className={`${style.wrap} ${style.wrapWide}`}>
-      {/* One continuous board: header + content */}
       <section aria-label="Guide" className={style.board}>
-        {/* Intro row inside the same surface */}
         <div className={style.introRow}>
           <div className={style.introCopy}>
             <h1 className={style.introTitle}>{post.title}</h1>
@@ -106,7 +112,6 @@ export default function GuidePostPage() {
                 <>Updated {updated.toLocaleDateString()}</>
               )}
             </p>
-
             {post.tags?.length ? (
               <div className={style.pills} aria-label="Tags">
                 {post.tags.map(t => <span key={t} className={style.pill}>{t}</span>)}
@@ -119,12 +124,12 @@ export default function GuidePostPage() {
           </Link>
         </div>
 
-        {/* Body sections */}
         <div className={style.boardBody}>
-          {/* Ad near top */}
+          {/* Ad near top (disabled by allowAds) */}
           <div className={style.sectionAd}>
             <div className={style.adFrame}>
               <GoogleAd
+                enabled={allowAds}                                   // <-- gate it
                 slot={AD_SLOTS.guideArticleTop}
                 style={{ minHeight: 120 }}
                 placeholderLabel="Guide top"
@@ -132,7 +137,6 @@ export default function GuidePostPage() {
             </div>
           </div>
 
-          {/* Full-bleed hero inside the board */}
           {cover ? (
             <div className={style.sectionHero} aria-hidden>
               <div className={style.heroFrame}>
@@ -141,10 +145,11 @@ export default function GuidePostPage() {
             </div>
           ) : null}
 
-          {/* Inline ad */}
+          {/* Inline ad (disabled by allowAds) */}
           <div className={style.sectionAd}>
             <div className={style.adFrame}>
               <GoogleAd
+                enabled={allowAds}                                   // <-- gate it
                 slot={AD_SLOTS.guideArticleInline}
                 style={{ minHeight: 250 }}
                 placeholderLabel="Guide inline"
@@ -152,7 +157,6 @@ export default function GuidePostPage() {
             </div>
           </div>
 
-          {/* Article content as an inner card */}
           <div className={style.section}>
             <article className={style.innerCard}>
               {renderBlocks(post.content ?? [{ type: "p", text: post.excerpt }])}
