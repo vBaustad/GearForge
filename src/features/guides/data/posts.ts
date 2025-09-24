@@ -51,7 +51,6 @@ export const POSTS: GuidePost[] = [
       { type: "callout", tone: "warning", title: "Limitations", text: "You must be out of combat to open most UI panels. If a major patch changes internal IDs, the macro may need an update. It doesn’t bypass travel restrictions for other vendors—this only opens the Reshii Wraps tree." },         
     ]
   },
-
   {
     slug: "brewfest-token-farming",
     imageTitle: "Brewfest Tokens",
