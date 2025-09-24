@@ -1,3 +1,5 @@
+// src/features/guides/types.ts
+
 export type GuideCodeBlock = {
   type: "code";
   label?: string; // e.g., "Macro", "WeakAura", "Script"
@@ -27,9 +29,26 @@ export type GuideQuoteBlock = {
 
 export type GuideCalloutBlock = {
   type: "callout";
-  tone?: "tip" | "warn";
+  tone?: "tip" | "warning";
   title?: string;
   text: string;
+};
+
+/** NEW: TL;DR box (renders like a callout with fixed “TL;DR” title) */
+export type GuideTldrBlock = {
+  type: "tldr";
+  text: string;
+};
+
+/** NEW: Numbered / Bulleted steps */
+export type GuideListBlock = {
+  type: "ol" | "ul";  // "ol" for steps, "ul" for bullets
+  items: string[];
+};
+
+/** NEW: Divider line */
+export type GuideHrBlock = {
+  type: "hr";
 };
 
 export type GuideBlock =
@@ -37,12 +56,16 @@ export type GuideBlock =
   | GuideCodeBlock
   | GuideImageBlock
   | GuideQuoteBlock
-  | GuideCalloutBlock;
+  | GuideCalloutBlock
+  | GuideTldrBlock 
+  | GuideListBlock
+  | GuideHrBlock;
 
 export type GuidePost = {
   slug: string;
   imageTitle: string;
   title: string;
+  subtitle?: string; // optional subtitle (if absent, use excerpt)  
   excerpt: string;
   cover?: string;
   tags: string[];

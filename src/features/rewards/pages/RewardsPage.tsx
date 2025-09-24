@@ -33,6 +33,13 @@ export function RewardsPage() {
     canonical: "/rewards",
   });
 
+  // Extra safety: only show ads when we truly have content to show
+  const hasContent =
+    Boolean(data?.seasonName) &&
+    // if you have arrays here, feel free to expand the checks:
+    // e.g., (data?.mplus?.length ?? 0) > 0 || (data?.raids?.length ?? 0) > 0
+    true;
+
   return (
     <main className={`${page.wrap} ${page.wrapWide}`}>
       {/* One continuous panel (header + content) */}
@@ -59,11 +66,11 @@ export function RewardsPage() {
             <VaultCards data={data} />
           </div>
 
-          {/* Ad inside panel (gated) */}
+          {/* Ad inside panel (gated + only when content exists) */}
           <div className={rp.sectionAd}>
             <div className={rp.adFrame}>
               <GoogleAd
-                enabled={allowAds}
+                enabled={allowAds && hasContent}
                 slot={AD_SLOTS.rewardsTop}
                 style={{ minHeight: 120 }}
                 placeholderLabel="Rewards top"
@@ -88,11 +95,11 @@ export function RewardsPage() {
             <RaidCards />
           </div>
 
-          {/* Mid-page ad (gated) */}
+          {/* Mid-page ad (gated + only when content exists) */}
           <div className={rp.sectionAd}>
             <div className={rp.adFrame}>
               <GoogleAd
-                enabled={allowAds}
+                enabled={allowAds && hasContent}
                 slot={AD_SLOTS.rewardsMid}
                 style={{ minHeight: 120 }}
                 placeholderLabel="Rewards raid"

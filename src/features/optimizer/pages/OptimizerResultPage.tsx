@@ -59,7 +59,7 @@ function extractFallbackRarityNum(it?: ParsedItem): number | undefined {
 
 // Map loose strings / SimC numeric qualities to our DisplayRarity
 function coerceDisplayRarity(
-  primary?: string, // keep signature (unused here), stays for future flexibility
+  primary?: string,
   fallbackText?: string, // e.g. "Epic"
   fallbackNum?: number // 0..7
 ): DisplayRarity | undefined {
@@ -74,18 +74,12 @@ function coerceDisplayRarity(
   };
   const fromNum = (n?: number): DisplayRarity | undefined => {
     switch (n) {
-      case 0:
-        return "poor";
-      case 1:
-        return "common";
-      case 2:
-        return "uncommon";
-      case 3:
-        return "rare";
-      case 4:
-        return "epic";
-      case 5:
-        return "legendary";
+      case 0: return "poor";
+      case 1: return "common";
+      case 2: return "uncommon";
+      case 3: return "rare";
+      case 4: return "epic";
+      case 5: return "legendary";
       case 6: // artifact
       case 7: // heirloom
         return "legendary";
@@ -108,8 +102,7 @@ const CURRENCY_TO_CREST: Record<number, Crest> = {
 const isFiniteNum = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
 const avg = (nums: number[]) => (nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : 0);
 const cap = (s?: string | null) => (s ? s[0].toUpperCase() + s.slice(1) : "");
-const titleCase = (s?: string | null) =>
-  s ? s.replace(/\b\w+/g, (w) => w[0].toUpperCase() + w.slice(1).toLowerCase()) : "";
+const titleCase = (s?: string | null) => (s ? s.replace(/\b\w+/g, w => w[0].toUpperCase() + w.slice(1).toLowerCase()) : "");
 
 // Extract ilvl from either .ilvl or .level (ignore <=0)
 const getIlvl = (x: { ilvl?: number; level?: number } | undefined | null): number | null => {
@@ -150,6 +143,7 @@ export default function OptimizerResultPage() {
   });
 
   const allowAds = useAllowAds();
+  const navigate = useNavigate();
 
   const data: SimcPayload | null = useMemo(() => {
     if (typeof window === "undefined") return null;
@@ -161,6 +155,7 @@ export default function OptimizerResultPage() {
   }, []);
 
   const simcText = data?.simc ?? "";
+  const hasContent = !!simcText; // only show ads when a payload exists
 
   // --- Parse equipped items ---
   const items: ParsedItem[] = useMemo(() => (simcText ? parseSimc(simcText) : []), [simcText]);
@@ -294,9 +289,6 @@ export default function OptimizerResultPage() {
     };
   }, [fetchTotal, allIconIds]);
 
-  const navigate = useNavigate();
-  const classToken = meta?.className ? (page as Record<string, string>)[`class-${meta.className}`] ?? "" : "";
-
   // =========================
   // Current vs potential avg ilvl (same rule as Paperdoll)
   // =========================
@@ -322,9 +314,11 @@ export default function OptimizerResultPage() {
       const current = getIlvl(item);
       if (!isFiniteNum(current) || current <= 0) continue;
 
-      const hasUpgrade = !!plan && isFiniteNum(plan.toRank) && isFiniteNum(plan.fromRank) && plan.toRank > plan.fromRank;
+      const hasUpgrade =
+        !!plan && isFiniteNum(plan.toRank) && isFiniteNum(plan.fromRank) && plan.toRank > plan.fromRank;
 
-      const display = hasUpgrade && isFiniteNum(plan?.toIlvl) && plan!.toIlvl > 0 ? plan!.toIlvl : current;
+      const display =
+        hasUpgrade && isFiniteNum(plan?.toIlvl) && plan!.toIlvl > 0 ? plan!.toIlvl : current;
 
       vals.push(display);
     }
@@ -383,7 +377,7 @@ export default function OptimizerResultPage() {
           <div className={orp.boardBody}>
             {/* Mast section */}
             <div className={orp.section}>
-              <header className={`${page.mast} ${classToken}`}>
+              <header className={`${page.mast} ${meta?.className ? (page as Record<string, string>)[`class-${meta.className}`] ?? "" : ""}`}>
                 <h1 className={page.mastName}>{meta?.name ?? "Upgrade Planner"}</h1>
                 {meta && <div className={page.mastSubline}>{subtitle}</div>}
 
@@ -409,11 +403,11 @@ export default function OptimizerResultPage() {
               </header>
             </div>
 
-            {/* Ad section */}
+            {/* Ad section (only when we have real content) */}
             <div className={orp.sectionAd}>
               <div className={orp.adFrame}>
                 <GoogleAd
-                  enabled={allowAds}
+                  enabled={allowAds && hasContent}
                   slot={AD_SLOTS.optimizerResultHeader}
                   style={{ minHeight: 120 }}
                   placeholderLabel="Results header"
@@ -474,14 +468,18 @@ export default function OptimizerResultPage() {
 
                     <div style={{ margin: "24px auto", width: "100%", maxWidth: 760 }}>
                       <GoogleAd
-                        enabled={allowAds}
+                        enabled={allowAds && hasContent}
                         slot={AD_SLOTS.optimizerResultInline}
                         style={{ minHeight: 250 }}
                         placeholderLabel="Results inline"
                       />
                     </div>
 
-                    <NarrativePlan plans={plans} ceilingIlvl={ceilingIlvl} visualsBySlot={visualsBySlot} />
+                    <NarrativePlan
+                      plans={plans}
+                      ceilingIlvl={ceilingIlvl}
+                      visualsBySlot={visualsBySlot}
+                    />
                   </IconUrlsProvider>
                 )}
               </div>

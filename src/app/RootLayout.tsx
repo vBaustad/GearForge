@@ -1,13 +1,12 @@
+// src/app/RootLayout.tsx
 import { Outlet, useMatches, useLocation } from "react-router-dom";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
 import { InfoBar } from "../components/InfoBar";
-import { GoogleAd } from "../components/ads/GoogleAd";
+import GoogleAd from "../components/ads/GoogleAd"; // use default import (optional)
 import { AD_SLOTS } from "../config/ads";
 import type { UIMatch } from "react-router-dom";
 import { AdGate } from "../components/ads/AdGate";
-import { ADS_ENABLED } from "../components/ads/GoogleAd";
-
 
 export function RootLayout() {
   type RouteHandle = { noAds?: boolean };
@@ -15,23 +14,24 @@ export function RootLayout() {
   const { pathname } = useLocation();
 
   const noAdsFromHandle = matches.some(m => (m.handle as RouteHandle)?.noAds);
-
   const noAdsByPath =
     pathname.startsWith("/guides/classes") ||
     pathname === "/faq" ||
     pathname === "/terms" ||
-    pathname === "/privacy" ||
-    pathname === "/404";
-
+    pathname === "/privacy";
   const noAds = noAdsFromHandle || noAdsByPath;
 
   const isOptimizerInput = pathname === "/optimizer";
   const noAdsStrict = noAds || isOptimizerInput;
 
+  // 🔑 Compute env + flag LOCALLY (don’t import ADS_ENABLED)
+  const client = import.meta.env.VITE_ADSENSE_CLIENT ?? "";
+  const adsEnabled = client.length > 0;
+
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Load/remove AdSense script based on route */}
-      <AdGate client={import.meta.env.VITE_ADSENSE_CLIENT ?? ""} enabled={ADS_ENABLED && !noAdsStrict} />
+      {/* Inject/remove script only when allowed */}
+      <AdGate client={client} enabled={adsEnabled && !noAdsStrict} />
 
       <Header />
       <InfoBar />
