@@ -1,3 +1,4 @@
+// src/features/guides/pages/GuidePostPage.tsx
 import style from "./guidepost.module.css";
 import { Link, useParams, useMatches, type UIMatch } from "react-router-dom";
 import { POSTS } from "../data/posts";
@@ -7,16 +8,15 @@ import { KEY_ART } from "../data/keyArtManifest";
 import { CodeBlock } from "../components/CodeBlock";
 import { Callout } from "../components/Callout";
 import { QuoteBox } from "../components/QuoteBox";
-import GoogleAd from "../../../components/ads/GoogleAd";             // <-- default import
-import { AD_SLOTS } from "../../../config/ads";
+import GoogleAd from "../../../components/ads/GoogleAd";
 import { usePageMeta } from "../../../app/seo/usePageMeta";
 
-/* small helper to respect route handles + paths */
+/* Respect route handles for ad gating (now none on this route) */
 type RouteHandle = { noAds?: boolean };
 function useAllowAds() {
   const matches = useMatches() as UIMatch<RouteHandle>[];
   const noAdsFromHandle = matches.some(m => (m.handle as RouteHandle)?.noAds);
-  return !noAdsFromHandle; // this page is handle:{noAds:true} so this becomes false
+  return !noAdsFromHandle;
 }
 
 function withBase(url?: string | null): string | null {
@@ -34,8 +34,14 @@ function hashSeed(seed: string): number {
   return h >>> 0;
 }
 
+/** Local block extensions (kept here so we don't have to change shared types) */
+type ListBlock = { type: "ol" | "ul" | "steps"; items: string[] }; // "steps" is an alias of "ol"
+type TLDRBlock = { type: "tldr"; text: string };
+type HRBlock = { type: "hr" };
+type GuideBlockEx = GuideBlock | ListBlock | TLDRBlock | HRBlock;
+
 export default function GuidePostPage() {
-  const allowAds = useAllowAds();                                     // <-- use it
+  const allowAds = useAllowAds();
   const { slug } = useParams();
   const post: GuidePost | undefined = POSTS.find(p => p.slug === slug);
 
@@ -95,6 +101,7 @@ export default function GuidePostPage() {
     );
   }
 
+
   return (
     <main className={`${style.wrap} ${style.wrapWide}`}>
       <section aria-label="Guide" className={style.board}>
@@ -125,18 +132,7 @@ export default function GuidePostPage() {
         </div>
 
         <div className={style.boardBody}>
-          {/* Ad near top (disabled by allowAds) */}
-          <div className={style.sectionAd}>
-            <div className={style.adFrame}>
-              <GoogleAd
-                enabled={allowAds}                                   // <-- gate it
-                slot={AD_SLOTS.guideArticleTop}
-                style={{ minHeight: 120 }}
-                placeholderLabel="Guide top"
-              />
-            </div>
-          </div>
-
+          {/* cover (optional) */}
           {cover ? (
             <div className={style.sectionHero} aria-hidden>
               <div className={style.heroFrame}>
@@ -145,35 +141,80 @@ export default function GuidePostPage() {
             </div>
           ) : null}
 
-          {/* Inline ad (disabled by allowAds) */}
-          <div className={style.sectionAd}>
-            <div className={style.adFrame}>
-              <GoogleAd
-                enabled={allowAds}                                   // <-- gate it
-                slot={AD_SLOTS.guideArticleInline}
-                style={{ minHeight: 250 }}
-                placeholderLabel="Guide inline"
-              />
-            </div>
-          </div>
-
           <div className={style.section}>
-            <article className={style.innerCard}>
-              {renderBlocks(post.content ?? [{ type: "p", text: post.excerpt }])}
+            <article className={`${style.article}`}>
+              {renderBlocks(
+                (post.content as unknown as GuideBlockEx[]) ??
+                  ([{ type: "p", text: post.excerpt }] as GuideBlockEx[])
+              )}
             </article>
           </div>
+
+          {allowAds && (
+            <div className={style.sectionAd}>
+              <div className={style.adFrame}>
+                <GoogleAd
+                  enabled
+                  slot={"0000000061"}         // Guide inline slot 0000000061
+                  style={{ minHeight: 250 }}
+                  placeholderLabel="Guide inline"
+                />
+              </div>
+            </div>
+          )}
         </div>
+
       </section>
     </main>
   );
 }
 
-function renderBlocks(blocks: GuideBlock[]) {
+function StepList({ items, ordered }: { items: string[]; ordered: boolean }) {
+  if (ordered) {
+    return (
+      <ol className={style.olStyled}>
+        {items.map((txt, i) => (
+          <li key={i}>{txt}</li>
+        ))}
+      </ol>
+    );
+  }
+  return (
+    <ul className={style.ulStyled}>
+      {items.map((txt, i) => (
+        <li key={i}>{txt}</li>
+      ))}
+    </ul>
+  );
+}
+
+function renderBlocks(blocks: GuideBlockEx[]) {
   return blocks.map((b, i) => {
-    if (b.type === "p") return <p key={i} className="navText" style={{ margin: i === 0 ? 0 : 8 }}>{b.text}</p>;
-    if (b.type === "code") return <CodeBlock key={i} label={b.label} lang={b.lang} content={b.content} />;
-    if (b.type === "callout") return <Callout key={i} tone={b.tone} title={b.title} text={b.text} />;
-    if (b.type === "quote") return <QuoteBox key={i} source={b.source} originalUrl={b.originalUrl} html={b.html} text={b.text} />;
+    if (b.type === "p") {
+      return (
+        <p key={i} className="navText" style={{ margin: i === 0 ? 0 : 8 }}>
+          {b.text}
+        </p>
+      );
+    }
+    if (b.type === "ol" || b.type === "steps") {
+      return <StepList key={i} items={b.items} ordered={true} />;
+    }
+    if (b.type === "ul") {
+      return <StepList key={i} items={b.items} ordered={false} />;
+    }
+    if (b.type === "tldr") {
+      return <Callout key={i} tone="tip" title="TL;DR" text={b.text} />;
+    }
+    if (b.type === "callout") {
+      return <Callout key={i} tone={b.tone} title={b.title} text={b.text} />;
+    }
+    if (b.type === "quote") {
+      return <QuoteBox key={i} source={b.source} originalUrl={b.originalUrl} html={b.html} text={b.text} />;
+    }
+    if (b.type === "code") {
+      return <CodeBlock key={i} label={b.label} lang={b.lang} content={b.content} />;
+    }
     if (b.type === "img") {
       return (
         <figure key={i} className={style.guideImgWrap}>
@@ -181,6 +222,9 @@ function renderBlocks(blocks: GuideBlock[]) {
           {b.caption ? <figcaption className={style.guideImgCaption}>{b.caption}</figcaption> : null}
         </figure>
       );
+    }
+    if (b.type === "hr") {
+      return <hr key={i} style={{ border: "none", borderTop: "1px solid #2a2c31", margin: "14px 0" }} />;
     }
     return null;
   });

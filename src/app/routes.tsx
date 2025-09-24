@@ -35,7 +35,7 @@ export const router = createBrowserRouter([
       // Feature: Guides
       { path: "guides",        lazy: GuidesPage },
       { path: "guides/classes/:class/:spec", lazy: GuideClassSpecPage, handle: { noAds: true} },
-      { path: "guides/:slug",  lazy: GuidePostPage, handle: { noAds: true}  },
+      { path: "guides/:slug",  lazy: GuidePostPage },
 
       // Feature: Changelog
       { path: "changelog",     element: <ChangelogPage /> },
