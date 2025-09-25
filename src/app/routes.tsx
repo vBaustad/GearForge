@@ -23,28 +23,25 @@ export const router = createBrowserRouter([
   {
     element: <RootLayout />,
     children: [
-      { index: true, element: <LandingPage />, handle: { noAds: true } },
+      { index: true, element: <LandingPage /> },
 
-      { path: "optimizer", element: <OptimizerPage />, handle: { noAds: true } },
+      { path: "optimizer", element: <OptimizerPage /> },
       { path: "optimizer/view", element: <OptimizerResultPage /> },
-
-      // Content-rich: Rewards page opts in
-      { path: "rewards", element: <RewardsPage />, handle: { allowLayoutAds: true } },
+      { path: "rewards", element: <RewardsPage /> },
 
       // Guides
-      { path: "guides", lazy: GuidesPage }, // only opt in if it has long-form content
-      { path: "guides/classes/:class/:spec", lazy: GuideClassSpecPage, handle: { noAds: true } },
-      { path: "guides/:slug", lazy: GuidePostPage, handle: { allowLayoutAds: true } },
+      { path: "guides", lazy: GuidesPage },
+      { path: "guides/classes/:class/:spec", lazy: GuideClassSpecPage },
+      { path: "guides/:slug", lazy: GuidePostPage },
 
-      // Changelog likely contentful; opt-in if it’s detailed posts
-      { path: "changelog", element: <ChangelogPage />, handle: { allowLayoutAds: true } },
 
-      // Thin/utility pages — keep ad-free
-      { path: "faq",     lazy: FaqPage,     handle: { noAds: true } },
-      { path: "terms",   lazy: TermsPage,   handle: { noAds: true } },
-      { path: "privacy", lazy: PrivacyPage, handle: { noAds: true } },
+      { path: "changelog", element: <ChangelogPage /> },
 
-      { path: "*", lazy: NotFound, handle: { noAds: true } },
+      { path: "faq",     lazy: FaqPage},
+      { path: "terms",   lazy: TermsPage},
+      { path: "privacy", lazy: PrivacyPage },
+
+      { path: "*", lazy: NotFound },
     ],
   },
 ]);

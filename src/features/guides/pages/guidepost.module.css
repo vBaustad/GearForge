@@ -53,7 +53,6 @@
   text-shadow: 0 1px 0 rgba(0,0,0,.35);
 }
 
-
 /* Pills */
 .pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 .pill  {
@@ -120,6 +119,37 @@
   color: #eef1f8;
 }
 
+/* Headings (inside article) */
+.article h1,
+.article h2,
+.article h3 {
+  margin: 18px 0 10px;
+  color: var(--ink);
+  letter-spacing: .2px;
+  line-height: 1.25;
+  text-shadow: 0 1px 0 rgba(0,0,0,.25);
+}
+.article h1 {
+  font-size: 28px;
+  font-weight: 900;
+}
+.article h2 {
+  font-size: 22px;
+  font-weight: 850;
+  border-bottom: 1px solid #2a2c31;
+  padding-bottom: 6px;
+}
+.article h3 {
+  font-size: 18px;
+  font-weight: 800;
+  color: #e6eaf3;
+}
+@media (max-width: 720px) {
+  .article h1 { font-size: 24px; }
+  .article h2 { font-size: 20px; }
+  .article h3 { font-size: 17px; }
+}
+
 /* Links */
 .article a {
   color: #ffd479;
@@ -183,16 +213,35 @@
   box-shadow: 0 0 0 2px rgba(255,255,255,.08), 0 2px 4px rgba(0,0,0,.25);
 }
 
-/* Images */
-.guideImgWrap { margin: 14px 0; }
-.article .guideImg {
-  border-radius: 12px;
+/* Images: centered, uniform size (not page width) */
+.guideImgWrap {
+  margin: 16px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.guideImgFrame {
+  width: min(720px, 100%);
+  aspect-ratio: 16 / 9;
   border: 1px solid #2a2c31;
+  border-radius: 12px;
+  overflow: hidden;
   background: rgba(255,255,255,.03);
   box-shadow: 0 10px 22px rgba(0,0,0,.35);
 }
+.article .guideImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* use 'contain' if you prefer letterboxing */
+  display: block;
+}
 .article .guideImgCaption {
-  color: #9aa1b3; font-size: 12px; margin-top: 6px;
+  width: min(720px, 100%);
+  text-align: center;
+  color: #9aa1b3;
+  font-size: 12px;
+  margin-top: 6px;
+  padding: 0 6px;
 }
 
 /* Callouts (lightweight tones) */
@@ -206,7 +255,7 @@
 }
 .calloutHeader { margin-bottom: 6px; font-weight: 850; letter-spacing: .2px; }
 
-/* Heuristic tone accents (works even if component doesn't emit extra classes) */
+/* Heuristic tone accents */
 .callout:has(strong:contains("Important")),
 .callout:has(> [class*="Header"]:contains("Important")) {
   border-color: #5a2d2d;
@@ -269,8 +318,7 @@
   .innerCard { padding: 14px; }
 }
 
-/* --- tiny helper for :has/contains poly-safety (ignored by browsers that don't support it) --- */
+/* --- tiny helper for :has/contains poly-safety --- */
 @supports not (selector(:has(*))) {
-  /* No-op: gracefully fall back without tone accents */
+  /* graceful fallback without tone accents */
 }
-/* Poor-man :contains() polyfill via attribute — if your Callout ever adds data attributes, prefer that. */

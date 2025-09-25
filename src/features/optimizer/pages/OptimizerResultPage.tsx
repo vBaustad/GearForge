@@ -12,22 +12,10 @@ import { planAll } from "../services/planner";
 import { normalizeSlot } from "../services/slotMap";
 import { RotateCcw, ExternalLink, Copy } from "lucide-react";
 import { IconUrlsProvider, type IconUrlMap } from "../context/IconUrlContext";
-import { useNavigate, useMatches, useLocation, type UIMatch } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import PageSplashGate from "../components/PageSplashGate";
 import orp from "./optimizerResultPage.module.css";
-import GoogleAd from "../../../components/ads/GoogleAd";
-import { AD_SLOTS } from "../../../config/ads";
 
-// ----- Route handle gating (type-safe) -----
-type RouteHandle = { noAds?: boolean };
-function getHandle(m: UIMatch<unknown>): RouteHandle {
-  return (m.handle ?? {}) as RouteHandle;
-}
-function useAllowAds() {
-  const matches = useMatches() as UIMatch<unknown>[];
-  const noAdsFromHandle = matches.some(m => Boolean(getHandle(m).noAds));
-  return !noAdsFromHandle;
-}
 
 // ----- Helpers -----
 type DisplayRarity = "poor" | "common" | "uncommon" | "rare" | "epic" | "legendary";
@@ -67,9 +55,9 @@ function coerceDisplayRarity(primary?: string, fallbackText?: string, fallbackNu
       case 2: return "uncommon";
       case 3: return "rare";
       case 4: return "epic";
-      case 5: // legendary
-      case 6: // artifact
-      case 7: // heirloom
+      case 5:
+      case 6:
+      case 7:
         return "legendary";
       default:
         return undefined;
@@ -115,9 +103,7 @@ export default function OptimizerResultPage() {
     ogType: "website",
   });
 
-  const allowAds = useAllowAds();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const data: SimcPayload | null = useMemo(() => {
     if (typeof window === "undefined") return null;
@@ -129,7 +115,6 @@ export default function OptimizerResultPage() {
   }, []);
 
   const simcText = data?.simc ?? "";
-  const hasContent = !!simcText; // only show ads when a payload exists
 
   // Parse equipped / context / meta
   const items: ParsedItem[] = useMemo(() => (simcText ? parseSimc(simcText) : []), [simcText]);
@@ -303,6 +288,7 @@ export default function OptimizerResultPage() {
     return v;
   }, [bySlot, iconMap]);
 
+
   return (
     <PageSplashGate durationMs={2000} oncePerSession={false} storageKey="gf-opt-splash-seen">
       <main className={`${page.wrap} ${page.wrapWide}`}>
@@ -335,20 +321,6 @@ export default function OptimizerResultPage() {
                 </div>
               </header>
             </div>
-
-            {/* Ad (only when there’s real content) */}
-            <div className={orp.sectionAd}>
-              <div className={orp.adFrame}>
-                <GoogleAd
-                  key={`opt-res-header-${location.pathname}`}
-                  enabled={allowAds && hasContent}
-                  slot={AD_SLOTS.optimizerResultHeader}
-                  style={{ minHeight: 120 }}
-                  placeholderLabel="Results header"
-                />
-              </div>
-            </div>
-
             {/* Results */}
             <div className={orp.section}>
               <div className={orp.innerCard}>
@@ -385,17 +357,6 @@ export default function OptimizerResultPage() {
                 ) : (
                   <IconUrlsProvider urls={iconMap}>
                     <Paperdoll items={items} plans={plans} />
-
-                    <div style={{ margin: "24px auto", width: "100%", maxWidth: 760 }}>
-                      <GoogleAd
-                        key={`opt-res-inline-${location.pathname}`}
-                        enabled={allowAds && hasContent}
-                        slot={AD_SLOTS.optimizerResultInline}
-                        style={{ minHeight: 250 }}
-                        placeholderLabel="Results inline"
-                      />
-                    </div>
-
                     <NarrativePlan
                       plans={plans}
                       ceilingIlvl={ceilingIlvl}
