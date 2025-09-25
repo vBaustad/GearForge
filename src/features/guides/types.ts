@@ -9,6 +9,13 @@ export type GuideCodeBlock = {
 
 export type GuideParagraph = {
   type: "p";
+  /**
+   * Supports a tiny inline markup subset:
+   * - [label](https://example.com)
+   * - **bold**
+   * - _italic_
+   * - `inline code`
+   */
   text: string;
 };
 
@@ -16,7 +23,14 @@ export type GuideImageBlock = {
   type: "img";
   src: string;   // public path or absolute URL
   alt?: string;
-  caption?: string;
+  caption?: string; // optional figcaption
+};
+
+/** NEW: semantic headings */
+export type GuideHeadingBlock = {
+  type: "h2" | "h3" | "h4";
+  text: string;  // plain text; inline links handled via the paragraph style renderer if needed
+  id?: string;   // optional anchor id (auto-generated if omitted)
 };
 
 export type GuideQuoteBlock = {
@@ -34,19 +48,23 @@ export type GuideCalloutBlock = {
   text: string;
 };
 
-/** NEW: TL;DR box (renders like a callout with fixed “TL;DR” title) */
+/** TL;DR box (renders like a callout with fixed “TL;DR” title) */
 export type GuideTldrBlock = {
   type: "tldr";
   text: string;
 };
 
-/** NEW: Numbered / Bulleted steps */
+/** Numbered / Bulleted steps */
 export type GuideListBlock = {
-  type: "ol" | "ul";  // "ol" for steps, "ul" for bullets
+  type: "ol" | "ul" | "steps";  // "ol" for steps, "ul" for bullets
+  /**
+   * Each item supports the same tiny inline markup:
+   * links, **bold**, _italic_, `code`.
+   */
   items: string[];
 };
 
-/** NEW: Divider line */
+/** Divider line */
 export type GuideHrBlock = {
   type: "hr";
 };
@@ -59,18 +77,19 @@ export type GuideBlock =
   | GuideCalloutBlock
   | GuideTldrBlock 
   | GuideListBlock
-  | GuideHrBlock;
+  | GuideHrBlock
+  | GuideHeadingBlock;
 
 export type GuidePost = {
   slug: string;
   imageTitle: string;
   title: string;
-  subtitle?: string; // optional subtitle (if absent, use excerpt)  
+  subtitle?: string;  
   excerpt: string;
   cover?: string;
   tags: string[];
-  author?: string;    // optional author
-  published?: string; // ISO date the guide was posted
-  updated: string;    // ISO date last updated
-  content?: GuideBlock[]; // structured content blocks
+  author?: string;
+  published?: string; // ISO
+  updated: string;    // ISO
+  content?: GuideBlock[];
 };

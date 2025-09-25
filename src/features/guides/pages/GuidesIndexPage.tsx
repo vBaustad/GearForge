@@ -1,21 +1,13 @@
+// src/features/guides/pages/GuidesIndexPage.tsx
 import page from "../../../styles/page.module.css";
-import { Link, useMatches, type UIMatch } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { GuideGrid } from "../components/GuideGrid";
 import { useEffect, useState } from "react";
 import { SpecIconRow } from "../components/SpecIconRow";
 import { ClassIconRow } from "../components/ClassIconRow";
 import s from "../components/components.module.css";
 import gi from "./guidesIndex.module.css";
-import GoogleAd from "../../../components/ads/GoogleAd";   // ← default import
-import { AD_SLOTS } from "../../../config/ads";
 import { usePageMeta } from "../../../app/seo/usePageMeta";
-
-type RouteHandle = { noAds?: boolean };
-function useAllowAds() {
-  const matches = useMatches() as UIMatch<RouteHandle>[];
-  const noAdsFromHandle = matches.some(m => (m.handle as RouteHandle)?.noAds);
-  return !noAdsFromHandle; // true on Guides index, false on routes with handle:{noAds:true}
-}
 
 export default function GuidesIndexPage() {
   usePageMeta({
@@ -27,11 +19,12 @@ export default function GuidesIndexPage() {
     ogType: "website",
   });
 
-  const allowAds = useAllowAds();
 
   const [selectedClass, setSelectedClass] = useState<string | null>(null);
   const [visibleClass, setVisibleClass] = useState<string | null>(null);
-  useEffect(() => { if (selectedClass) setVisibleClass(selectedClass); }, [selectedClass]);
+  useEffect(() => {
+    if (selectedClass) setVisibleClass(selectedClass);
+  }, [selectedClass]);
 
   return (
     <main className={`${page.wrap} ${page.wrapWide}`}>
@@ -69,32 +62,10 @@ export default function GuidesIndexPage() {
             </div>
           </div>
 
-          {/* Ad between cards (gated) */}
-          <div className={gi.sectionAd}>
-            <div className={gi.adFrame}>
-              <GoogleAd
-                enabled={allowAds}
-                slot={AD_SLOTS.guidesIndexTop}
-                style={{ minHeight: 120 }}
-                placeholderLabel="Guides selector"
-              />
-            </div>
-          </div>
-
           {/* Guides grid card */}
           <div className={gi.section}>
             <div className={gi.innerCard}>
               <GuideGrid />
-
-              {/* Optional ad inside the card (gated) */}
-              <div style={{ marginTop: 24 }}>
-                <GoogleAd
-                  enabled={allowAds}
-                  slot={AD_SLOTS.guidesIndexGrid}
-                  style={{ minHeight: 250 }}
-                  placeholderLabel="Guides grid"
-                />
-              </div>
             </div>
           </div>
         </div>

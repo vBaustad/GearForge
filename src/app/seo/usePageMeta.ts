@@ -1,57 +1,60 @@
+// src/app/seo/usePageMeta.ts
 import { useEffect } from "react";
 
 type OgType = "website" | "article";
 
 export type UsePageMetaOpts = {
-  /** Page title without site suffix (we’ll template it) */
   title?: string;
-  /** Plain text description (150–160 chars is ideal) */
   description?: string;
-  /** Absolute or relative URL to an OG image */
   image?: string;
-  /** Alt text for OG/Twitter image */
   imageAlt?: string;
-  /** Absolute or relative canonical URL; defaults to current full href */
   canonical?: string;
-  /** Set robots to noindex,nofollow */
   noindex?: boolean;
-  /** Open Graph type; default "website" */
   ogType?: OgType;
-  /** OG site name (default "GearForge") */
   siteName?: string;
-  /** OG locale, e.g. "en_US" or "nb_NO" */
   locale?: string;
-
-  /** Twitter handle of the site (e.g. "@gearforge") */
   twitterSite?: string;
-  /** Twitter handle of the author/creator */
   twitterCreator?: string;
-
-  /** Optional JSON-LD object */
   jsonLd?: object;
-  /** Title template; %s replaced by title */
-  titleTemplate?: string; // e.g. "%s — GearForge"
-
-  /** Article-only fields (used when ogType === "article") */
-  publishedTime?: string; // ISO 8601
-  modifiedTime?: string;  // ISO 8601
+  titleTemplate?: string;
+  publishedTime?: string;
+  modifiedTime?: string;
   section?: string;
-  tags?: string[];        // e.g., ["WoW","Mythic+","Vault"]
+  tags?: string[];
 };
 
-const SITE_URL = import.meta.env.VITE_SITE_URL || "";
+const IS_DEV = !!import.meta.env.DEV;
+const RAW_SITE_URL = import.meta.env.VITE_SITE_URL || "";
 const DEFAULT_OG = import.meta.env.VITE_OG_IMAGE || "/og-cover.png";
 const DEFAULT_TEMPLATE = "%s — GearForge";
 const DEFAULT_SITE_NAME = "GearForge";
 
-function abs(url?: string): string | undefined {
-  if (!url) return undefined;
+function resolveSiteOrigin(): string {
+  if (RAW_SITE_URL) {
+    try {
+      return new URL(RAW_SITE_URL).origin.replace(/\/$/, "");
+    } catch (e) {
+      if (IS_DEV) console.warn("[usePageMeta] Invalid VITE_SITE_URL:", RAW_SITE_URL, e);
+    }
+  }
+  if (typeof window !== "undefined") return window.location.origin;
+  return "";
+}
+const SITE_ORIGIN = resolveSiteOrigin();
+
+function absoluteFromSiteOrigin(input?: string, stripSearchHash = false): string | undefined {
+  if (!input) return undefined;
   try {
-    const base =
-      SITE_URL || (typeof window !== "undefined" ? window.location.origin : "");
-    return new URL(url, base).toString();
-  } catch {
-    return url;
+    const base = SITE_ORIGIN || (typeof window !== "undefined" ? window.location.origin : undefined);
+    const url = new URL(input, base);
+    if (stripSearchHash) {
+      url.search = "";
+      url.hash = "";
+    }
+    return url.toString();
+  } catch (e) {
+    if (IS_DEV) console.warn("[usePageMeta] URL build failed for:", input, e);
+    return input;
   }
 }
 
@@ -97,7 +100,7 @@ function upsertJsonLd(data?: object) {
   if (typeof document === "undefined") return;
   document
     .querySelectorAll('script[type="application/ld+json"][data-dgrp="seo"]')
-  .forEach((n) => n.remove());
+    .forEach(n => n.remove());
   if (!data) return;
   const el = document.createElement("script");
   el.type = "application/ld+json";
@@ -132,9 +135,7 @@ export function usePageMeta(opts: UsePageMetaOpts) {
 
     // Title (+ template)
     if (title) {
-      const full = titleTemplate.includes("%s")
-        ? titleTemplate.replace("%s", title)
-        : title;
+      const full = titleTemplate.includes("%s") ? titleTemplate.replace("%s", title) : title;
       document.title = full;
       upsertMeta("property", "og:title", full);
       upsertMeta("name", "twitter:title", full);
@@ -145,15 +146,14 @@ export function usePageMeta(opts: UsePageMetaOpts) {
     upsertMeta("property", "og:description", description);
     upsertMeta("name", "twitter:description", description);
 
-    // Canonical & URL — default to the full current URL
-    const currentHref =
-      typeof window !== "undefined" ? window.location.href : undefined;
-    const canonicalAbs = abs(canonical ?? currentHref);
+    // Canonical & URL (strip query/hash by default)
+    const pathOnly = typeof window !== "undefined" ? window.location.pathname : undefined;
+    const canonicalAbs = absoluteFromSiteOrigin(canonical ?? pathOnly, true);
     upsertLinkCanonical(canonicalAbs);
     upsertMeta("property", "og:url", canonicalAbs || undefined);
 
     // OG/Twitter image (+ alt)
-    const imgAbs = abs(image || DEFAULT_OG);
+    const imgAbs = absoluteFromSiteOrigin(image || DEFAULT_OG, false);
     upsertMeta("property", "og:image", imgAbs);
     upsertMeta("property", "og:image:secure_url", imgAbs);
     upsertMeta("name", "twitter:image", imgAbs);
@@ -171,38 +171,38 @@ export function usePageMeta(opts: UsePageMetaOpts) {
     upsertMeta("name", "twitter:creator", twitterCreator);
 
     // robots
-    if (noindex) upsertMeta("name", "robots", "noindex, nofollow");
-    else upsertMeta("name", "robots", undefined);
+    if (noindex) {
+      upsertMeta("name", "robots", "noindex, nofollow");
+    } else {
+      upsertMeta("name", "robots", undefined);
+    }
 
     // Article-specific OG tags
     if (ogType === "article") {
       upsertMeta("property", "article:published_time", publishedTime);
       upsertMeta("property", "article:modified_time", modifiedTime);
       upsertMeta("property", "article:section", section);
+
+      // tags
+      document
+        .querySelectorAll('meta[property="article:tag"][data-dgrp="seo"]')
+        .forEach(n => n.remove());
       if (tags?.length) {
-        // remove previous tags added by us
-        document
-          .querySelectorAll('meta[property="article:tag"][data-dgrp="seo"]')
-          .forEach((n) => n.remove());
-        tags.forEach((t) => {
+        tags.forEach(t => {
           const meta = document.createElement("meta");
           meta.setAttribute("property", "article:tag");
           meta.setAttribute("content", t);
           meta.dataset.dgrp = "seo";
           document.head.appendChild(meta);
         });
-      } else {
-        document
-          .querySelectorAll('meta[property="article:tag"][data-dgrp="seo"]')
-          .forEach((n) => n.remove());
       }
     } else {
-      // Clean up article tags if we switch types
-      ["article:published_time","article:modified_time","article:section"]
-        .forEach((k) => upsertMeta("property", k, undefined));
+      ["article:published_time", "article:modified_time", "article:section"].forEach(k =>
+        upsertMeta("property", k, undefined)
+      );
       document
         .querySelectorAll('meta[property="article:tag"][data-dgrp="seo"]')
-        .forEach((n) => n.remove());
+        .forEach(n => n.remove());
     }
 
     // JSON-LD

@@ -1,5 +1,5 @@
 // src/features/rewards/pages/RewardsPage.tsx
-import { Link, useMatches, useLocation, type UIMatch } from "react-router-dom";
+import { Link } from "react-router-dom";
 import page from "../../../styles/page.module.css";
 import rp from "./rewardsPage.module.css";
 
@@ -10,21 +10,9 @@ import { RaidCards } from "../components/RaidCards";
 import { CollapsibleSection } from "../components/CollapsibleSection";
 import { usePageMeta } from "../../../app/seo/usePageMeta";
 
-import GoogleAd from "../../../components/ads/GoogleAd";
-import { AD_SLOTS } from "../../../config/ads";
-
-/** Respect route handles for ad gating (e.g. { handle: { noAds: true } }) */
-type RouteHandle = { noAds?: boolean };
-function useAllowAds() {
-  const matches = useMatches() as UIMatch<RouteHandle>[];
-  return !matches.some(m => (m.handle as RouteHandle)?.noAds);
-}
 
 export function RewardsPage() {
   const data = useRewardsData();
-  const allowAds = useAllowAds();
-  const location = useLocation();
-
   usePageMeta({
     title: "Mythic+, Raid & Great Vault Rewards",
     description:
@@ -34,8 +22,6 @@ export function RewardsPage() {
     canonical: "/rewards",
   });
 
-  // Only show ads when we truly have content
-  const hasContent = Boolean(data?.seasonName);
 
   return (
     <main className={`${page.wrap} ${page.wrapWide}`}>
@@ -62,20 +48,6 @@ export function RewardsPage() {
             <VaultCards data={data} />
           </div>
 
-          {/* Ad inside panel */}
-          <div className={rp.sectionAd}>
-            <div className={rp.adFrame}>
-              <GoogleAd
-                // key includes route so SPA navigations re-request a fill even if the component persists
-                key={`rewards-top-${location.pathname}`}
-                enabled={allowAds && hasContent}
-                slot={AD_SLOTS.rewardsTop}
-                style={{ minHeight: 120 }}
-                placeholderLabel="Rewards top"
-              />
-            </div>
-          </div>
-
           {/* Full Mythic+ table (collapsible) */}
           <div className={rp.section}>
             <CollapsibleSection
@@ -91,19 +63,6 @@ export function RewardsPage() {
           {/* Raid drops */}
           <div className={rp.section}>
             <RaidCards />
-          </div>
-
-          {/* Mid-page ad */}
-          <div className={rp.sectionAd}>
-            <div className={rp.adFrame}>
-              <GoogleAd
-                key={`rewards-mid-${location.pathname}`}
-                enabled={allowAds && hasContent}
-                slot={AD_SLOTS.rewardsMid}
-                style={{ minHeight: 120 }}
-                placeholderLabel="Rewards mid"
-              />
-            </div>
           </div>
         </div>
       </section>

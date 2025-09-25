@@ -97,7 +97,8 @@ export const POSTS: GuidePost[] = [
     slug: "legion-remix-overview",
     imageTitle: "Legion Remix",
     title: "Legion Remix — Everything You Need to Know",
-    excerpt: "Dates, phases, leveling, Heroic World Tier, artifact tree, gearing, Mythic+, raids, and the big cosmetic reward chase.",
+    excerpt:
+      "Dates, phases, leveling, Heroic World Tier, artifact tree, gearing, Mythic+, raids, and the big cosmetic reward chase.",
     cover: "images/key_art/custom/WoW-Legion-Remix.jpg",
     tags: ["legion", "remix", "overview", "guide"],
     author: "Gearforge Team",
@@ -106,23 +107,26 @@ export const POSTS: GuidePost[] = [
     content: [
       { type: "tldr", text: "Phased event from Oct 7/8 through mid-Jan. Level 10→80 in Legion zones, power up a universal artifact tree with Infinite Power, and farm Bronze to buy (almost) every Legion cosmetic. Mythic+, daily-reset raids, and Heroic World Tier are your big progression loops." },
 
+      { type: "h2", text: "What is Legion Remix?" },
       { type: "p", text: "Legion Remix is a limited-time mode with a phased rollout and a massive cosmetics chase. Progress a universal artifact tree, farm Bronze, and clear Legion raids and dungeons on a daily cadence." },
+
+      { type: "img", src: "images/key_art/custom/remix-bazaar.jpg", alt: "Infinite Bazaar hub", caption: "The Infinite Bazaar — your hub for vendors, upgrades, and the Heroic World Tier console." },
 
       { type: "hr" },
 
-      { type: "p", text: "Release & phases:" },
+      { type: "h2", text: "Release windows & phases" },
       { type: "ol", items: [
         "Launch: Oct 7/8 (region-dependent) — “Skies of Fire”: Broken Isles leveling + Emerald Nightmare & Trial of Valor.",
         "Two weeks later — “Rise of the Nightfallen”: Insurrection story, new world quests, Return to Karazhan, Nighthold.",
         "Nov 4 — “Legionfall”: Broken Shore, assaults, Cathedral of Eternal Night, Tomb of Sargeras.",
         "Nov 18 — “Argus Eternal”: Argus campaign, Seat of the Triumvirate, Antorus.",
-        "Dec 9 — “Infinite Echoes”: catch-up, remix updates, extra rewards.",
+        "Dec 9 — “Infinite Echoes”: catch-up, remix updates, extra rewards."
       ]},
       { type: "p", text: "Event is scheduled to complete Jan 19/20 (region-dependent)." },
 
       { type: "hr" },
 
-      { type: "p", text: "Leveling & access:" },
+      { type: "h2", text: "Leveling & access" },
       { type: "ul", items: [
         "Start at level 10; level to 80 in scaled Broken Isles zones.",
         "All races are available; classes are the original Legion 12 (Evoker excluded).",
@@ -138,7 +142,7 @@ export const POSTS: GuidePost[] = [
 
       { type: "hr" },
 
-      { type: "p", text: "Heroic World Tier:" },
+      { type: "h2", text: "Heroic World Tier" },
       { type: "ul", items: [
         "Toggle at the Console of Infinite Chaos in the Infinite Bazaar (south of Dalaran); exit with Temporal Retreat, spirit healer, or the console.",
         "Creatures hit harder, sometimes with extra affixes; in return, you gain much more Bronze and Infinite Power.",
@@ -148,7 +152,8 @@ export const POSTS: GuidePost[] = [
 
       { type: "hr" },
 
-      { type: "p", text: "Artifact weapon = your Remix progression anchor:" },
+      { type: "h2", text: "Artifact tree & powers" },
+      { type: "img", src: "images/key_art/custom/artifact-tree.jpg", alt: "Remix artifact tree", caption: "The universal artifact tree." },
       { type: "ul", items: [
         "Earned quickly via a short intro; alts can skip directly to the weapon.",
         "Upgrade item level with Artifactium Sand from Caches of Infinite Treasures, drops, and scrapping (cap 740, the global Remix ilvl cap).",
@@ -162,7 +167,7 @@ export const POSTS: GuidePost[] = [
 
       { type: "hr" },
 
-      { type: "p", text: "Endgame gearing at 80:" },
+      { type: "h2", text: "Endgame gearing at 80" },
       { type: "ul", items: [
         "World/Caches gearing soft-caps around ~584 for epics; higher ilvl comes from Motes of Broken Time (combine 10 to create current-tier raid loot scaled to your average ilvl).",
         "Mythic+: all Legion dungeons are in the pool with original affixes plus 4 new Eternus Trials. Keys around +40 are the practical ceiling for most groups on PTR; above that scales sharply. Expect ~681 ilvl rewards at that tier (subject to tuning).",
@@ -172,12 +177,12 @@ export const POSTS: GuidePost[] = [
 
       { type: "hr" },
 
-      { type: "p", text: "Leaving Remix:" },
+      { type: "h2", text: "Leaving Remix" },
       { type: "p", text: "You can convert a Remix character back to regular realms at any time from the login screen (one-way). Characters receive a basic gear package, some gold, and move to your main game." },
 
       { type: "hr" },
 
-      { type: "p", text: "Rewards & cosmetics (Infinite Bazaar):" },
+      { type: "h2", text: "Rewards & cosmetics (Infinite Bazaar)" },
       { type: "ul", items: [
         "Bronze returns as the universal currency (account-wide; 1:1 transfers within your warband).",
         "Fel-themed class mounts: auto-granted at 80 on the class or purchasable for 20,000 Bronze each.",
