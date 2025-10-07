@@ -280,9 +280,21 @@ function renderBlocks(blocks: GuideBlock[]) {
       return <StepList key={i} items={b.items} ordered={true} />;
     }
 
-    // Callouts / TL;DR
-    if (b.type === "tldr") return <Callout key={i} tone="tip" title="TL;DR" text={b.text} />;
-    if (b.type === "callout") return <Callout key={i} tone={b.tone} title={b.title} text={b.text} />;
+    // Callouts / TL;DR  (render inline so **bold** / _italic_ / `code` work)
+    if (b.type === "tldr") {
+      return (
+        <Callout key={i} tone="tip" title="TL;DR">
+          {renderInline(b.text)}
+        </Callout>
+      );
+    }
+    if (b.type === "callout") {
+      return (
+        <Callout key={i} tone={b.tone} title={b.title}>
+          {renderInline(b.text)}
+        </Callout>
+      );
+    }
 
     // Quote
     if (b.type === "quote") {

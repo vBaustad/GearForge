@@ -43,7 +43,7 @@ export type GuideQuoteBlock = {
 
 export type GuideCalloutBlock = {
   type: "callout";
-  tone?: "tip" | "warning";
+  tone?: "info" |"tip" | "success" |"warning";
   title?: string;
   text: string;
 };
