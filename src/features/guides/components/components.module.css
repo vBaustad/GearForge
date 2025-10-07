@@ -213,6 +213,14 @@
 .calloutTitle{ font-weight:800; margin:0 0 6px; }
 .calloutTip{ box-shadow: inset 0 0 0 1px rgba(56,189,248,.2); }
 .calloutWarn{ box-shadow: inset 0 0 0 1px rgba(251,191,36,.25); }
+.calloutInfo {
+  border-color: #3b82f6;           /* or var(--info) */
+  background: rgba(59, 130, 246, .08);
+}
+.calloutSuccess {
+  border-color: #22c55e;           /* or var(--success) */
+  background: rgba(34, 197, 94, .08);
+}
 
 /* ===== Quote box (Blizzard/forum style) ===== */
 .quoteBox{
