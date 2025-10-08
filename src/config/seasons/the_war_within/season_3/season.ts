@@ -3,7 +3,12 @@ import { composeSeason } from "../../utils/composeSeason";
 import { trackTemplates } from "../../../../data/trackDefinitions";
 import { bonusUpgradeIndex } from "./bonusUpgradeIndex";
 
-import { ilvlByRank_tww_s3 as ilvlByRank } from "./ilvlByRank";
+//UPDATE FOR TURBO BOOST
+
+// import { ilvlByRank_tww_s3 as ilvlByRank } from "./ilvlByRank";
+
+import { ilvlByRank_tww_s3_turbo_boost as ilvlByRank } from "./ilvlByRank";
+
 import { seasonMeta as meta } from "./season.meta";
 import {
   rewardTuples_s3 as rewardTuples,
