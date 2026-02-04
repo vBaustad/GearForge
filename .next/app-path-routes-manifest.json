@@ -1,0 +1,21 @@
+{
+  "/_not-found/page": "/_not-found",
+  "/api/auth/callback/route": "/api/auth/callback",
+  "/robots.txt/route": "/robots.txt",
+  "/sitemap.xml/route": "/sitemap.xml",
+  "/auth/callback/page": "/auth/callback",
+  "/design/[id]/page": "/design/[id]",
+  "/page": "/",
+  "/user/[id]/page": "/user/[id]",
+  "/(info)/about/page": "/about",
+  "/(info)/faq/page": "/faq",
+  "/(legal)/terms/page": "/terms",
+  "/admin/page": "/admin",
+  "/(info)/help/page": "/help",
+  "/(legal)/privacy/page": "/privacy",
+  "/browse/page": "/browse",
+  "/decor/page": "/decor",
+  "/design/[id]/edit/page": "/design/[id]/edit",
+  "/settings/page": "/settings",
+  "/upload/page": "/upload"
+}

@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwind from "@tailwindcss/vite";
 import { execSync } from "child_process";
+import path from "path";
 import pkg from "./package.json" with { type: "json" };
 
 function safeGitSha() {
@@ -11,6 +12,11 @@ function safeGitSha() {
 
 export default defineConfig({
   plugins: [react(), tailwind()],
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+  },
   server: {
     proxy: { "/api": "http://localhost:8787" } // must match your API port
   },

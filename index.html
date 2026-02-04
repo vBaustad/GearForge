@@ -4,17 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <!-- Google AdSense -->
-    <script 
-      async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9717693672458065"
-      crossorigin="anonymous">
-    </script>
-
     <!-- PWA / App -->
     <link rel="manifest" href="/site.webmanifest" />
-    <meta name="color-scheme" content="dark light" />
-    <meta name="theme-color" content="#0f1216" media="(prefers-color-scheme: dark)" />
-    <meta name="theme-color" content="#ffffff"   media="(prefers-color-scheme: light)" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#12100e" />
 
     <!-- Wowhead tooltips -->
     <script>
@@ -27,6 +20,11 @@
     </script>
     <script defer src="https://wow.zamimg.com/js/tooltips.js"></script>
 
+    <!-- Google Fonts - WoW Cozy Design System -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+
     <!-- Preconnects for icons/tooltips -->
     <link rel="preconnect" href="https://wow.zamimg.com" crossorigin>
     <link rel="dns-prefetch" href="//wow.zamimg.com">
@@ -34,26 +32,38 @@
     <link rel="dns-prefetch" href="//render.worldofwarcraft.com">
 
     <!-- Primary SEO -->
-    <title>GearForge — Optimize Your Gear</title>
-    <meta name="description" content="GearForge helps you analyze, compare, and optimize your gear with fast, clear recommendations." />
-    <meta name="robots" content="index,follow" />
-    <link rel="canonical" href="%VITE_SITE_URL%" />
+    <title>GearForge - WoW Housing Designs | Midnight & TWW Player Housing Gallery</title>
+    <meta name="description" content="Browse and share World of Warcraft housing designs for Midnight and The War Within. Find cozy bedroom layouts, tavern builds, and garden ideas. Copy import strings instantly. Free community gallery of WoW player housing creations." />
+    <meta name="keywords" content="WoW housing, World of Warcraft housing, WoW player housing, WoW Midnight housing, Midnight expansion housing, TWW housing, The War Within housing, WoW housing designs, WoW import string, housing import export, WoW cozy bedroom, WoW tavern build, WoW garden layout, WoW library design, WoW kitchen build, WoW great hall, WoW shrine room, blood elf housing, night elf housing, WoW housing ideas, WoW decor items, WoW furniture, housing inspiration, Quel'Thalas housing, WoW neighborhood, warband house, WoW housing gallery, best WoW builds, cozy WoW home, WoW aesthetic builds, housing floorplan, WoW decorations, housing loadout, share WoW house, copy paste housing" />
+    <meta name="author" content="GearForge" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <link rel="canonical" href="https://gearforge.io/" />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="GearForge" />
-    <meta property="og:title" content="GearForge — Optimize Your Gear" />
-    <meta property="og:description" content="Optimize your gear. Maximize your potential." />
-    <meta property="og:url" content="%VITE_SITE_URL%" />
-    <meta property="og:image" content="https://gearforge.vercel.app/og-cover.png?v=2">
-    <meta property="og:image:alt" content="GearForge upgrade planner and seasonal tracker preview" />
+    <meta property="og:title" content="GearForge - WoW Housing Designs Gallery" />
+    <meta property="og:description" content="Browse and share World of Warcraft housing designs. Find inspiration with community-created layouts and import strings for The War Within player housing." />
+    <meta property="og:url" content="https://gearforge.io/" />
+    <meta property="og:image" content="https://gearforge.io/og-cover.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="GearForge - WoW Housing Creations gallery preview" />
+    <meta property="og:locale" content="en_US" />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="GearForge — Optimize Your Gear" />
-    <meta name="twitter:description" content="Optimize your gear. Maximize your potential." />
-    <meta name="twitter:image" content="https://gearforge.vercel.app/og-cover.png?v=2">
-    <!-- <meta name="twitter:site" content="@your_handle" /> -->
+    <meta name="twitter:title" content="GearForge - WoW Housing Creations" />
+    <meta name="twitter:description" content="Discover and share World of Warcraft player housing creations. Browse designs and copy import strings." />
+    <meta name="twitter:image" content="https://gearforge.io/og-cover.png" />
+
+    <!-- Google Search Console Verification (replace with your code) -->
+    <!-- <meta name="google-site-verification" content="YOUR_VERIFICATION_CODE" /> -->
+
+    <!-- Additional SEO -->
+    <meta name="application-name" content="GearForge" />
+    <meta name="apple-mobile-web-app-title" content="GearForge" />
+    <meta name="format-detection" content="telephone=no" />
 
     <!-- Icons -->
     <link rel="icon" href="/favicon.ico" />
@@ -62,10 +72,69 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="/android-chrome-192x192.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="/android-chrome-512x512.png" />
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "GearForge",
+      "alternateName": ["GearForge WoW Housing", "WoW Housing Creations", "WoW Housing Gallery", "The War Within Housing Designs", "Midnight Housing Designs", "WoW Midnight Housing", "WoW Housing Import Strings"],
+      "url": "https://gearforge.io/",
+      "description": "Browse and share World of Warcraft housing designs for Midnight and The War Within. Find cozy home layouts, tavern builds, and import strings.",
+      "keywords": "WoW housing, WoW Midnight housing, TWW housing, housing designs, import strings, cozy WoW home, blood elf housing",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://gearforge.io/browse?q={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "GearForge",
+      "url": "https://gearforge.io/",
+      "logo": "https://gearforge.io/android-chrome-512x512.png",
+      "description": "Community platform for World of Warcraft player housing designs",
+      "sameAs": [
+        "https://github.com/vBaustad/GearForge"
+      ]
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "GearForge",
+      "applicationCategory": "GameApplication",
+      "applicationSubCategory": "World of Warcraft Companion Tool",
+      "operatingSystem": "Web Browser",
+      "description": "Free tool for browsing and sharing World of Warcraft housing designs with import strings",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "featureList": [
+        "Browse WoW housing designs for Midnight and TWW",
+        "Copy import strings with one click",
+        "Upload your own housing creations",
+        "Search by category: bedroom, tavern, garden, library, kitchen",
+        "View 2000+ housing decor items database",
+        "Share builds with the community",
+        "Blood Elf and Night Elf themed designs",
+        "Cozy aesthetic home inspiration"
+      ]
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>
-    <!-- Make sure this path matches your actual entry (you used /src/main.tsx earlier) -->
-    <script type="module" src="/src/app/main.tsx"></script>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
