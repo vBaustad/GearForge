@@ -15,6 +15,7 @@ const eslintConfig = [
     ignores: [
       "convex/_generated/**",
       "src/_pages_old/**",
+      "src/app/**",
       "src/App.tsx",
       "src/main.tsx",
       "src/vite-env.d.ts",
