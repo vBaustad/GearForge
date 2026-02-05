@@ -12,33 +12,52 @@ export function AuthCallbackClient() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const code = searchParams?.get("code");
-    const state = searchParams?.get("state");
-    const storedState = sessionStorage.getItem("oauth_state");
+    // Prevent double execution in React 18 strict mode
+    let handled = false;
 
-    // Verify state parameter for CSRF protection
-    if (state !== storedState) {
-      setError("Invalid state parameter. Please try logging in again.");
-      return;
-    }
+    const handleCallback = async () => {
+      if (handled) return;
 
-    if (!code) {
-      setError("No authorization code received. Please try logging in again.");
-      return;
-    }
+      const code = searchParams?.get("code");
+      const state = searchParams?.get("state");
+      const storedState = sessionStorage.getItem("oauth_state");
 
-    // Clear state
-    sessionStorage.removeItem("oauth_state");
+      // Debug logging
+      console.log("OAuth callback - state from URL:", state);
+      console.log("OAuth callback - stored state:", storedState);
 
-    // Exchange code for session
-    handleOAuthCallback(code)
-      .then(() => {
+      // Verify state parameter for CSRF protection
+      if (!state || !storedState || state !== storedState) {
+        // Only show error if we actually have a state mismatch (not just missing)
+        if (state && storedState && state !== storedState) {
+          setError("Invalid state parameter. Please try logging in again.");
+        } else if (!storedState) {
+          // State was already consumed or never set - might be a page refresh
+          setError("Session expired. Please try logging in again.");
+        }
+        return;
+      }
+
+      if (!code) {
+        setError("No authorization code received. Please try logging in again.");
+        return;
+      }
+
+      // Clear state immediately to prevent reuse
+      sessionStorage.removeItem("oauth_state");
+      handled = true;
+
+      // Exchange code for session
+      try {
+        await handleOAuthCallback(code);
         router.push("/");
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error("OAuth callback error:", err);
         setError("Failed to complete login. Please try again.");
-      });
+      }
+    };
+
+    handleCallback();
   }, [searchParams, handleOAuthCallback, router]);
 
   if (error) {
