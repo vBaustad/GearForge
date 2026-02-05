@@ -1,9 +1,17 @@
-# robots.txt for GearForge
+# robots.txt for GearForge - WoW Housing Creations
 User-agent: *
 Allow: /
 
-# Ensure ad crawling works
-User-agent: AdsBot-Google
-Allow: /
+# Allow crawling of all content pages
+Allow: /browse
+Allow: /creation/
+Allow: /upload
 
-Sitemap: https://gearforge.io/sitemap.xml
+# Disallow admin/private areas (if any)
+Disallow: /api/
+
+# Crawl delay for politeness
+Crawl-delay: 1
+
+# Sitemap location
+Sitemap: https://gearforge.vercel.app/sitemap.xml

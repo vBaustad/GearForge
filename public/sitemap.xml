@@ -1,35 +1,139 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Main Pages -->
   <url>
     <loc>https://gearforge.io/</loc>
-    <lastmod>2025-09-21</lastmod>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://gearforge.io/optimizer</loc>
-    <lastmod>2025-09-21</lastmod>
+    <loc>https://gearforge.io/browse</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>hourly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Category Pages - Important for SEO -->
+  <url>
+    <loc>https://gearforge.io/browse?category=bedroom</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://gearforge.io/rewards</loc>
-    <lastmod>2025-09-21</lastmod>
+    <loc>https://gearforge.io/browse?category=tavern</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://gearforge.io/changelog</loc>
-    <lastmod>2025-09-21</lastmod>
+    <loc>https://gearforge.io/browse?category=garden</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://gearforge.io/guides</loc>
-    <lastmod>2025-09-21</lastmod>
+    <loc>https://gearforge.io/browse?category=library</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://gearforge.io/guides/one-click-cloak-upgrade</loc>
-    <lastmod>2025-09-15</lastmod>
+    <loc>https://gearforge.io/browse?category=kitchen</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://gearforge.io/guides/reduce-spell-clutter</loc>
-    <lastmod>2025-09-12</lastmod>
+    <loc>https://gearforge.io/browse?category=great_hall</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://gearforge.io/guides/weekly-world-quest-advantage</loc>
-    <lastmod>2025-09-12</lastmod>
+    <loc>https://gearforge.io/browse?category=workshop</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://gearforge.io/browse?category=shrine</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://gearforge.io/browse?category=outdoor</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://gearforge.io/browse?category=other</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <!-- Sorted views for different user intents -->
+  <url>
+    <loc>https://gearforge.io/browse?sort=popular</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://gearforge.io/browse?sort=newest</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>hourly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <url>
+    <loc>https://gearforge.io/decor</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://gearforge.io/upload</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Info Pages -->
+  <url>
+    <loc>https://gearforge.io/about</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://gearforge.io/help</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://gearforge.io/faq</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <!-- Legal Pages -->
+  <url>
+    <loc>https://gearforge.io/terms</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://gearforge.io/privacy</loc>
+    <lastmod>2026-02-03</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
   </url>
 </urlset>
