@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     const state = searchParams.get("state");
     const error = searchParams.get("error");
 
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+    const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").trim();
 
     if (error) {
       console.error("Kick OAuth error:", error);
@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(callbackUrl.toString());
   } catch (error) {
     console.error("Kick OAuth callback error:", error);
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+    const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").trim();
     return NextResponse.redirect(`${baseUrl}/settings?error=kick_error`);
   }
 }

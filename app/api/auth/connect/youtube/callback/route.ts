@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     const state = searchParams.get("state");
     const error = searchParams.get("error");
 
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+    const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").trim();
 
     if (error) {
       console.error("YouTube OAuth error:", error);
@@ -53,10 +53,25 @@ export async function GET(request: NextRequest) {
 
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
-      console.error("YouTube token exchange failed:", tokenResponse.status, errorText);
-      console.error("Request details - clientId:", clientId?.slice(0, 10) + "...", "redirectUri:", redirectUri);
+      console.error("=== YouTube Token Exchange Failed ===");
+      console.error("Status:", tokenResponse.status);
+      console.error("Response:", errorText);
+      console.error("Client ID:", clientId);
+      console.error("Redirect URI:", redirectUri);
+      console.error("Code (first 20 chars):", code?.slice(0, 20));
+      console.error("=====================================");
+
+      // Parse error for URL
+      let errorMsg = "unknown";
+      try {
+        const parsed = JSON.parse(errorText);
+        errorMsg = parsed.error_description || parsed.error || "unknown";
+      } catch {
+        errorMsg = errorText.slice(0, 100);
+      }
+
       return NextResponse.redirect(
-        `${baseUrl}/settings?error=youtube_token_failed&details=${encodeURIComponent(errorText.slice(0, 100))}`
+        `${baseUrl}/settings?error=youtube_token_failed&details=${encodeURIComponent(errorMsg)}`
       );
     }
 
@@ -121,7 +136,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(callbackUrl.toString());
   } catch (error) {
     console.error("YouTube OAuth callback error:", error);
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+    const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").trim();
     return NextResponse.redirect(`${baseUrl}/settings?error=youtube_error`);
   }
 }

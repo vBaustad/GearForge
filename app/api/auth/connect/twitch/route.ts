@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
-  const clientId = process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID;
-  const redirectUri = `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/api/auth/connect/twitch/callback`;
+  const clientId = process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID?.trim();
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").trim();
+  const redirectUri = `${siteUrl}/api/auth/connect/twitch/callback`;
+
+  // Debug logging
+  console.log("=== Twitch OAuth Init ===");
+  console.log("Site URL:", JSON.stringify(siteUrl));
+  console.log("Redirect URI:", JSON.stringify(redirectUri));
+  console.log("=========================");
 
   if (!clientId) {
     return NextResponse.json(
@@ -26,6 +33,8 @@ export async function GET(request: NextRequest) {
   authUrl.searchParams.set("response_type", "code");
   authUrl.searchParams.set("scope", "user:read:email");
   authUrl.searchParams.set("state", state);
+
+  console.log("Final auth URL:", authUrl.toString());
 
   return NextResponse.redirect(authUrl.toString());
 }

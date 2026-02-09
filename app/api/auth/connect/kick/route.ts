@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
-  const clientId = process.env.NEXT_PUBLIC_KICK_CLIENT_ID;
-  const redirectUri = `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/api/auth/connect/kick/callback`;
+  const clientId = process.env.NEXT_PUBLIC_KICK_CLIENT_ID?.trim();
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").trim();
+  const redirectUri = `${siteUrl}/api/auth/connect/kick/callback`;
 
   if (!clientId) {
     return NextResponse.json(
