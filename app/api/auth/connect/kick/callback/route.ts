@@ -87,12 +87,18 @@ export async function GET(request: NextRequest) {
     }
 
     const userData = await userResponse.json();
-    console.log("Kick user data:", JSON.stringify(userData));
-    const kickUser = userData.data?.[0] || userData.data || userData;
+    console.log("Kick user data:", JSON.stringify(userData, null, 2));
 
-    if (!kickUser || !kickUser.username) {
+    // Try different response structures
+    const kickUser = userData.data?.[0] || userData.data || userData;
+    const username = kickUser?.username || kickUser?.name || kickUser?.slug || kickUser?.user?.username;
+    const userId = kickUser?.id || kickUser?.user_id || kickUser?.user?.id;
+
+    console.log("Parsed - username:", username, "userId:", userId);
+
+    if (!username) {
       return NextResponse.redirect(
-        `${baseUrl}/settings?error=kick_no_user`
+        `${baseUrl}/settings?error=kick_no_user&raw=${encodeURIComponent(JSON.stringify(userData).slice(0, 200))}`
       );
     }
 
@@ -101,13 +107,16 @@ export async function GET(request: NextRequest) {
       ? Date.now() + tokenData.expires_in * 1000
       : undefined;
 
+    // Get avatar from various possible fields
+    const avatarUrl = kickUser?.profile_pic || kickUser?.profile_picture || kickUser?.avatar || kickUser?.user?.profile_pic;
+
     // Encode connection data in URL params for client-side Convex mutation
     const connectionData = {
       platform: "kick",
-      platformId: String(kickUser.id || kickUser.user_id),
-      platformUsername: kickUser.username,
-      platformAvatarUrl: kickUser.profile_pic || kickUser.avatar,
-      channelUrl: `https://kick.com/${kickUser.username}`,
+      platformId: String(userId),
+      platformUsername: username,
+      platformAvatarUrl: avatarUrl,
+      channelUrl: `https://kick.com/${username}`,
       accessToken: tokenData.access_token,
       refreshToken: tokenData.refresh_token,
       tokenExpiresAt,
