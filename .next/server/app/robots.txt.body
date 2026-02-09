@@ -1,7 +1,0 @@
-User-Agent: *
-Allow: /
-Disallow: /admin
-Disallow: /api/
-Disallow: /auth/callback
-
-Sitemap: https://gearforge.io/sitemap.xml
