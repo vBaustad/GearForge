@@ -115,8 +115,7 @@ export function SocialConnections({ userId, sessionToken }: SocialConnectionsPro
       </p>
 
       <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-md)" }}>
-        {/* Kick OAuth not yet available - remove from array when ready */}
-        {(["twitch", "youtube"] as Platform[]).map((platform) => {
+        {(["twitch", "youtube", "kick"] as Platform[]).map((platform) => {
           const config = platformConfig[platform];
           const connection = getConnection(platform);
           const isDisconnecting = disconnecting === platform;
