@@ -82,5 +82,6 @@ export default async function UserPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  console.log("UserPage rendering with id:", id);
   return <UserPageClient id={id} />;
 }
