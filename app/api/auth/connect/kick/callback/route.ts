@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const KICK_TOKEN_URL = "https://id.kick.com/oauth/token";
-const KICK_USER_URL = "https://api.kick.com/public/v1/users/me";
+const KICK_USER_URL = "https://api.kick.com/public/v1/users";
 
 export async function GET(request: NextRequest) {
   try {
@@ -79,14 +79,16 @@ export async function GET(request: NextRequest) {
     });
 
     if (!userResponse.ok) {
-      console.error("Failed to fetch Kick user info");
+      const errorText = await userResponse.text();
+      console.error("Failed to fetch Kick user info:", userResponse.status, errorText);
       return NextResponse.redirect(
-        `${baseUrl}/settings?error=kick_user_failed`
+        `${baseUrl}/settings?error=kick_user_failed&details=${encodeURIComponent(errorText.slice(0, 100))}`
       );
     }
 
     const userData = await userResponse.json();
-    const kickUser = userData.data || userData;
+    console.log("Kick user data:", JSON.stringify(userData));
+    const kickUser = userData.data?.[0] || userData.data || userData;
 
     if (!kickUser || !kickUser.username) {
       return NextResponse.redirect(
