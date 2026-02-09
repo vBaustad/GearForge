@@ -110,6 +110,15 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
+// Validate ../../app/auth/connect/callback/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/auth/connect/callback">> = Specific
+  const handler = {} as typeof import("../../app/auth/connect/callback/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../app/browse/page.tsx
 {
   type __IsExpected<Specific extends AppPageConfig<"/browse">> = Specific
@@ -186,6 +195,69 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
 {
   type __IsExpected<Specific extends RouteHandlerConfig<"/api/auth/callback">> = Specific
   const handler = {} as typeof import("../../app/api/auth/callback/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../app/api/auth/connect/kick/callback/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/auth/connect/kick/callback">> = Specific
+  const handler = {} as typeof import("../../app/api/auth/connect/kick/callback/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../app/api/auth/connect/kick/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/auth/connect/kick">> = Specific
+  const handler = {} as typeof import("../../app/api/auth/connect/kick/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../app/api/auth/connect/twitch/callback/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/auth/connect/twitch/callback">> = Specific
+  const handler = {} as typeof import("../../app/api/auth/connect/twitch/callback/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../app/api/auth/connect/twitch/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/auth/connect/twitch">> = Specific
+  const handler = {} as typeof import("../../app/api/auth/connect/twitch/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../app/api/auth/connect/youtube/callback/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/auth/connect/youtube/callback">> = Specific
+  const handler = {} as typeof import("../../app/api/auth/connect/youtube/callback/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../app/api/auth/connect/youtube/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/auth/connect/youtube">> = Specific
+  const handler = {} as typeof import("../../app/api/auth/connect/youtube/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../app/api/youtube/videos/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/youtube/videos">> = Specific
+  const handler = {} as typeof import("../../app/api/youtube/videos/route.js")
   type __Check = __IsExpected<typeof handler>
   // @ts-ignore
   type __Unused = __Check

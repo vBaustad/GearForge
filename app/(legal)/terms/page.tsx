@@ -62,7 +62,33 @@ export default function TermsPage() {
             <li>Maintaining the security of your Battle.net account</li>
             <li>All activity that occurs under your account</li>
             <li>Complying with Blizzard&apos;s terms of service</li>
+            <li>Any third-party accounts you connect (YouTube, Twitch, Kick)</li>
           </ul>
+        </section>
+
+        <section>
+          <h2>Connected Services</h2>
+          <p>
+            GearForge allows you to connect external accounts to enhance your profile:
+          </p>
+          <ul>
+            <li>
+              <strong>YouTube:</strong> Connect to showcase videos with your designs
+              and display a verified badge on your profile.
+            </li>
+            <li>
+              <strong>Twitch:</strong> Connect to display a verified badge and link
+              to your streaming channel.
+            </li>
+            <li>
+              <strong>Kick:</strong> Connect to display a verified badge and link
+              to your streaming channel.
+            </li>
+          </ul>
+          <p>
+            These connections are optional. You can disconnect at any time from
+            your account settings.
+          </p>
         </section>
 
         <section>

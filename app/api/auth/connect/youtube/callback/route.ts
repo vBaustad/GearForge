@@ -52,10 +52,11 @@ export async function GET(request: NextRequest) {
     });
 
     if (!tokenResponse.ok) {
-      const error = await tokenResponse.text();
-      console.error("YouTube token exchange failed:", error);
+      const errorText = await tokenResponse.text();
+      console.error("YouTube token exchange failed:", tokenResponse.status, errorText);
+      console.error("Request details - clientId:", clientId?.slice(0, 10) + "...", "redirectUri:", redirectUri);
       return NextResponse.redirect(
-        `${baseUrl}/settings?error=youtube_token_failed`
+        `${baseUrl}/settings?error=youtube_token_failed&details=${encodeURIComponent(errorText.slice(0, 100))}`
       );
     }
 

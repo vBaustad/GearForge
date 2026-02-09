@@ -73,16 +73,51 @@ export default function PrivacyPage() {
         <section>
           <h2>Your Rights</h2>
           <p>
-            You can access, update, or delete your account information at any time
-            through your profile settings. To request data deletion, contact us.
+            You have the right to:
+          </p>
+          <ul>
+            <li>Access your personal data through your account settings</li>
+            <li>Export your data using the &ldquo;Download Data&rdquo; feature in settings</li>
+            <li>Delete your account and all associated data at any time</li>
+            <li>Disconnect third-party services (YouTube, Twitch, Kick) from your account</li>
+          </ul>
+          <p>
+            When you delete your account, we permanently remove your profile,
+            uploaded designs, likes, saves, and any connected service tokens.
           </p>
         </section>
 
         <section>
           <h2>Third-Party Services</h2>
           <p>
-            We use Blizzard&apos;s OAuth for authentication. Their privacy policy applies
-            to information collected during login.
+            We integrate with the following third-party services:
+          </p>
+          <ul>
+            <li>
+              <strong>Blizzard Battle.net:</strong> We use Blizzard&apos;s OAuth for
+              authentication. We receive your Battle Tag and account ID to create
+              your GearForge account.
+            </li>
+            <li>
+              <strong>YouTube (Google):</strong> If you choose to connect your YouTube
+              account, we access your channel information and video list to let you
+              showcase videos with your designs. We request read-only access and do
+              not modify your YouTube content.
+            </li>
+            <li>
+              <strong>Twitch:</strong> If you choose to connect your Twitch account,
+              we access your basic profile information to display a verified badge
+              and link to your channel on your profile.
+            </li>
+            <li>
+              <strong>Kick:</strong> If you choose to connect your Kick account,
+              we access your basic profile information to display a verified badge
+              and link to your channel on your profile.
+            </li>
+          </ul>
+          <p>
+            You can disconnect any connected service at any time from your account
+            settings. When you disconnect, we delete the associated access tokens.
           </p>
         </section>
 
