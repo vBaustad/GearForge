@@ -36,7 +36,16 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Exchange code for access token
+    // Get PKCE code verifier from cookie
+    const codeVerifier = request.cookies.get("kick_code_verifier")?.value;
+    if (!codeVerifier) {
+      console.error("Missing PKCE code verifier");
+      return NextResponse.redirect(
+        `${baseUrl}/settings?error=kick_missing_verifier`
+      );
+    }
+
+    // Exchange code for access token (with PKCE)
     const tokenResponse = await fetch(KICK_TOKEN_URL, {
       method: "POST",
       headers: {
@@ -48,6 +57,7 @@ export async function GET(request: NextRequest) {
         code,
         grant_type: "authorization_code",
         redirect_uri: redirectUri,
+        code_verifier: codeVerifier,
       }),
     });
 
