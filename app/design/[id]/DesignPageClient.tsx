@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
-import { Heart, Eye, Copy, Check, ArrowLeft, User, ChevronLeft, ChevronRight, Bookmark, Flag, X, AlertCircle, Trash2, Edit } from "lucide-react";
+import { Heart, Eye, Copy, Check, ArrowLeft, User, ChevronLeft, ChevronRight, Bookmark, Flag, X, AlertCircle, Trash2, Edit, Youtube, ExternalLink } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { CATEGORY_LABELS, type Category } from "@/types/creation";
@@ -356,6 +356,57 @@ export function DesignPageClient({ id }: DesignPageClientProps) {
                   {copied ? "Copied!" : "Copy String"}
                 </button>
               </div>
+            </div>
+          )}
+
+          {/* YouTube Video */}
+          {design.youtubeVideoId && (
+            <div style={{ marginTop: "var(--space-xl)" }}>
+              <h3 style={{ display: "flex", alignItems: "center", gap: "var(--space-sm)", marginBottom: "var(--space-md)" }}>
+                <Youtube size={20} style={{ color: "#FF0000" }} />
+                Video Showcase
+              </h3>
+              <div
+                style={{
+                  position: "relative",
+                  paddingBottom: "56.25%",
+                  height: 0,
+                  overflow: "hidden",
+                  borderRadius: "var(--radius-md)",
+                  background: "var(--bg-deep)",
+                }}
+              >
+                <iframe
+                  src={`https://www.youtube.com/embed/${design.youtubeVideoId}`}
+                  title="Design showcase video"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    height: "100%",
+                    border: "none",
+                  }}
+                />
+              </div>
+              <a
+                href={`https://youtube.com/watch?v=${design.youtubeVideoId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-secondary"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "var(--space-xs)",
+                  marginTop: "var(--space-sm)",
+                  fontSize: "0.875rem",
+                }}
+              >
+                <ExternalLink size={14} />
+                Watch on YouTube
+              </a>
             </div>
           )}
 

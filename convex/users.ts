@@ -326,3 +326,214 @@ export const updateProfile = mutation({
     return true;
   },
 });
+
+// Delete user account and all associated data
+export const deleteAccount = mutation({
+  args: {
+    sessionToken: v.string(),
+    confirmBattleTag: v.string(), // Must match to confirm deletion
+  },
+  handler: async (ctx, args) => {
+    // Verify session
+    const session = await ctx.db
+      .query("sessions")
+      .withIndex("by_token", (q) => q.eq("token", args.sessionToken))
+      .first();
+
+    if (!session || session.expiresAt < Date.now()) {
+      throw new Error("Unauthorized: Please log in to delete your account");
+    }
+
+    const user = await ctx.db.get(session.userId);
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    // Confirm battle tag matches
+    if (user.battleTag !== args.confirmBattleTag) {
+      throw new Error("Battle.net tag does not match. Please enter your exact Battle.net tag to confirm deletion.");
+    }
+
+    const userId = user._id;
+
+    // Delete all user's creations and their images
+    const creations = await ctx.db
+      .query("creations")
+      .withIndex("by_creator", (q) => q.eq("creatorId", userId))
+      .collect();
+
+    for (const creation of creations) {
+      // Delete images from storage
+      for (const imageId of creation.imageIds) {
+        await ctx.storage.delete(imageId);
+      }
+      if (creation.thumbnailId) {
+        await ctx.storage.delete(creation.thumbnailId);
+      }
+      // Delete associated likes
+      const likes = await ctx.db
+        .query("likes")
+        .withIndex("by_creation", (q) => q.eq("creationId", creation._id))
+        .collect();
+      for (const like of likes) {
+        await ctx.db.delete(like._id);
+      }
+      // Delete associated saves
+      const saves = await ctx.db
+        .query("saves")
+        .withIndex("by_creation", (q) => q.eq("creationId", creation._id))
+        .collect();
+      for (const save of saves) {
+        await ctx.db.delete(save._id);
+      }
+      // Delete the creation
+      await ctx.db.delete(creation._id);
+    }
+
+    // Delete user's likes on other creations
+    const userLikes = await ctx.db
+      .query("likes")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+    for (const like of userLikes) {
+      await ctx.db.delete(like._id);
+    }
+
+    // Delete user's saves
+    const userSaves = await ctx.db
+      .query("saves")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+    for (const save of userSaves) {
+      await ctx.db.delete(save._id);
+    }
+
+    // Delete user's follows (both following and followers)
+    const following = await ctx.db
+      .query("follows")
+      .withIndex("by_follower", (q) => q.eq("followerId", userId))
+      .collect();
+    for (const follow of following) {
+      await ctx.db.delete(follow._id);
+    }
+    const followers = await ctx.db
+      .query("follows")
+      .withIndex("by_following", (q) => q.eq("followingId", userId))
+      .collect();
+    for (const follow of followers) {
+      await ctx.db.delete(follow._id);
+    }
+
+    // Delete user's collections and collection items
+    const collections = await ctx.db
+      .query("collections")
+      .withIndex("by_owner", (q) => q.eq("ownerId", userId))
+      .collect();
+    for (const collection of collections) {
+      const items = await ctx.db
+        .query("collectionItems")
+        .withIndex("by_collection", (q) => q.eq("collectionId", collection._id))
+        .collect();
+      for (const item of items) {
+        await ctx.db.delete(item._id);
+      }
+      await ctx.db.delete(collection._id);
+    }
+
+    // Delete social connections
+    const socialConnections = await ctx.db
+      .query("socialConnections")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+    for (const conn of socialConnections) {
+      await ctx.db.delete(conn._id);
+    }
+
+    // Delete all sessions
+    const sessions = await ctx.db
+      .query("sessions")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+    for (const sess of sessions) {
+      await ctx.db.delete(sess._id);
+    }
+
+    // Finally, delete the user
+    await ctx.db.delete(userId);
+
+    return { success: true };
+  },
+});
+
+// Export user data
+export const exportData = query({
+  args: { sessionToken: v.string() },
+  handler: async (ctx, args) => {
+    // Verify session
+    const session = await ctx.db
+      .query("sessions")
+      .withIndex("by_token", (q) => q.eq("token", args.sessionToken))
+      .first();
+
+    if (!session || session.expiresAt < Date.now()) {
+      throw new Error("Unauthorized");
+    }
+
+    const user = await ctx.db.get(session.userId);
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const userId = user._id;
+
+    // Get all user's creations
+    const creations = await ctx.db
+      .query("creations")
+      .withIndex("by_creator", (q) => q.eq("creatorId", userId))
+      .collect();
+
+    // Get social connections
+    const socialConnections = await ctx.db
+      .query("socialConnections")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+
+    // Get collections
+    const collections = await ctx.db
+      .query("collections")
+      .withIndex("by_owner", (q) => q.eq("ownerId", userId))
+      .collect();
+
+    return {
+      user: {
+        battleTag: user.battleTag,
+        bio: user.bio,
+        createdAt: new Date(user.createdAt).toISOString(),
+        lastLoginAt: new Date(user.lastLoginAt).toISOString(),
+      },
+      creations: creations.map((c) => ({
+        title: c.title,
+        description: c.description,
+        importString: c.importString,
+        category: c.category,
+        tags: c.tags,
+        createdAt: new Date(c.createdAt).toISOString(),
+        likeCount: c.likeCount,
+        viewCount: c.viewCount,
+      })),
+      socialConnections: socialConnections.map((c) => ({
+        platform: c.platform,
+        platformUsername: c.platformUsername,
+        channelUrl: c.channelUrl,
+        connectedAt: new Date(c.connectedAt).toISOString(),
+      })),
+      collections: collections.map((c) => ({
+        name: c.name,
+        description: c.description,
+        isPublic: c.isPublic,
+        createdAt: new Date(c.createdAt).toISOString(),
+      })),
+      exportedAt: new Date().toISOString(),
+    };
+  },
+});

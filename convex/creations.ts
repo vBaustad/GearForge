@@ -265,6 +265,7 @@ export const create = mutation({
         quantity: v.number(),
       })
     ),
+    youtubeVideoId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     // Verify session and get current user
@@ -296,6 +297,7 @@ export const create = mutation({
       category: args.category,
       tags: args.tags,
       items: args.items,
+      youtubeVideoId: args.youtubeVideoId,
       creatorId: user._id, // Derived from session, not client input
       createdAt: now,
       updatedAt: now,
@@ -340,6 +342,7 @@ export const update = mutation({
         })
       )
     ),
+    youtubeVideoId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const { id, sessionToken, ...updates } = args;
@@ -390,6 +393,7 @@ export const update = mutation({
     if (updates.category !== undefined) updateData.category = updates.category;
     if (updates.tags !== undefined) updateData.tags = updates.tags;
     if (updates.items !== undefined) updateData.items = updates.items;
+    if (updates.youtubeVideoId !== undefined) updateData.youtubeVideoId = updates.youtubeVideoId;
 
     await ctx.db.patch(id, updateData);
     return id;

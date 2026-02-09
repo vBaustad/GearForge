@@ -10,10 +10,11 @@ import { Upload, Image, X, Plus, AlertCircle, CheckCircle, AlertTriangle, Lock }
 import { CATEGORIES, CATEGORY_LABELS, type Category } from "@/types/creation";
 import { useAuth } from "@/lib/auth";
 import { BlizzardLoginButton } from "@/components/BlizzardLoginButton";
+import { YouTubeVideoPicker } from "@/components/YouTubeVideoPicker";
 
 export function UploadPageClient() {
   const router = useRouter();
-  const { isAuthenticated, isLoading, sessionToken } = useAuth();
+  const { isAuthenticated, isLoading, sessionToken, user } = useAuth();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -23,6 +24,7 @@ export function UploadPageClient() {
   const [tagInput, setTagInput] = useState("");
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [youtubeVideoId, setYoutubeVideoId] = useState<string | undefined>();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
@@ -172,6 +174,7 @@ export function UploadPageClient() {
         category,
         tags,
         items: [], // No item picker in this simplified version
+        youtubeVideoId,
       });
 
       // Show success message and redirect to the new design
@@ -517,11 +520,21 @@ export function UploadPageClient() {
               </div>
             </div>
 
+            {/* YouTube Video */}
+            {user && sessionToken && (
+              <YouTubeVideoPicker
+                userId={user.id}
+                sessionToken={sessionToken}
+                value={youtubeVideoId}
+                onChange={setYoutubeVideoId}
+              />
+            )}
+
             {/* Submit */}
             <button
               type="submit"
               className="btn btn-primary btn-lg"
-              style={{ width: "100%", justifyContent: "center" }}
+              style={{ width: "100%", justifyContent: "center", marginTop: "var(--space-lg)" }}
               disabled={isSubmitting}
             >
               {isSubmitting ? (

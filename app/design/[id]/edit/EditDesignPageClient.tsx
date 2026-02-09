@@ -8,6 +8,7 @@ import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { useAuth } from "@/lib/auth";
 import { CATEGORY_LABELS, type Category, CATEGORIES } from "@/types/creation";
+import { YouTubeVideoPicker } from "@/components/YouTubeVideoPicker";
 import {
   ArrowLeft,
   Save,
@@ -35,6 +36,7 @@ export function EditDesignPageClient({ id }: EditDesignPageClientProps) {
   const [category, setCategory] = useState<Category>("other");
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
+  const [youtubeVideoId, setYoutubeVideoId] = useState<string | undefined>();
 
   // UI state
   const [isSaving, setIsSaving] = useState(false);
@@ -48,6 +50,7 @@ export function EditDesignPageClient({ id }: EditDesignPageClientProps) {
       setDescription(design.description || "");
       setCategory(design.category as Category);
       setTags(design.tags || []);
+      setYoutubeVideoId(design.youtubeVideoId);
     }
   }, [design]);
 
@@ -159,6 +162,7 @@ export function EditDesignPageClient({ id }: EditDesignPageClientProps) {
         description: description.trim() || undefined,
         category,
         tags,
+        youtubeVideoId,
       });
 
       setSuccess(true);
@@ -359,6 +363,18 @@ export function EditDesignPageClient({ id }: EditDesignPageClientProps) {
               {isSaving ? "Saving..." : "Save Changes"}
             </button>
           </div>
+
+          {/* YouTube Video */}
+          {sessionToken && (
+            <div style={{ marginTop: "var(--space-lg)" }}>
+              <YouTubeVideoPicker
+                userId={user.id}
+                sessionToken={sessionToken}
+                value={youtubeVideoId}
+                onChange={setYoutubeVideoId}
+              />
+            </div>
+          )}
         </form>
 
         {/* Preview Sidebar */}

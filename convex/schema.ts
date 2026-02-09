@@ -28,6 +28,9 @@ export default defineSchema({
     imageIds: v.array(v.id("_storage")),
     thumbnailId: v.optional(v.id("_storage")),
 
+    // Optional YouTube video showcase
+    youtubeVideoId: v.optional(v.string()),
+
     // Categorization
     category: v.union(
       v.literal("bedroom"),
@@ -207,4 +210,22 @@ export default defineSchema({
     windowStart: v.number(),
   })
     .index("by_identifier_action", ["identifier", "action"]),
+
+  // ===== SOCIAL CONNECTIONS (OAuth-verified streaming platforms) =====
+  socialConnections: defineTable({
+    userId: v.id("users"),
+    platform: v.union(v.literal("twitch"), v.literal("youtube"), v.literal("kick")),
+    platformId: v.string(),          // Unique ID from platform
+    platformUsername: v.string(),    // Display username
+    platformAvatarUrl: v.optional(v.string()),
+    channelUrl: v.string(),          // Direct link to channel
+    accessToken: v.string(),         // OAuth token (for validation)
+    refreshToken: v.optional(v.string()),
+    tokenExpiresAt: v.optional(v.number()),
+    connectedAt: v.number(),
+    lastValidatedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_platform", ["userId", "platform"])
+    .index("by_platform_id", ["platform", "platformId"]),
 });

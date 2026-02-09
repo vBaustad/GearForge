@@ -19,6 +19,7 @@ import type * as rateLimit from "../rateLimit.js";
 import type * as reports from "../reports.js";
 import type * as saves from "../saves.js";
 import type * as seed from "../seed.js";
+import type * as socialConnections from "../socialConnections.js";
 import type * as users from "../users.js";
 
 import type {
@@ -39,6 +40,7 @@ declare const fullApi: ApiFromModules<{
   reports: typeof reports;
   saves: typeof saves;
   seed: typeof seed;
+  socialConnections: typeof socialConnections;
   users: typeof users;
 }>;
 
