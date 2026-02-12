@@ -9,6 +9,8 @@ export function Footer() {
           <nav className="footer-links" aria-label="Footer navigation">
             <Link href="/browse" className="footer-link">Browse</Link>
             <Link href="/upload" className="footer-link">Upload</Link>
+            <Link href="/blog" className="footer-link">Blog</Link>
+            <Link href="/changelog" className="footer-link">Changelog</Link>
             <Link href="/help" className="footer-link">Help</Link>
             <Link href="/faq" className="footer-link">FAQ</Link>
             <Link href="/about" className="footer-link">About</Link>

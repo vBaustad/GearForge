@@ -1,3 +1,4 @@
+import { mutation } from "./_generated/server";
 import type { MutationCtx } from "./_generated/server";
 
 /**
@@ -32,8 +33,20 @@ export const RATE_LIMITS = {
   // Login attempts: 10 per 15 minutes (prevent brute force)
   login: { limit: 10, windowMs: 15 * 60 * 1000 },
 
+  // Social connections: 10 per hour (prevent abuse)
+  social_connect: { limit: 10, windowMs: 60 * 60 * 1000 },
+
   // Image uploads: 20 per hour
   upload_image: { limit: 20, windowMs: 60 * 60 * 1000 },
+
+  // Comments: 20 per hour
+  create_comment: { limit: 20, windowMs: 60 * 60 * 1000 },
+
+  // Comment likes: 100 per minute
+  toggle_comment_like: { limit: 100, windowMs: 60 * 1000 },
+
+  // Room bundles: 10 per hour
+  create_bundle: { limit: 10, windowMs: 60 * 60 * 1000 },
 } as const;
 
 export type RateLimitAction = keyof typeof RATE_LIMITS;
@@ -139,3 +152,25 @@ export async function enforceRateLimit(
     );
   }
 }
+
+/**
+ * Clean up old rate limit entries (cron job)
+ * Removes entries older than 24 hours to keep the table lean
+ */
+export const cleanupRateLimits = mutation({
+  handler: async (ctx) => {
+    const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+
+    // Get old rate limit entries
+    const oldEntries = await ctx.db
+      .query("rateLimits")
+      .filter((q) => q.lt(q.field("windowStart"), oneDayAgo))
+      .take(500); // Process in batches
+
+    for (const entry of oldEntries) {
+      await ctx.db.delete(entry._id);
+    }
+
+    return { deleted: oldEntries.length, hasMore: oldEntries.length === 500 };
+  },
+});

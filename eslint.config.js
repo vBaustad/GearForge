@@ -25,6 +25,10 @@ const eslintConfig = [
     rules: {
       // Allow <img> for external images (Wowhead, Blizzard CDN)
       "@next/next/no-img-element": "warn",
+      // Allow any types in some patterns (Convex queries, etc.)
+      "@typescript-eslint/no-explicit-any": "warn",
+      // Allow unused vars with underscore prefix
+      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
     },
   },
 ];

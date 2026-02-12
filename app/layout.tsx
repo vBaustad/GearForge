@@ -3,6 +3,10 @@ import { Cinzel } from "next/font/google";
 import { ConvexClientProvider } from "./providers";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { CookieConsent } from "@/components/CookieConsent";
+import { ConditionalAnalytics } from "@/components/ConditionalAnalytics";
+import { ChecklistProvider } from "@/lib/checklistContext";
+import { ChecklistPanel, ChecklistToggle } from "@/components/ChecklistPanel";
 import "./globals.css";
 
 // Load Cinzel for display text
@@ -199,18 +203,27 @@ export default function RootLayout({
       </head>
       <body suppressHydrationWarning>
         <ConvexClientProvider>
-          {/* Skip to main content link for accessibility */}
-          <a href="#main-content" className="skip-link">
-            Skip to main content
-          </a>
-          <div className="app-wrapper">
-            <Header />
-            <main id="main-content" className="main-content" role="main">
-              {children}
-            </main>
-            <Footer />
-          </div>
+          <ChecklistProvider>
+            {/* Skip to main content link for accessibility */}
+            <a href="#main-content" className="skip-link">
+              Skip to main content
+            </a>
+            <div className="app-wrapper">
+              <Header />
+              <main id="main-content" className="main-content" role="main">
+                {children}
+              </main>
+              <Footer />
+            </div>
+            {/* Checklist panel and toggle */}
+            <ChecklistPanel />
+            <ChecklistToggle />
+            {/* Cookie consent banner */}
+            <CookieConsent />
+          </ChecklistProvider>
         </ConvexClientProvider>
+        {/* Vercel Analytics - only loads if user consents */}
+        <ConditionalAnalytics />
       </body>
     </html>
   );

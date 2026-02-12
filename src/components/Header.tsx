@@ -3,9 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { Search, Upload, User, Compass, LogOut, ChevronDown, UserCircle, Menu, X, Package, Shield, Settings } from "lucide-react";
+import { Search, Upload, User, Compass, LogOut, ChevronDown, UserCircle, Menu, X, Package, Shield, Settings, Layers } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { BlizzardLoginButton } from "./BlizzardLoginButton";
+import { NotificationBell } from "./NotificationBell";
 
 // Helper component to replace NavLink
 function NavLinkItem({
@@ -38,7 +39,7 @@ export function Header() {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const router = useRouter();
-  const { user, isAuthenticated, isLoading, logout } = useAuth();
+  const { user, isAuthenticated, isLoading, logout, sessionToken } = useAuth();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,15 +89,25 @@ export function Header() {
               <span>Browse</span>
             </NavLinkItem>
 
-            <NavLinkItem href="/upload" className="header-nav-link">
-              <Upload size={18} />
-              <span>Upload</span>
+            <NavLinkItem href="/bundles" className="header-nav-link">
+              <Layers size={18} />
+              <span>Bundles</span>
             </NavLinkItem>
 
             <NavLinkItem href="/decor" className="header-nav-link">
               <Package size={18} />
               <span>Items</span>
             </NavLinkItem>
+
+            <NavLinkItem href="/upload" className="header-nav-link">
+              <Upload size={18} />
+              <span>Upload</span>
+            </NavLinkItem>
+
+            {/* Notification bell (for logged-in users) */}
+            {isAuthenticated && sessionToken && (
+              <NotificationBell sessionToken={sessionToken} />
+            )}
 
             {/* User menu */}
             {isLoading ? (
@@ -202,12 +213,12 @@ export function Header() {
                 Browse
               </NavLinkItem>
               <NavLinkItem
-                href="/upload"
+                href="/bundles"
                 className="mobile-menu-link"
                 onClick={() => setShowMobileMenu(false)}
               >
-                <Upload size={20} />
-                Upload
+                <Layers size={20} />
+                Bundles
               </NavLinkItem>
               <NavLinkItem
                 href="/decor"
@@ -216,6 +227,14 @@ export function Header() {
               >
                 <Package size={20} />
                 Items
+              </NavLinkItem>
+              <NavLinkItem
+                href="/upload"
+                className="mobile-menu-link"
+                onClick={() => setShowMobileMenu(false)}
+              >
+                <Upload size={20} />
+                Upload
               </NavLinkItem>
               {isAuthenticated && user ? (
                 <>

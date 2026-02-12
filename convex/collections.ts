@@ -287,6 +287,51 @@ export const removeItem = mutation({
   },
 });
 
+// List public collections for discovery
+export const listPublic = query({
+  args: {
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const limit = args.limit ?? 20;
+
+    const collections = await ctx.db
+      .query("collections")
+      .filter((q) => q.eq(q.field("isPublic"), true))
+      .order("desc")
+      .take(limit);
+
+    return Promise.all(
+      collections.map(async (collection) => {
+        const owner = await ctx.db.get(collection.ownerId);
+        const items = await ctx.db
+          .query("collectionItems")
+          .withIndex("by_collection", (q) => q.eq("collectionId", collection._id))
+          .collect();
+
+        // Get first thumbnail
+        let coverUrl = null;
+        if (items.length > 0) {
+          const firstCreation = await ctx.db.get(items[0].creationId);
+          if (firstCreation?.thumbnailId) {
+            coverUrl = await ctx.storage.getUrl(firstCreation.thumbnailId);
+          } else if (firstCreation?.imageIds.length) {
+            coverUrl = await ctx.storage.getUrl(firstCreation.imageIds[0]);
+          }
+        }
+
+        return {
+          ...collection,
+          ownerName: owner?.battleTag.split("#")[0] ?? "Unknown",
+          ownerAvatarUrl: owner?.avatarUrl,
+          itemCount: items.length,
+          coverUrl,
+        };
+      })
+    );
+  },
+});
+
 // Check which collections contain a creation (for logged in user)
 export const getContainingCollections = query({
   args: {
