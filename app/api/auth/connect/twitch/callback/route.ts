@@ -1,9 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  checkIpRateLimit,
+  getClientIp,
+  createRateLimitHeaders,
+} from "@/lib/rateLimit";
 
 const TWITCH_TOKEN_URL = "https://id.twitch.tv/oauth2/token";
 const TWITCH_USER_URL = "https://api.twitch.tv/helix/users";
 
 export async function GET(request: NextRequest) {
+  // Apply IP-based rate limiting
+  const clientIp = getClientIp(request);
+  const rateLimitResult = checkIpRateLimit(clientIp, "oauthCallback");
+
+  if (!rateLimitResult.allowed) {
+    const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").trim();
+    return NextResponse.redirect(`${baseUrl}/settings?error=rate_limited`);
+  }
+
   try {
     const { searchParams } = request.nextUrl;
     const code = searchParams.get("code");
@@ -90,7 +104,7 @@ export async function GET(request: NextRequest) {
       ? Date.now() + tokenData.expires_in * 1000
       : undefined;
 
-    // Encode connection data in URL params for client-side Convex mutation
+    // Store connection data in httpOnly cookie (more secure than URL params)
     const connectionData = {
       platform: "twitch",
       platformId: twitchUser.id,
@@ -103,11 +117,20 @@ export async function GET(request: NextRequest) {
       state,
     };
 
-    // Redirect to callback page with encoded data
+    // Redirect to callback page - data passed via secure cookie
     const callbackUrl = new URL(`${baseUrl}/auth/connect/callback`);
-    callbackUrl.searchParams.set("data", Buffer.from(JSON.stringify(connectionData)).toString("base64"));
+    const response = NextResponse.redirect(callbackUrl.toString());
 
-    return NextResponse.redirect(callbackUrl.toString());
+    // Set connection data in httpOnly cookie (5 min expiry for security)
+    response.cookies.set("oauth_connect_data", Buffer.from(JSON.stringify(connectionData)).toString("base64"), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 300, // 5 minutes
+      path: "/",
+    });
+
+    return response;
   } catch (error) {
     console.error("Twitch OAuth callback error:", error);
     const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").trim();

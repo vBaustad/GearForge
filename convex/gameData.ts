@@ -1,8 +1,33 @@
-import { query, action, internalMutation, internalAction } from "./_generated/server";
+import { query, mutation, action, internalMutation, internalAction, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 
+// Helper: fetch with timeout to prevent hanging requests
+const FETCH_TIMEOUT_MS = 15000; // 15 seconds
+
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit = {},
+  timeoutMs: number = FETCH_TIMEOUT_MS
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    return response;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 // ===== QUERIES - Read from local cache =====
+
+// Max search string length to prevent ReDoS
+const MAX_SEARCH_LENGTH = 100;
 
 // Get all decor items from local cache
 export const getDecorItems = query({
@@ -24,9 +49,9 @@ export const getDecorItems = query({
       items = await ctx.db.query("decorItems").collect();
     }
 
-    // Search filter (case-insensitive name search)
+    // Search filter (case-insensitive name search) with length limit
     if (args.search) {
-      const searchLower = args.search.toLowerCase();
+      const searchLower = args.search.slice(0, MAX_SEARCH_LENGTH).toLowerCase();
       items = items.filter((item) =>
         item.name.toLowerCase().includes(searchLower)
       );
@@ -52,6 +77,129 @@ export const getDecorByBlizzardId = query({
       .query("decorItems")
       .withIndex("by_blizzard_id", (q) => q.eq("blizzardId", args.blizzardId))
       .first();
+  },
+});
+
+// Get single decor item by WoW Item ID (internal - for test action)
+export const getDecorByWowItemId = internalQuery({
+  args: { wowItemId: v.number() },
+  handler: async (ctx, args) => {
+    // No index on wowItemId, so we need to scan
+    const items = await ctx.db.query("decorItems").collect();
+    return items.find((item) => item.wowItemId === args.wowItemId) || null;
+  },
+});
+
+// Reset enrichment timestamp to allow re-enrichment
+export const resetEnrichmentTimestamps = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const items = await ctx.db.query("decorItems").collect();
+    let count = 0;
+    for (const item of items) {
+      if (item.tooltipEnrichedAt !== undefined) {
+        await ctx.db.patch(item._id, { tooltipEnrichedAt: undefined });
+        count++;
+      }
+    }
+    return { reset: count };
+  },
+});
+
+// Get decor items for Wowhead enrichment
+export const getDecorItemsForEnrichment = internalQuery({
+  args: {
+    limit: v.number(),
+    onlyMissingBudget: v.boolean(),
+    onlyMissingNewFields: v.optional(v.boolean()), // For re-enrichment with new parsing
+  },
+  handler: async (ctx, args) => {
+    const items = await ctx.db.query("decorItems").collect();
+
+    // Filter items that have wowItemId
+    let filtered = items.filter((item) => item.wowItemId !== undefined);
+
+    // Filter to items missing budget cost
+    if (args.onlyMissingBudget) {
+      filtered = filtered.filter((item) => item.budgetCost === undefined || item.budgetCost === null);
+    }
+
+    // Filter to items that haven't been enriched with the new tooltip parser
+    if (args.onlyMissingNewFields) {
+      filtered = filtered.filter((item) => {
+        // Items processed by the new parser have tooltipEnrichedAt set
+        return item.tooltipEnrichedAt === undefined;
+      });
+    }
+
+    return filtered.slice(0, args.limit);
+  },
+});
+
+// Update decor item with budget cost
+export const updateDecorBudgetCost = internalMutation({
+  args: {
+    blizzardId: v.number(),
+    budgetCost: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("decorItems")
+      .withIndex("by_blizzard_id", (q) => q.eq("blizzardId", args.blizzardId))
+      .first();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, { budgetCost: args.budgetCost });
+      return true;
+    }
+    return false;
+  },
+});
+
+// Update decor item with all Wowhead tooltip data
+export const updateDecorFromWowhead = internalMutation({
+  args: {
+    blizzardId: v.number(),
+    budgetCost: v.optional(v.number()),
+    goldCost: v.optional(v.number()),
+    currencyType: v.optional(v.string()),
+    currencyCost: v.optional(v.number()),
+    reputationFaction: v.optional(v.string()),
+    reputationStanding: v.optional(v.string()),
+    professionName: v.optional(v.string()),
+    professionSkillRequired: v.optional(v.number()),
+    questName: v.optional(v.string()),
+    questId: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("decorItems")
+      .withIndex("by_blizzard_id", (q) => q.eq("blizzardId", args.blizzardId))
+      .first();
+
+    if (existing) {
+      const updates: Record<string, any> = {};
+
+      if (args.budgetCost !== undefined) updates.budgetCost = args.budgetCost;
+      if (args.goldCost !== undefined) updates.goldCost = args.goldCost;
+      if (args.currencyType !== undefined) updates.currencyType = args.currencyType;
+      if (args.currencyCost !== undefined) updates.currencyCost = args.currencyCost;
+      if (args.reputationFaction !== undefined) updates.reputationFaction = args.reputationFaction;
+      if (args.reputationStanding !== undefined) updates.reputationStanding = args.reputationStanding;
+      if (args.professionName !== undefined) updates.professionName = args.professionName;
+      if (args.professionSkillRequired !== undefined) updates.professionSkillRequired = args.professionSkillRequired;
+      if (args.questName !== undefined) updates.questName = args.questName;
+      if (args.questId !== undefined) updates.questId = args.questId;
+
+      // Always set the enrichment timestamp when processing
+      updates.tooltipEnrichedAt = Date.now();
+
+      if (Object.keys(updates).length > 0) {
+        await ctx.db.patch(existing._id, updates);
+        return true;
+      }
+    }
+    return false;
   },
 });
 
@@ -269,6 +417,13 @@ export const batchUpsertDecorItems = internalMutation({
         category: v.optional(v.string()),
         source: v.optional(v.string()),
         sourceDetails: v.optional(v.string()),
+        // Quest/Achievement requirements
+        questId: v.optional(v.number()),
+        questName: v.optional(v.string()),
+        achievementId: v.optional(v.number()),
+        achievementName: v.optional(v.string()),
+        // Housing budget cost
+        budgetCost: v.optional(v.number()),
       })
     ),
   },
@@ -478,7 +633,7 @@ async function getBlizzardAccessToken(clientId: string, clientSecret: string, re
     ? "https://oauth.battlenet.com.cn/token"
     : "https://oauth.battle.net/token";
 
-  const response = await fetch(tokenUrl, {
+  const response = await fetchWithTimeout(tokenUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
@@ -549,6 +704,35 @@ export const testBlizzardApi = action({
     const itemName = blizzardData.name?.en_US || blizzardData.name || "Unknown";
     const inferredCategory = inferCategoryFromName(itemName);
 
+    // Parse source data (achievements, quests, etc.)
+    let parsedSource: {
+      type?: string;
+      achievementId?: number;
+      achievementName?: string;
+      questId?: number;
+      questName?: string;
+      vendorName?: string;
+    } = {};
+
+    if (Array.isArray(blizzardData.source)) {
+      for (const src of blizzardData.source) {
+        if (src.achievements && src.achievements.length > 0) {
+          parsedSource.type = "achievement";
+          parsedSource.achievementId = src.achievements[0].id;
+          parsedSource.achievementName = src.achievements[0].name?.en_US || src.achievements[0].name;
+        }
+        if (src.quests && src.quests.length > 0) {
+          parsedSource.type = "quest";
+          parsedSource.questId = src.quests[0].id;
+          parsedSource.questName = src.quests[0].name?.en_US || src.quests[0].name;
+        }
+        if (src.vendors && src.vendors.length > 0) {
+          parsedSource.type = "vendor";
+          parsedSource.vendorName = src.vendors[0].name?.en_US || src.vendors[0].name;
+        }
+      }
+    }
+
     return {
       decorId,
       blizzardApi: {
@@ -561,6 +745,12 @@ export const testBlizzardApi = action({
         itemPageUrl: blizzardData.items?.id
           ? `https://www.wowhead.com/item=${blizzardData.items.id}`
           : null,
+        achievementUrl: parsedSource.achievementId
+          ? `https://www.wowhead.com/achievement=${parsedSource.achievementId}`
+          : null,
+        questUrl: parsedSource.questId
+          ? `https://www.wowhead.com/quest=${parsedSource.questId}`
+          : null,
       },
       processing: {
         name: itemName,
@@ -568,6 +758,371 @@ export const testBlizzardApi = action({
         inferredCategory,
         finalCategory: blizzardData.category?.name?.en_US || blizzardData.category?.name || inferredCategory,
       },
+      parsedSource,
+    };
+  },
+});
+
+// Test by WoW Item ID - lookup in DB and fetch Wowhead tooltip
+export const testWowheadTooltip = action({
+  args: {
+    wowItemId: v.number(),
+  },
+  handler: async (ctx, args): Promise<{
+    wowItemId: number;
+    wowheadUrl: string;
+    database: { found: boolean; decorId?: number; name?: string; category?: string | null; source?: string | null; sourceDetails?: string | null; questId?: number | null; questName?: string | null; achievementId?: number | null; achievementName?: string | null; budgetCost?: number | null };
+    wowheadTooltip: any;
+  }> => {
+    const { wowItemId } = args;
+
+    // Look up in our database
+    type DbItem = { blizzardId: number; name: string; category?: string | null; source?: string | null; sourceDetails?: string | null; questId?: number | null; questName?: string | null; achievementId?: number | null; achievementName?: string | null; budgetCost?: number | null } | null;
+    const dbItem: DbItem = await ctx.runQuery(internal.gameData.getDecorByWowItemId, { wowItemId });
+
+    // Try fetching Wowhead tooltip data
+    let wowheadTooltip: any = null;
+    let wowheadError: string | null = null;
+
+    try {
+      // Wowhead's tooltip endpoint
+      const tooltipUrl = `https://nether.wowhead.com/tooltip/item/${wowItemId}?dataEnv=1&locale=0`;
+      const response = await fetch(tooltipUrl, {
+        headers: {
+          "Accept": "application/json",
+          "User-Agent": "Mozilla/5.0 (compatible; GearForge/1.0)",
+        },
+      });
+
+      if (response.ok) {
+        wowheadTooltip = await response.json();
+      } else {
+        wowheadError = `Status ${response.status}: ${response.statusText}`;
+      }
+    } catch (e: any) {
+      wowheadError = e.message || String(e);
+    }
+
+    return {
+      wowItemId,
+      wowheadUrl: `https://www.wowhead.com/item=${wowItemId}`,
+      database: dbItem ? {
+        found: true,
+        decorId: dbItem.blizzardId,
+        name: dbItem.name,
+        category: dbItem.category,
+        source: dbItem.source,
+        sourceDetails: dbItem.sourceDetails,
+        questId: dbItem.questId,
+        questName: dbItem.questName,
+        achievementId: dbItem.achievementId,
+        achievementName: dbItem.achievementName,
+        budgetCost: dbItem.budgetCost,
+      } : { found: false },
+      wowheadTooltip: wowheadTooltip || { error: wowheadError },
+    };
+  },
+});
+
+// Helper to parse budget cost from Wowhead tooltip HTML
+function parseBudgetCostFromTooltip(tooltipHtml: string): number | null {
+  // Pattern: <img src="...house-decor-budget-icon.webp"...><b>NUMBER</b>
+  const match = tooltipHtml.match(/house-decor-budget-icon\.webp[^>]*>[^<]*<b>(\d+)<\/b>/);
+  if (match && match[1]) {
+    return parseInt(match[1], 10);
+  }
+  return null;
+}
+
+// Parse gold cost from Wowhead tooltip (returns copper value)
+function parseGoldCostFromTooltip(tooltipHtml: string): number | null {
+  // Wowhead shows gold as: <span class="moneygold">123</span><span class="moneysilver">45</span><span class="moneycopper">67</span>
+  const goldMatch = tooltipHtml.match(/class="moneygold">(\d+)</);
+  const silverMatch = tooltipHtml.match(/class="moneysilver">(\d+)</);
+  const copperMatch = tooltipHtml.match(/class="moneycopper">(\d+)</);
+
+  const gold = goldMatch ? parseInt(goldMatch[1], 10) : 0;
+  const silver = silverMatch ? parseInt(silverMatch[1], 10) : 0;
+  const copper = copperMatch ? parseInt(copperMatch[1], 10) : 0;
+
+  const totalCopper = gold * 10000 + silver * 100 + copper;
+  return totalCopper > 0 ? totalCopper : null;
+}
+
+// Parse reputation or renown requirement from Wowhead tooltip
+function parseReputationFromTooltip(tooltipHtml: string): { factionName: string; standingRequired: string; isRenown?: boolean } | null {
+  // Pattern 1: Renown - "Requires Renown X with <faction>"
+  // e.g., "Requires Renown 12 with The Assembly of the Deeps"
+  const renownMatch = tooltipHtml.match(/Requires\s+Renown\s+(\d+)\s+with\s+([^<]+?)(?:<|$|\.|,)/i);
+  if (renownMatch) {
+    return {
+      factionName: renownMatch[2].trim(),
+      standingRequired: `Renown ${renownMatch[1]}`,
+      isRenown: true,
+    };
+  }
+
+  // Pattern 2: Traditional reputation standings
+  // e.g., "Requires The Assembly of the Deeps - Valued"
+  const standingMatch = tooltipHtml.match(/Requires\s+([^<]+?)\s+-\s+(Neutral|Friendly|Honored|Revered|Exalted|Valued|Esteemed|Renowned)/i);
+  if (standingMatch) {
+    return {
+      factionName: standingMatch[1].trim(),
+      standingRequired: standingMatch[2],
+    };
+  }
+
+  return null;
+}
+
+// Parse profession requirement from Wowhead tooltip
+function parseProfessionFromTooltip(tooltipHtml: string): { professionName: string; skillRequired: number } | null {
+  // Patterns:
+  // "Requires Blacksmithing (100)"
+  // "Requires Leatherworking"
+  const match = tooltipHtml.match(/Requires\s+(Alchemy|Blacksmithing|Enchanting|Engineering|Herbalism|Inscription|Jewelcrafting|Leatherworking|Mining|Skinning|Tailoring|Cooking|Fishing|Archaeology)(?:\s+\((\d+)\))?/i);
+  if (match) {
+    return {
+      professionName: match[1],
+      skillRequired: match[2] ? parseInt(match[2], 10) : 1,
+    };
+  }
+  return null;
+}
+
+// Parse quest requirement from Wowhead tooltip
+function parseQuestFromTooltip(tooltipHtml: string): { questName: string } | null {
+  // Pattern: Complete the quest "Quest Name"
+  // e.g., 'Complete the quest "Allegiance of Kul Tiras"'
+  const match = tooltipHtml.match(/Complete the quest\s*"([^"]+)"/i);
+  if (match) {
+    return {
+      questName: match[1].trim(),
+    };
+  }
+  return null;
+}
+
+// Parse currency cost from Wowhead tooltip
+function parseCurrencyFromTooltip(tooltipHtml: string): { currencyType: string; currencyCost: number } | null {
+  // Look for currency icons and amounts
+  // Pattern examples: "50 Artisan's Acuity", "100 Resonance Crystals"
+  // Usually appears as: <span class="...currency...">NUMBER</span> Currency Name
+
+  // Common housing currencies
+  const currencies = [
+    "Artisan's Acuity",
+    "Resonance Crystals",
+    "Kej",
+    "Valorstones",
+    "Coffer Key Shards",
+  ];
+
+  for (const currency of currencies) {
+    const regex = new RegExp(`(\\d+)\\s*(?:<[^>]+>)?\\s*${currency.replace(/'/g, "'")}`, "i");
+    const match = tooltipHtml.match(regex);
+    if (match) {
+      return {
+        currencyType: currency,
+        currencyCost: parseInt(match[1], 10),
+      };
+    }
+  }
+  return null;
+}
+
+// Combined parsing function that extracts all available data from tooltip
+interface TooltipData {
+  budgetCost: number | null;
+  goldCost: number | null;
+  currencyType: string | null;
+  currencyCost: number | null;
+  reputationFaction: string | null;
+  reputationStanding: string | null;
+  professionName: string | null;
+  professionSkillRequired: number | null;
+  questName: string | null;
+}
+
+function parseAllFromTooltip(tooltipHtml: string): TooltipData {
+  const budgetCost = parseBudgetCostFromTooltip(tooltipHtml);
+  const goldCost = parseGoldCostFromTooltip(tooltipHtml);
+  const currency = parseCurrencyFromTooltip(tooltipHtml);
+  const reputation = parseReputationFromTooltip(tooltipHtml);
+  const profession = parseProfessionFromTooltip(tooltipHtml);
+  const quest = parseQuestFromTooltip(tooltipHtml);
+
+  return {
+    budgetCost,
+    goldCost,
+    currencyType: currency?.currencyType || null,
+    currencyCost: currency?.currencyCost || null,
+    reputationFaction: reputation?.factionName || null,
+    reputationStanding: reputation?.standingRequired || null,
+    professionName: profession?.professionName || null,
+    professionSkillRequired: profession?.skillRequired || null,
+    questName: quest?.questName || null,
+  };
+}
+
+// Enrich decor items with Wowhead data (budget costs, gold costs, reputation, profession, quest requirements)
+export const enrichFromWowhead = action({
+  args: {
+    limit: v.optional(v.number()), // How many items to enrich (default 50)
+    onlyMissingBudget: v.optional(v.boolean()), // Only enrich items without budget cost
+    onlyMissingNewFields: v.optional(v.boolean()), // Re-enrich items missing new tooltip data
+  },
+  handler: async (ctx, args): Promise<{
+    processed: number;
+    enriched: number;
+    failed: number;
+    results: Array<{
+      name: string;
+      budgetCost: number | null;
+      goldCost: number | null;
+      reputation: string | null;
+      profession: string | null;
+      quest: string | null;
+      error?: string;
+    }>;
+  }> => {
+    const limit = args.limit ?? 50;
+    const onlyMissingBudget = args.onlyMissingBudget ?? true;
+
+    // Get items that need enrichment
+    const onlyMissingNewFields = args.onlyMissingNewFields ?? false;
+    type EnrichmentItem = { blizzardId: number; name: string; wowItemId?: number };
+    const allItems: EnrichmentItem[] = await ctx.runQuery(internal.gameData.getDecorItemsForEnrichment, {
+      limit,
+      onlyMissingBudget,
+      onlyMissingNewFields,
+    });
+
+    let enriched = 0;
+    let failed = 0;
+    const results: Array<{
+      name: string;
+      budgetCost: number | null;
+      goldCost: number | null;
+      reputation: string | null;
+      profession: string | null;
+      quest: string | null;
+      error?: string;
+    }> = [];
+
+    for (const item of allItems) {
+      if (!item.wowItemId) {
+        continue;
+      }
+
+      try {
+        // Rate limit - 100ms between requests
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // Fetch Wowhead tooltip
+        const tooltipUrl = `https://nether.wowhead.com/tooltip/item/${item.wowItemId}?dataEnv=1&locale=0`;
+        const response = await fetch(tooltipUrl, {
+          headers: {
+            "Accept": "application/json",
+            "User-Agent": "Mozilla/5.0 (compatible; GearForge/1.0)",
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const tooltipData = parseAllFromTooltip(data.tooltip || "");
+
+          // Look up quest ID if we have a quest name
+          let questId: number | undefined;
+          if (tooltipData.questName) {
+            const questData = await ctx.runQuery(internal.gameData.getQuestByName, {
+              name: tooltipData.questName,
+            });
+            if (questData) {
+              questId = questData.questId;
+            }
+          }
+
+          // Check if we got any useful data
+          const hasData = tooltipData.budgetCost !== null ||
+            tooltipData.goldCost !== null ||
+            tooltipData.reputationFaction !== null ||
+            tooltipData.professionName !== null ||
+            tooltipData.currencyType !== null ||
+            tooltipData.questName !== null;
+
+          if (hasData) {
+            // Update the item in database with all parsed data
+            await ctx.runMutation(internal.gameData.updateDecorFromWowhead, {
+              blizzardId: item.blizzardId,
+              budgetCost: tooltipData.budgetCost ?? undefined,
+              goldCost: tooltipData.goldCost ?? undefined,
+              currencyType: tooltipData.currencyType ?? undefined,
+              currencyCost: tooltipData.currencyCost ?? undefined,
+              reputationFaction: tooltipData.reputationFaction ?? undefined,
+              reputationStanding: tooltipData.reputationStanding ?? undefined,
+              professionName: tooltipData.professionName ?? undefined,
+              professionSkillRequired: tooltipData.professionSkillRequired ?? undefined,
+              questName: tooltipData.questName ?? undefined,
+              questId: questId,
+            });
+            enriched++;
+            results.push({
+              name: item.name,
+              budgetCost: tooltipData.budgetCost,
+              goldCost: tooltipData.goldCost,
+              reputation: tooltipData.reputationFaction
+                ? `${tooltipData.reputationFaction} - ${tooltipData.reputationStanding}`
+                : null,
+              profession: tooltipData.professionName
+                ? `${tooltipData.professionName} (${tooltipData.professionSkillRequired})`
+                : null,
+              quest: tooltipData.questName
+                ? `${tooltipData.questName}${questId ? ` (ID: ${questId})` : " (no ID found)"}`
+                : null,
+            });
+          } else {
+            results.push({
+              name: item.name,
+              budgetCost: null,
+              goldCost: null,
+              reputation: null,
+              profession: null,
+              quest: null,
+              error: "No enrichable data in tooltip",
+            });
+          }
+        } else {
+          failed++;
+          results.push({
+            name: item.name,
+            budgetCost: null,
+            goldCost: null,
+            reputation: null,
+            profession: null,
+            quest: null,
+            error: `HTTP ${response.status}`,
+          });
+        }
+      } catch (e: any) {
+        failed++;
+        results.push({
+          name: item.name,
+          budgetCost: null,
+          goldCost: null,
+          reputation: null,
+          profession: null,
+          quest: null,
+          error: e.message,
+        });
+      }
+    }
+
+    return {
+      processed: allItems.length,
+      enriched,
+      failed,
+      results: results.slice(0, 20), // Only return first 20 for display
     };
   },
 });
@@ -614,7 +1169,21 @@ export const syncDecorItemsInternal = internalAction({
 
     for (let i = 0; i < decorList.length; i += batchSize) {
       const batch = decorList.slice(i, i + batchSize);
-      const items = [];
+      const items: Array<{
+        blizzardId: number;
+        name: string;
+        description?: string;
+        iconUrl?: string;
+        wowItemId?: number;
+        category?: string;
+        source?: string;
+        sourceDetails?: string;
+        questId?: number;
+        questName?: string;
+        achievementId?: number;
+        achievementName?: string;
+        budgetCost?: number;
+      }> = [];
 
       for (const decor of batch) {
         try {
@@ -645,6 +1214,50 @@ export const syncDecorItemsInternal = internalAction({
             // Use Blizzard's category if available, otherwise infer from name
             const category = detail.category?.name?.en_US || detail.category?.name || inferCategoryFromName(itemName);
 
+            // Extract source info - Blizzard returns source as array of objects
+            // e.g. source: [{ achievements: [{ id: 41186, name: "..." }] }]
+            // or source: [{ quests: [{ id: 12345, name: "..." }] }]
+            let questId: number | undefined;
+            let questName: string | undefined;
+            let achievementId: number | undefined;
+            let achievementName: string | undefined;
+            let sourceType: string | undefined;
+            let sourceDetails: string | undefined;
+
+            if (Array.isArray(detail.source)) {
+              for (const src of detail.source) {
+                // Check for achievements
+                if (src.achievements && src.achievements.length > 0) {
+                  const ach = src.achievements[0];
+                  achievementId = ach.id;
+                  achievementName = ach.name?.en_US || ach.name;
+                  sourceType = "achievement";
+                  sourceDetails = achievementName;
+                }
+                // Check for quests
+                if (src.quests && src.quests.length > 0) {
+                  const quest = src.quests[0];
+                  questId = quest.id;
+                  questName = quest.name?.en_US || quest.name;
+                  sourceType = "quest";
+                  sourceDetails = questName;
+                }
+                // Check for vendors
+                if (src.vendors && src.vendors.length > 0) {
+                  sourceType = "vendor";
+                  sourceDetails = src.vendors[0].name?.en_US || src.vendors[0].name;
+                }
+                // Check for professions/crafting
+                if (src.professions && src.professions.length > 0) {
+                  sourceType = "profession";
+                  sourceDetails = src.professions[0].name?.en_US || src.professions[0].name;
+                }
+              }
+            }
+
+            // Capture budget/placement cost if available from Blizzard
+            const budgetCost = detail.budget_cost ?? detail.placement_cost ?? detail.decor_cost;
+
             items.push({
               blizzardId: detail.id,
               name: itemName,
@@ -652,8 +1265,13 @@ export const syncDecorItemsInternal = internalAction({
               iconUrl,
               wowItemId,
               category,
-              source: detail.source?.type,
-              sourceDetails: detail.source?.name?.en_US || detail.source?.name,
+              source: sourceType,
+              sourceDetails,
+              questId,
+              questName,
+              achievementId,
+              achievementName,
+              budgetCost,
             });
           }
         } catch (e) {
@@ -924,6 +1542,147 @@ export const syncAllGameData = action({
   },
 });
 
+// ===== CHARACTER PROFILE TEST =====
+
+// Test fetching character achievements (public data - no user login needed)
+export const testCharacterAchievements = action({
+  args: {
+    realmSlug: v.string(), // e.g., "area-52", "illidan", "stormrage"
+    characterName: v.string(), // lowercase character name
+    region: v.optional(v.string()), // us, eu, kr, tw (default: us)
+    achievementIds: v.optional(v.array(v.number())), // specific achievements to check
+  },
+  handler: async (_ctx, args): Promise<{
+    character: { name: string; realm: string; level?: number; faction?: string };
+    achievementSummary: { total: number; points: number };
+    requestedAchievements?: Array<{ id: number; name?: string; completed: boolean; completedAt?: string }>;
+    recentAchievements?: Array<{ id: number; name: string; completedAt: string }>;
+    error?: string;
+  }> => {
+    const clientId = process.env.BLIZZARD_CLIENT_ID;
+    const clientSecret = process.env.BLIZZARD_CLIENT_SECRET;
+
+    if (!clientId || !clientSecret) {
+      return {
+        character: { name: args.characterName, realm: args.realmSlug },
+        achievementSummary: { total: 0, points: 0 },
+        error: "Missing BLIZZARD_CLIENT_ID or BLIZZARD_CLIENT_SECRET",
+      };
+    }
+
+    const region = args.region || "us";
+    const namespace = `profile-${region}`;
+    const locale = "en_US";
+
+    // Get access token
+    const tokenUrl = region === "cn"
+      ? "https://oauth.battlenet.com.cn/token"
+      : "https://oauth.battle.net/token";
+
+    const tokenResponse = await fetch(tokenUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Authorization: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
+      },
+      body: "grant_type=client_credentials",
+    });
+
+    if (!tokenResponse.ok) {
+      return {
+        character: { name: args.characterName, realm: args.realmSlug },
+        achievementSummary: { total: 0, points: 0 },
+        error: `Token error: ${tokenResponse.status}`,
+      };
+    }
+
+    const tokenData = await tokenResponse.json();
+    const accessToken = tokenData.access_token;
+
+    // API base URL
+    const apiUrl = region === "cn"
+      ? "https://gateway.battlenet.com.cn"
+      : `https://${region}.api.blizzard.com`;
+
+    // Fetch character achievements
+    const realmSlug = args.realmSlug.toLowerCase().replace(/\s+/g, "-");
+    const characterName = args.characterName.toLowerCase();
+
+    const achievementsUrl = `${apiUrl}/profile/wow/character/${realmSlug}/${characterName}/achievements?namespace=${namespace}&locale=${locale}`;
+
+    const achievementsResponse = await fetch(achievementsUrl, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (!achievementsResponse.ok) {
+      const errorText = await achievementsResponse.text();
+      return {
+        character: { name: args.characterName, realm: args.realmSlug },
+        achievementSummary: { total: 0, points: 0 },
+        error: `API error ${achievementsResponse.status}: ${errorText}`,
+      };
+    }
+
+    const achievementsData = await achievementsResponse.json();
+
+    // Build completed achievements set
+    const completedAchievements = new Map<number, { id: number; name?: string; completedAt?: number }>();
+
+    if (achievementsData.achievements) {
+      for (const ach of achievementsData.achievements) {
+        if (ach.completed_timestamp) {
+          completedAchievements.set(ach.id, {
+            id: ach.id,
+            name: ach.achievement?.name,
+            completedAt: ach.completed_timestamp,
+          });
+        }
+      }
+    }
+
+    // Check requested achievements
+    let requestedAchievements: Array<{ id: number; name?: string; completed: boolean; completedAt?: string }> | undefined;
+    if (args.achievementIds && args.achievementIds.length > 0) {
+      requestedAchievements = args.achievementIds.map((id) => {
+        const completed = completedAchievements.get(id);
+        return {
+          id,
+          name: completed?.name,
+          completed: !!completed,
+          completedAt: completed?.completedAt
+            ? new Date(completed.completedAt).toISOString()
+            : undefined,
+        };
+      });
+    }
+
+    // Get recent achievements (last 10)
+    const recentAchievements = Array.from(completedAchievements.values())
+      .filter((a) => a.completedAt)
+      .sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0))
+      .slice(0, 10)
+      .map((a) => ({
+        id: a.id,
+        name: a.name || `Achievement ${a.id}`,
+        completedAt: new Date(a.completedAt!).toISOString(),
+      }));
+
+    return {
+      character: {
+        name: achievementsData.character?.name || args.characterName,
+        realm: achievementsData.character?.realm?.name || args.realmSlug,
+        level: achievementsData.character?.level,
+      },
+      achievementSummary: {
+        total: completedAchievements.size,
+        points: achievementsData.total_points || 0,
+      },
+      requestedAchievements,
+      recentAchievements,
+    };
+  },
+});
+
 // Sync using environment variables (for admin UI)
 export const syncFromEnv = action({
   args: {
@@ -955,5 +1714,445 @@ export const syncFromEnv = action({
       default:
         return await ctx.runAction(internal.gameData.syncAllGameDataInternal, syncArgs);
     }
+  },
+});
+
+// ===== QUEST SYNC =====
+
+// Batch upsert quests
+export const batchUpsertQuests = internalMutation({
+  args: {
+    quests: v.array(
+      v.object({
+        questId: v.number(),
+        name: v.string(),
+      })
+    ),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    let upserted = 0;
+
+    for (const quest of args.quests) {
+      const existing = await ctx.db
+        .query("quests")
+        .withIndex("by_quest_id", (q) => q.eq("questId", quest.questId))
+        .first();
+
+      const data = {
+        questId: quest.questId,
+        name: quest.name,
+        nameLower: quest.name.toLowerCase(),
+        cachedAt: now,
+      };
+
+      if (existing) {
+        await ctx.db.patch(existing._id, data);
+      } else {
+        await ctx.db.insert("quests", data);
+      }
+      upserted++;
+    }
+
+    return { upserted };
+  },
+});
+
+// Lookup quest ID by name (case-insensitive)
+export const getQuestByName = internalQuery({
+  args: { name: v.string() },
+  handler: async (ctx, args) => {
+    const nameLower = args.name.toLowerCase();
+    return await ctx.db
+      .query("quests")
+      .withIndex("by_name_lower", (q) => q.eq("nameLower", nameLower))
+      .first();
+  },
+});
+
+// Get quest cache stats
+export const getQuestCacheStats = query({
+  handler: async (ctx) => {
+    const quests = await ctx.db.query("quests").collect();
+    return {
+      count: quests.length,
+      oldestCacheDate: quests.length > 0
+        ? Math.min(...quests.map((q) => q.cachedAt))
+        : null,
+    };
+  },
+});
+
+// Link quest names to quest IDs from our quests table
+// OPTIMIZED: Only processes items that have questName but NO questId (skips already-linked items)
+export const linkQuestIds = mutation({
+  args: {
+    forceRelink: v.optional(v.boolean()), // Set true to re-check all items, even ones with questId
+  },
+  handler: async (ctx, args) => {
+    // Get all decor items that have a quest name
+    const decorItems = await ctx.db.query("decorItems").collect();
+
+    // OPTIMIZATION: Only process items that need linking (no questId yet)
+    // Unless forceRelink is true, then process all items with questName
+    const itemsToProcess = decorItems.filter((item) => {
+      if (!item.questName) return false;
+      if (args.forceRelink) return true;
+      return !item.questId; // Only items missing questId
+    });
+
+    let linked = 0;
+    let skipped = decorItems.filter((item) => item.questName && item.questId).length;
+    let notFound = 0;
+    const notFoundQuests: string[] = [];
+
+    for (const item of itemsToProcess) {
+      if (!item.questName) continue;
+
+      // Look up the quest by name (case-insensitive) using indexed query
+      const nameLower = item.questName.toLowerCase();
+      let quest = await ctx.db
+        .query("quests")
+        .withIndex("by_name_lower", (q) => q.eq("nameLower", nameLower))
+        .first();
+
+      // If not found, try with "The " prefix (common pattern)
+      if (!quest && !nameLower.startsWith("the ")) {
+        quest = await ctx.db
+          .query("quests")
+          .withIndex("by_name_lower", (q) => q.eq("nameLower", "the " + nameLower))
+          .first();
+      }
+
+      // If still not found, try removing "The " prefix
+      if (!quest && nameLower.startsWith("the ")) {
+        quest = await ctx.db
+          .query("quests")
+          .withIndex("by_name_lower", (q) => q.eq("nameLower", nameLower.slice(4)))
+          .first();
+      }
+
+      if (quest) {
+        // Only update if questId is missing or different
+        if (item.questId !== quest.questId) {
+          await ctx.db.patch(item._id, { questId: quest.questId });
+          linked++;
+        }
+      } else {
+        notFound++;
+        if (!notFoundQuests.includes(item.questName)) {
+          notFoundQuests.push(item.questName);
+        }
+      }
+    }
+
+    return {
+      processed: itemsToProcess.length,
+      skipped, // Items already linked (not re-checked)
+      linked,
+      notFound,
+      notFoundQuests: notFoundQuests.slice(0, 20),
+    };
+  },
+});
+
+// Manual quest ID mappings for edge cases where names don't match exactly
+const MANUAL_QUEST_MAPPINGS: Record<string, number> = {
+  // Names from Wowhead tooltips -> actual quest IDs
+  "I TAKE Candle!": 26229,
+  "Kobold Candles": 26229,  // Alternate name for same quest
+  // Add more as needed
+};
+
+// Apply manual quest ID mappings for edge cases
+export const applyManualQuestMappings = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const decorItems = await ctx.db.query("decorItems").collect();
+    let updated = 0;
+
+    for (const item of decorItems) {
+      if (!item.questName) continue;
+
+      const manualId = MANUAL_QUEST_MAPPINGS[item.questName];
+      if (manualId && item.questId !== manualId) {
+        await ctx.db.patch(item._id, { questId: manualId });
+        updated++;
+      }
+    }
+
+    return { updated, mappingsAvailable: Object.keys(MANUAL_QUEST_MAPPINGS).length };
+  },
+});
+
+// Get decor items with unmatched quest requirements (have questName but no questId)
+// OPTIMIZED: Only checks items without questId (skips expensive DB lookups)
+export const getUnmatchedQuestItems = query({
+  args: {
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const limit = args.limit ?? 50;
+    const decorItems = await ctx.db.query("decorItems").collect();
+
+    // OPTIMIZATION: Only return items with questName but NO questId
+    // This avoids expensive cross-table lookups for each item
+    const unmatched = decorItems
+      .filter((item) => item.questName && !item.questId)
+      .slice(0, limit)
+      .map((item) => ({
+        blizzardId: item.blizzardId,
+        name: item.name,
+        questName: item.questName,
+        questId: item.questId,
+        wowItemId: item.wowItemId,
+        iconUrl: item.iconUrl,
+      }));
+
+    const totalUnmatched = decorItems.filter((item) => item.questName && !item.questId).length;
+
+    return {
+      items: unmatched,
+      total: totalUnmatched,
+      hasMore: totalUnmatched > limit,
+    };
+  },
+});
+
+// Delete decor items by blizzard ID (admin utility for cleaning up test data)
+export const deleteDecorItems = mutation({
+  args: {
+    blizzardIds: v.array(v.number()),
+  },
+  handler: async (ctx, args) => {
+    let deleted = 0;
+    for (const blizzardId of args.blizzardIds) {
+      const item = await ctx.db
+        .query("decorItems")
+        .withIndex("by_blizzard_id", (q) => q.eq("blizzardId", blizzardId))
+        .first();
+      if (item) {
+        await ctx.db.delete(item._id);
+        deleted++;
+      }
+    }
+    return { deleted };
+  },
+});
+
+// Set quest ID for a specific quest name (admin utility)
+export const setQuestIdByName = mutation({
+  args: {
+    questName: v.string(),
+    questId: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const decorItems = await ctx.db.query("decorItems").collect();
+    const itemsToUpdate = decorItems.filter(
+      (item) => item.questName?.toLowerCase() === args.questName.toLowerCase()
+    );
+
+    for (const item of itemsToUpdate) {
+      await ctx.db.patch(item._id, { questId: args.questId });
+    }
+
+    // Also add to our quests table for future lookups
+    const existingQuest = await ctx.db
+      .query("quests")
+      .withIndex("by_quest_id", (q) => q.eq("questId", args.questId))
+      .first();
+
+    if (!existingQuest) {
+      await ctx.db.insert("quests", {
+        questId: args.questId,
+        name: args.questName,
+        nameLower: args.questName.toLowerCase(),
+        cachedAt: Date.now(),
+      });
+    }
+
+    return { updated: itemsToUpdate.length, questName: args.questName, questId: args.questId };
+  },
+});
+
+// Sync quests from Blizzard API
+export const syncQuestsInternal = internalAction({
+  args: {
+    clientId: v.string(),
+    clientSecret: v.string(),
+    region: v.optional(v.string()),
+  },
+  handler: async (ctx, args): Promise<{ synced: number }> => {
+    const region = args.region ?? "us";
+    const namespace = `static-${region}`;
+    const locale = "en_US";
+
+    // Get access token
+    const tokenUrl = "https://oauth.battle.net/token";
+    const tokenResponse = await fetch(tokenUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Authorization: `Basic ${btoa(`${args.clientId}:${args.clientSecret}`)}`,
+      },
+      body: "grant_type=client_credentials",
+    });
+
+    if (!tokenResponse.ok) {
+      throw new Error(`Failed to get access token: ${tokenResponse.statusText}`);
+    }
+
+    const tokenData = await tokenResponse.json();
+    const accessToken = tokenData.access_token;
+
+    const apiUrl = `https://${region}.api.blizzard.com`;
+
+    // Fetch quest index
+    const indexResponse = await fetch(
+      `${apiUrl}/data/wow/quest/index?namespace=${namespace}&locale=${locale}`,
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }
+    );
+
+    if (!indexResponse.ok) {
+      throw new Error(`Failed to fetch quest index: ${indexResponse.statusText}`);
+    }
+
+    const indexData = await indexResponse.json();
+
+    // The quest index returns categories, areas, and types
+    // We fetch from BOTH categories AND areas to get all quests including old continents
+    let allQuests: Array<{ questId: number; name: string }> = [];
+    const seenQuestIds = new Set<number>(); // Track seen IDs to avoid duplicates
+    let totalProcessed = 0;
+
+    // Helper to add quest avoiding duplicates
+    const addQuest = (id: number, name: string) => {
+      if (!seenQuestIds.has(id)) {
+        seenQuestIds.add(id);
+        allQuests.push({ questId: id, name: name || `Quest ${id}` });
+      }
+    };
+
+    // Helper to batch insert
+    const flushBatch = async () => {
+      if (allQuests.length >= 500) {
+        await ctx.runMutation(internal.gameData.batchUpsertQuests, { quests: allQuests });
+        totalProcessed += allQuests.length;
+        allQuests = [];
+      }
+    };
+
+    // ===== SYNC BY CATEGORY =====
+    const categoriesResponse = await fetch(
+      `${apiUrl}/data/wow/quest/category/index?namespace=${namespace}&locale=${locale}`,
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }
+    );
+
+    if (categoriesResponse.ok) {
+      const categoriesData = await categoriesResponse.json();
+      const categories = categoriesData.categories || [];
+
+      for (const category of categories) {
+        await new Promise((resolve) => setTimeout(resolve, 30)); // Rate limit
+
+        const categoryResponse = await fetch(
+          `${apiUrl}/data/wow/quest/category/${category.id}?namespace=${namespace}&locale=${locale}`,
+          {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          }
+        );
+
+        if (categoryResponse.ok) {
+          const categoryData = await categoryResponse.json();
+          if (categoryData.quests && Array.isArray(categoryData.quests)) {
+            for (const quest of categoryData.quests) {
+              addQuest(quest.id, quest.name);
+            }
+          }
+        }
+
+        await flushBatch();
+      }
+    }
+
+    // ===== SYNC BY AREA (zones/continents - includes old content) =====
+    const areasResponse = await fetch(
+      `${apiUrl}/data/wow/quest/area/index?namespace=${namespace}&locale=${locale}`,
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }
+    );
+
+    if (areasResponse.ok) {
+      const areasData = await areasResponse.json();
+      const areas = areasData.areas || [];
+
+      console.log(`Syncing quests from ${areas.length} areas/zones...`);
+
+      for (const area of areas) {
+        await new Promise((resolve) => setTimeout(resolve, 30)); // Rate limit
+
+        const areaResponse = await fetch(
+          `${apiUrl}/data/wow/quest/area/${area.id}?namespace=${namespace}&locale=${locale}`,
+          {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          }
+        );
+
+        if (areaResponse.ok) {
+          const areaData = await areaResponse.json();
+          if (areaData.quests && Array.isArray(areaData.quests)) {
+            for (const quest of areaData.quests) {
+              addQuest(quest.id, quest.name);
+            }
+          }
+        }
+
+        await flushBatch();
+      }
+    }
+
+    // Insert remaining quests
+    if (allQuests.length > 0) {
+      await ctx.runMutation(internal.gameData.batchUpsertQuests, { quests: allQuests });
+      totalProcessed += allQuests.length;
+    }
+
+    // Get final count
+    const stats: { count: number } = await ctx.runQuery(internal.gameData.getQuestCacheStatsInternal);
+    return { synced: stats.count };
+  },
+});
+
+// Internal query for quest stats (used by sync action)
+export const getQuestCacheStatsInternal = internalQuery({
+  handler: async (ctx) => {
+    const quests = await ctx.db.query("quests").collect();
+    return { count: quests.length };
+  },
+});
+
+// Public action to sync quests
+export const syncQuests = action({
+  args: {
+    region: v.optional(v.string()),
+  },
+  handler: async (ctx, args): Promise<{ synced: number }> => {
+    const clientId = process.env.BLIZZARD_CLIENT_ID;
+    const clientSecret = process.env.BLIZZARD_CLIENT_SECRET;
+
+    if (!clientId || !clientSecret) {
+      throw new Error("Blizzard API credentials not configured.");
+    }
+
+    return await ctx.runAction(internal.gameData.syncQuestsInternal, {
+      clientId,
+      clientSecret,
+      region: args.region ?? "us",
+    });
   },
 });

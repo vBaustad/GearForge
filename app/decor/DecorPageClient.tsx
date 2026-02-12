@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Search, Package, ExternalLink, Grid, List } from "lucide-react";
@@ -56,11 +56,13 @@ export function DecorPageClient() {
   const isLoading = decorItems === undefined;
 
   // Sort items alphabetically by name
-  const sortedItems = decorItems
-    ? [...decorItems]
-        .sort((a, b) => a.name.localeCompare(b.name))
-        .slice(0, limit)
-    : [];
+  const sortedItems = useMemo(() => {
+    return decorItems
+      ? [...decorItems]
+          .sort((a, b) => a.name.localeCompare(b.name))
+          .slice(0, limit)
+      : [];
+  }, [decorItems, limit]);
 
   // Reset limit when filters change
   useEffect(() => {

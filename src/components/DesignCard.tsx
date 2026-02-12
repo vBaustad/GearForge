@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Heart, Eye } from "lucide-react";
 import type { CreationWithCreator, Category } from "@/types/creation";
 import { CATEGORY_LABELS } from "@/types/creation";
@@ -59,13 +60,26 @@ export function DesignCard(props: DesignCardProps) {
       href={`/design/${data.id}`}
       className="design-card"
     >
-      {/* Thumbnail */}
+      {/* Thumbnail with lazy loading */}
       <div className="design-card-image">
         {data.thumbnailUrl ? (
-          <img src={data.thumbnailUrl} alt={data.title} />
+          <Image
+            src={data.thumbnailUrl}
+            alt={data.title}
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            loading="lazy"
+            style={{ objectFit: "cover" }}
+          />
         ) : (
           <div className="design-card-placeholder">
-            <img src="/gearforge_logo_new.png" alt="" className="placeholder-logo" />
+            <Image
+              src="/gearforge_logo_new.png"
+              alt=""
+              width={64}
+              height={64}
+              className="placeholder-logo"
+            />
           </div>
         )}
         {/* Category badge overlay */}

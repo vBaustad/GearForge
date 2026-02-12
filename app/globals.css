@@ -2112,6 +2112,62 @@ select.input {
 }
 
 /* ============================================
+   BREADCRUMBS
+   ============================================ */
+
+.breadcrumbs {
+  margin-bottom: var(--space-lg);
+}
+
+.breadcrumb-list {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  list-style: none;
+  font-size: 0.875rem;
+}
+
+.breadcrumb-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.breadcrumb-link {
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.breadcrumb-link:hover {
+  color: var(--accent);
+}
+
+.breadcrumb-separator {
+  color: var(--text-muted);
+}
+
+.breadcrumb-current {
+  color: var(--text-primary);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ============================================
    HELP PAGE STYLES
    ============================================ */
 
@@ -4269,3 +4325,116 @@ select.input {
   color: var(--accent);
   flex-shrink: 0;
 }
+
+/* Design Page Layout - Image + Items side by side */
+.design-main-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-lg);
+}
+
+@media (min-width: 900px) {
+  .design-main-grid {
+    display: grid;
+    grid-template-columns: 3fr 2fr;
+    align-items: start;
+  }
+}
+
+/* Gallery column - contains images */
+.design-gallery-column {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Items sidebar - height controlled by JS to match gallery */
+.design-items-sidebar {
+  display: flex;
+  flex-direction: column;
+  min-height: 300px;
+  overflow: hidden;
+}
+
+.design-items-sidebar .card,
+.design-items-sidebar .items-list-card {
+  margin-top: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* Unified details section below the grid */
+.design-details-section {
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  margin-bottom: var(--space-lg);
+}
+
+.design-details-header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+.design-details-creator {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex: 1;
+  min-width: 0;
+}
+
+.design-details-creator-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  border: 2px solid var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.design-details-creator-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.design-details-actions {
+  display: flex;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+}
+
+.design-details-body {
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--border);
+}
+
+.design-description {
+  margin-bottom: var(--space-md);
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.design-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-md);
+}
+
+.design-import {
+  margin-top: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--border);
+}
+

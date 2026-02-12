@@ -1,9 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  checkIpRateLimit,
+  getClientIp,
+  createRateLimitHeaders,
+} from "@/lib/rateLimit";
 
 const BLIZZARD_TOKEN_URL = "https://oauth.battle.net/token";
 const BLIZZARD_USERINFO_URL = "https://oauth.battle.net/userinfo";
 
 export async function POST(request: NextRequest) {
+  // Apply IP-based rate limiting
+  const clientIp = getClientIp(request);
+  const rateLimitResult = checkIpRateLimit(clientIp, "oauthCallback");
+
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      { message: "Too many requests. Please try again later." },
+      {
+        status: 429,
+        headers: createRateLimitHeaders(rateLimitResult),
+      }
+    );
+  }
+
   try {
     const { code } = await request.json();
 

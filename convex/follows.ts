@@ -1,6 +1,8 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { enforceRateLimit } from "./rateLimit";
+import { createNotification } from "./notifications";
+import { checkFollowerBadges } from "./badges";
 
 // Check if user is following another user
 export const isFollowing = query({
@@ -61,6 +63,18 @@ export const toggle = mutation({
 
     if (existing) {
       await ctx.db.delete(existing._id);
+
+      // Update denormalized counts
+      await ctx.db.patch(user._id, {
+        followingCount: Math.max(0, (user.followingCount ?? 1) - 1),
+      });
+      const targetUser = await ctx.db.get(args.followingId);
+      if (targetUser) {
+        await ctx.db.patch(args.followingId, {
+          followerCount: Math.max(0, (targetUser.followerCount ?? 1) - 1),
+        });
+      }
+
       return { action: "unfollowed" };
     } else {
       await ctx.db.insert("follows", {
@@ -68,34 +82,48 @@ export const toggle = mutation({
         followingId: args.followingId,
         createdAt: Date.now(),
       });
+
+      // Update denormalized counts
+      await ctx.db.patch(user._id, {
+        followingCount: (user.followingCount ?? 0) + 1,
+      });
+      const targetUser = await ctx.db.get(args.followingId);
+      if (targetUser) {
+        await ctx.db.patch(args.followingId, {
+          followerCount: (targetUser.followerCount ?? 0) + 1,
+        });
+      }
+
+      // Notify the followed user
+      await createNotification(ctx, {
+        recipientId: args.followingId,
+        type: "follow",
+        actorId: user._id,
+      });
+
+      // Check for follower-related badges
+      await checkFollowerBadges(ctx, args.followingId);
+
       return { action: "followed" };
     }
   },
 });
 
-// Get follower count for a user
+// Get follower count for a user (uses denormalized count)
 export const getFollowerCount = query({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {
-    const followers = await ctx.db
-      .query("follows")
-      .withIndex("by_following", (q) => q.eq("followingId", args.userId))
-      .collect();
-
-    return followers.length;
+    const user = await ctx.db.get(args.userId);
+    return user?.followerCount ?? 0;
   },
 });
 
-// Get following count for a user
+// Get following count for a user (uses denormalized count)
 export const getFollowingCount = query({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {
-    const following = await ctx.db
-      .query("follows")
-      .withIndex("by_follower", (q) => q.eq("followerId", args.userId))
-      .collect();
-
-    return following.length;
+    const user = await ctx.db.get(args.userId);
+    return user?.followingCount ?? 0;
   },
 });
 
@@ -157,24 +185,14 @@ export const getFollowing = query({
   },
 });
 
-// Get combined stats for a user (followers and following counts)
+// Get combined stats for a user (uses denormalized counts)
 export const getStats = query({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {
-    const [followers, following] = await Promise.all([
-      ctx.db
-        .query("follows")
-        .withIndex("by_following", (q) => q.eq("followingId", args.userId))
-        .collect(),
-      ctx.db
-        .query("follows")
-        .withIndex("by_follower", (q) => q.eq("followerId", args.userId))
-        .collect(),
-    ]);
-
+    const user = await ctx.db.get(args.userId);
     return {
-      followers: followers.length,
-      following: following.length,
+      followers: user?.followerCount ?? 0,
+      following: user?.followingCount ?? 0,
     };
   },
 });

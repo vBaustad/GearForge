@@ -5,6 +5,7 @@ import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { Link2, CheckCircle, ExternalLink, Loader } from "lucide-react";
 import { useState } from "react";
+import { getErrorMessage } from "@/lib/errorMessages";
 
 type Platform = "twitch" | "youtube" | "kick";
 
@@ -47,8 +48,8 @@ const platformConfig: Record<
     color: "#53FC18",
     bgColor: "rgba(83, 252, 24, 0.1)",
     icon: (
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-        <path d="M1.393 2.095v19.81h5.737V10.15l3.058 3.706 3.868-4.66v12.709h5.736V8.95l3.815 4.614V2.095h-5.736l-3.869 4.66-3.057-3.707v8.66l-3.815-4.613v14.81H1.393V2.095z" />
+      <svg viewBox="0 0 512 512" width="20" height="20" fill="currentColor">
+        <path d="M37 .036h164.448v113.621h54.71v-56.82h54.731V.036h164.448v170.777h-54.73v56.82h-54.711v56.8h54.71v56.82h54.73V512.03H310.89v-56.82h-54.73v-56.8h-54.711v113.62H37V.036z" />
       </svg>
     ),
   },
@@ -80,7 +81,7 @@ export function SocialConnections({ userId, sessionToken }: SocialConnectionsPro
       await disconnect({ sessionToken, platform });
     } catch (err) {
       console.error("Failed to disconnect:", err);
-      alert(err instanceof Error ? err.message : "Failed to disconnect account");
+      alert(getErrorMessage(err));
     } finally {
       setDisconnecting(null);
     }

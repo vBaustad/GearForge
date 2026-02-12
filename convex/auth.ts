@@ -1,6 +1,7 @@
-import { mutation, query } from "./_generated/server";
+import { mutation, query, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 import { enforceRateLimit } from "./rateLimit";
+import { logAuditEvent } from "./auditLog";
 
 // Generate a random session token
 function generateToken(): string {
@@ -92,8 +93,76 @@ export const loginWithBlizzard = mutation({
       expiresAt,
     });
 
+    // Log login event
+    await logAuditEvent(ctx, {
+      actorId: user._id,
+      actorRole: user.role,
+      actorIdentifier: user.battleTag,
+      action: "auth.login",
+      targetType: "session",
+      targetId: user._id,
+      targetIdentifier: user.battleTag,
+      severity: "info",
+    });
+
     return {
       token,
+      user: {
+        id: user._id,
+        battleTag: user.battleTag,
+        avatarUrl: user.avatarUrl,
+        role: user.role,
+      },
+    };
+  },
+});
+
+// Rotate session - create new token and invalidate old one
+// Call this on sensitive actions (password change, email change, etc.)
+export const rotateSession = mutation({
+  args: { sessionToken: v.string() },
+  handler: async (ctx, args) => {
+    const session = await ctx.db
+      .query("sessions")
+      .withIndex("by_token", (q) => q.eq("token", args.sessionToken))
+      .first();
+
+    if (!session || session.expiresAt < Date.now()) {
+      throw new Error("Invalid or expired session");
+    }
+
+    const user = await ctx.db.get(session.userId);
+    if (!user || user.banned) {
+      throw new Error("User not found or banned");
+    }
+
+    // Delete old session
+    await ctx.db.delete(session._id);
+
+    // Create new session with fresh token
+    const newToken = generateToken();
+    const now = Date.now();
+    const expiresAt = now + 30 * 24 * 60 * 60 * 1000; // 30 days
+
+    await ctx.db.insert("sessions", {
+      userId: user._id,
+      token: newToken,
+      expiresAt,
+    });
+
+    // Log session rotation
+    await logAuditEvent(ctx, {
+      actorId: user._id,
+      actorRole: user.role,
+      actorIdentifier: user.battleTag,
+      action: "auth.session_rotated",
+      targetType: "session",
+      targetId: user._id,
+      severity: "info",
+    });
+
+    return {
+      token: newToken,
       user: {
         id: user._id,
         battleTag: user.battleTag,
@@ -114,7 +183,21 @@ export const logout = mutation({
       .first();
 
     if (session) {
+      const user = await ctx.db.get(session.userId);
       await ctx.db.delete(session._id);
+
+      // Log logout event
+      if (user) {
+        await logAuditEvent(ctx, {
+          actorId: user._id,
+          actorRole: user.role,
+          actorIdentifier: user.battleTag,
+          action: "auth.logout",
+          targetType: "session",
+          targetId: user._id,
+          severity: "info",
+        });
+      }
     }
 
     return { success: true };
@@ -135,5 +218,18 @@ export const cleanupExpiredSessions = mutation({
     }
 
     return { deleted: expiredSessions.length };
+  },
+});
+
+// Internal query to get session by token (for use in actions)
+export const getSessionByToken = internalQuery({
+  args: { token: v.string() },
+  handler: async (ctx, args) => {
+    const session = await ctx.db
+      .query("sessions")
+      .withIndex("by_token", (q) => q.eq("token", args.token))
+      .first();
+
+    return session;
   },
 });

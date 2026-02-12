@@ -1,20 +1,70 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
-import { User, Heart, Eye, ExternalLink, CheckCircle, Calendar, Layout } from "lucide-react";
+import { User, Heart, Eye, Calendar, Layout, UserPlus, UserCheck, Users } from "lucide-react";
 import { DesignCard } from "@/components/DesignCard";
+import { TipLinks } from "@/components/TipLinks";
+import { BadgeGrid } from "@/components/badges/BadgeGrid";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { useAuth } from "@/lib/auth";
+import Script from "next/script";
 
 interface UserPageClientProps {
   id: string;
 }
 
 export function UserPageClient({ id }: UserPageClientProps) {
-  const userProfile = useQuery(api.users.getById, { id: id as Id<"users"> });
-  const designs = useQuery(api.creations.getByCreator, { creatorId: id as Id<"users"> });
-  const socialConnections = useQuery(api.socialConnections.getByUser, { userId: id as Id<"users"> });
+  const [isFollowing, setIsFollowing] = useState(false);
+  const { user, isAuthenticated, sessionToken } = useAuth();
+
+  // Validate ID before making queries - must be a valid Convex ID format
+  const isValidId = id && id !== "undefined" && id !== "null" && id.length > 0;
+
+  const userProfile = useQuery(
+    api.users.getById,
+    isValidId ? { id: id as Id<"users"> } : "skip"
+  );
+  const designs = useQuery(
+    api.creations.getByCreator,
+    isValidId ? { creatorId: id as Id<"users"> } : "skip"
+  );
+  const socialConnections = useQuery(
+    api.socialConnections.getByUser,
+    isValidId ? { userId: id as Id<"users"> } : "skip"
+  );
+  const followStats = useQuery(
+    api.follows.getStats,
+    isValidId ? { userId: id as Id<"users"> } : "skip"
+  );
+  const isFollowingUser = useQuery(
+    api.follows.isFollowing,
+    isValidId && user ? { followerId: user.id, followingId: id as Id<"users"> } : "skip"
+  );
+  const toggleFollow = useMutation(api.follows.toggle);
+
+  // Invalid ID - show not found
+  if (!isValidId) {
+    return (
+      <div className="container page-section">
+        <div className="placeholder-page">
+          <h2 className="font-display" style={{ marginBottom: "var(--space-md)" }}>
+            User Not Found
+          </h2>
+          <p className="text-secondary" style={{ marginBottom: "var(--space-xl)" }}>
+            This user profile doesn&apos;t exist.
+          </p>
+          <Link href="/" className="btn btn-primary">
+            Return Home
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   if (userProfile === undefined || designs === undefined) {
     return (
@@ -49,6 +99,24 @@ export function UserPageClient({ id }: UserPageClientProps) {
     year: "numeric",
   });
 
+  // Check if viewing own profile
+  const isOwnProfile = user?.id === id;
+
+  const handleToggleFollow = async () => {
+    if (!sessionToken || isFollowing) return;
+    setIsFollowing(true);
+    try {
+      await toggleFollow({
+        sessionToken,
+        followingId: id as Id<"users">,
+      });
+    } catch (err) {
+      console.error("Failed to toggle follow:", err);
+    } finally {
+      setIsFollowing(false);
+    }
+  };
+
   const platformConfig: Record<string, { color: string; bgColor: string; icon: React.ReactNode }> = {
     twitch: {
       color: "#9146FF",
@@ -72,15 +140,49 @@ export function UserPageClient({ id }: UserPageClientProps) {
       color: "#53FC18",
       bgColor: "rgba(83, 252, 24, 0.15)",
       icon: (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M1.393 2.095v19.81h5.737V10.15l3.058 3.706 3.868-4.66v12.709h5.736V8.95l3.815 4.614V2.095h-5.736l-3.869 4.66-3.057-3.707v8.66l-3.815-4.613v14.81H1.393V2.095z"/>
+        <svg width="16" height="16" viewBox="0 0 512 512" fill="currentColor">
+          <path d="M37 .036h164.448v113.621h54.71v-56.82h54.731V.036h164.448v170.777h-54.73v56.82h-54.711v56.8h54.71v56.82h54.73V512.03H310.89v-56.82h-54.73v-56.8h-54.711v113.62H37V.036z"/>
         </svg>
       ),
     },
   };
 
+  // JSON-LD Person schema for SEO
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    name: userProfile.battleTag.split("#")[0],
+    url: `https://gearforge.io/user/${id}`,
+    image: userProfile.avatarUrl || undefined,
+    description: userProfile.bio || `WoW housing creator with ${designs?.length || 0} designs`,
+    sameAs: socialConnections
+      ?.map((c: { channelUrl: string }) => c.channelUrl)
+      .filter(Boolean) || [],
+    interactionStatistic: [
+      {
+        "@type": "InteractionCounter",
+        interactionType: "https://schema.org/FollowAction",
+        userInteractionCount: followStats?.followers || 0,
+      },
+    ],
+  };
+
   return (
-    <div className="container page-section">
+    <>
+      <Script
+        id="user-jsonld"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <div className="container page-section">
+      {/* Breadcrumbs for SEO */}
+      <Breadcrumbs
+        items={[
+          { label: "Creators", href: "/browse" },
+          { label: userProfile.battleTag.split("#")[0] },
+        ]}
+      />
+
       {/* Profile Hero Section */}
       <div
         className="card"
@@ -138,16 +240,46 @@ export function UserPageClient({ id }: UserPageClientProps) {
 
             {/* User Info */}
             <div style={{ flex: 1, minWidth: 200 }}>
-              <h1
-                className="font-display"
-                style={{
-                  fontSize: "2rem",
-                  marginBottom: "var(--space-xs)",
-                  color: "var(--text-primary)",
-                }}
-              >
-                {userProfile.battleTag.split("#")[0]}
-              </h1>
+              <div style={{ display: "flex", alignItems: "center", gap: "var(--space-md)", marginBottom: "var(--space-xs)", flexWrap: "wrap" }}>
+                <h1
+                  className="font-display"
+                  style={{
+                    fontSize: "2rem",
+                    color: "var(--text-primary)",
+                    margin: 0,
+                  }}
+                >
+                  {userProfile.battleTag.split("#")[0]}
+                </h1>
+
+                {/* Follow Button */}
+                {!isOwnProfile && isAuthenticated && (
+                  <button
+                    onClick={handleToggleFollow}
+                    disabled={isFollowing}
+                    className={`btn ${isFollowingUser ? "btn-secondary" : "btn-primary"}`}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "var(--space-xs)",
+                      padding: "8px 16px",
+                      fontSize: "0.875rem",
+                    }}
+                  >
+                    {isFollowingUser ? (
+                      <>
+                        <UserCheck size={16} />
+                        Following
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus size={16} />
+                        Follow
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
 
               <div
                 style={{
@@ -165,6 +297,23 @@ export function UserPageClient({ id }: UserPageClientProps) {
                   <Calendar size={14} />
                   Member since {memberSince}
                 </span>
+                {followStats && (
+                  <>
+                    <span
+                      className="text-secondary"
+                      style={{ display: "flex", alignItems: "center", gap: "var(--space-xs)", fontSize: "0.875rem" }}
+                    >
+                      <Users size={14} />
+                      <strong style={{ color: "var(--text-primary)" }}>{followStats.followers}</strong> followers
+                    </span>
+                    <span
+                      className="text-secondary"
+                      style={{ fontSize: "0.875rem" }}
+                    >
+                      <strong style={{ color: "var(--text-primary)" }}>{followStats.following}</strong> following
+                    </span>
+                  </>
+                )}
               </div>
 
               {/* Bio */}
@@ -197,26 +346,36 @@ export function UserPageClient({ id }: UserPageClientProps) {
                         style={{
                           display: "inline-flex",
                           alignItems: "center",
-                          gap: "6px",
-                          padding: "6px 12px",
-                          background: config.bgColor,
-                          border: `1px solid ${config.color}30`,
+                          gap: "8px",
+                          padding: "8px 14px",
+                          background: config.color,
                           borderRadius: "var(--radius-sm)",
-                          color: config.color,
+                          color: "#fff",
                           fontSize: "0.875rem",
                           fontWeight: 500,
+                          textDecoration: "none",
                           transition: "all 0.15s ease",
                         }}
                       >
-                        <CheckCircle size={14} style={{ color: "#22c55e" }} />
                         {config.icon}
                         <span>{conn.platformUsername}</span>
-                        <ExternalLink size={12} style={{ opacity: 0.7 }} />
                       </a>
                     );
                   })}
                 </div>
               )}
+
+              {/* Tip Links */}
+              <TipLinks tipLinks={userProfile.tipLinks} />
+
+              {/* Badges */}
+              <ErrorBoundary
+                compact
+                title="Unable to load badges"
+                description="Something went wrong while loading badges."
+              >
+                <BadgeGrid userId={id as Id<"users">} />
+              </ErrorBoundary>
             </div>
           </div>
 
@@ -338,5 +497,6 @@ export function UserPageClient({ id }: UserPageClientProps) {
         )}
       </div>
     </div>
+    </>
   );
 }

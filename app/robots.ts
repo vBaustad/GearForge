@@ -8,9 +8,26 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/admin", "/api/", "/auth/callback"],
+        disallow: [
+          "/admin",
+          "/admin/*",
+          "/api/",
+          "/api/*",
+          "/auth/callback",
+          "/auth/connect/*",
+          "/settings",
+          "/upload",
+          "/*.json$",
+        ],
+      },
+      {
+        // Allow Googlebot to access all public content
+        userAgent: "Googlebot",
+        allow: ["/", "/browse", "/design/*", "/user/*", "/decor", "/help", "/faq", "/about"],
+        disallow: ["/admin", "/api/", "/auth/", "/settings"],
       },
     ],
     sitemap: `${baseUrl}/sitemap.xml`,
+    host: baseUrl,
   };
 }

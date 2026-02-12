@@ -18,6 +18,7 @@ import {
   Image as ImageIcon,
   X,
 } from "lucide-react";
+import { getErrorMessage } from "@/lib/errorMessages";
 
 interface EditDesignPageClientProps {
   id: string;
@@ -27,7 +28,13 @@ export function EditDesignPageClient({ id }: EditDesignPageClientProps) {
   const router = useRouter();
   const { user, isLoading: authLoading, sessionToken } = useAuth();
 
-  const design = useQuery(api.creations.getById, { id: id as Id<"creations"> });
+  // Validate ID before making queries
+  const isValidId = id && id !== "undefined" && id !== "null" && id.length > 0;
+
+  const design = useQuery(
+    api.creations.getById,
+    isValidId ? { id: id as Id<"creations"> } : "skip"
+  );
   const updateDesign = useMutation(api.creations.update);
 
   // Form state
@@ -55,7 +62,7 @@ export function EditDesignPageClient({ id }: EditDesignPageClientProps) {
   }, [design]);
 
   // Loading state
-  if (authLoading || design === undefined) {
+  if (authLoading || (isValidId && design === undefined)) {
     return (
       <div className="container page-section">
         <div style={{ minHeight: "50vh" }} />
@@ -63,8 +70,8 @@ export function EditDesignPageClient({ id }: EditDesignPageClientProps) {
     );
   }
 
-  // Design not found
-  if (design === null) {
+  // Invalid ID or design not found
+  if (!isValidId || !design) {
     return (
       <div className="container page-section">
         <div className="placeholder-page">
@@ -171,7 +178,7 @@ export function EditDesignPageClient({ id }: EditDesignPageClientProps) {
       }, 1500);
     } catch (err) {
       console.error("Failed to update design:", err);
-      setError(err instanceof Error ? err.message : "Failed to save changes");
+      setError(getErrorMessage(err));
     } finally {
       setIsSaving(false);
     }

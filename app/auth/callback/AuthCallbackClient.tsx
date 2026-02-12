@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { Loader } from "lucide-react";
@@ -8,15 +8,20 @@ import { Loader } from "lucide-react";
 export function AuthCallbackClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { handleOAuthCallback } = useAuth();
+  const { handleOAuthCallback, isAuthenticated } = useAuth();
   const [error, setError] = useState<string | null>(null);
+  const handledRef = useRef(false);
 
   useEffect(() => {
-    // Prevent double execution in React 18 strict mode
-    let handled = false;
+    // If already authenticated, redirect home
+    if (isAuthenticated) {
+      router.push("/");
+      return;
+    }
 
     const handleCallback = async () => {
-      if (handled) return;
+      // Prevent double execution
+      if (handledRef.current) return;
 
       const code = searchParams?.get("code");
       const state = searchParams?.get("state");
@@ -26,26 +31,28 @@ export function AuthCallbackClient() {
       console.log("OAuth callback - state from URL:", state);
       console.log("OAuth callback - stored state:", storedState);
 
-      // Verify state parameter for CSRF protection
-      if (!state || !storedState || state !== storedState) {
-        // Only show error if we actually have a state mismatch (not just missing)
-        if (state && storedState && state !== storedState) {
-          setError("Invalid state parameter. Please try logging in again.");
-        } else if (!storedState) {
-          // State was already consumed or never set - might be a page refresh
-          setError("Session expired. Please try logging in again.");
-        }
+      // If no code or state, this might be a stale page refresh - redirect home
+      if (!code || !state) {
+        router.push("/");
         return;
       }
 
-      if (!code) {
-        setError("No authorization code received. Please try logging in again.");
+      // Verify state parameter for CSRF protection
+      if (!storedState) {
+        // State was already consumed - this is likely a page refresh after login
+        // Redirect home instead of showing an error
+        router.push("/");
+        return;
+      }
+
+      if (state !== storedState) {
+        setError("Invalid state parameter. Please try logging in again.");
         return;
       }
 
       // Clear state immediately to prevent reuse
       sessionStorage.removeItem("oauth_state");
-      handled = true;
+      handledRef.current = true;
 
       // Exchange code for session
       try {
@@ -58,7 +65,7 @@ export function AuthCallbackClient() {
     };
 
     handleCallback();
-  }, [searchParams, handleOAuthCallback, router]);
+  }, [searchParams, handleOAuthCallback, router, isAuthenticated]);
 
   if (error) {
     return (

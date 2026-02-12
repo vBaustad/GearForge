@@ -12,10 +12,13 @@
     "lint": "next lint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "preview": "next start"
+    "preview": "next start",
+    "security:audit": "npm audit --audit-level=moderate",
+    "security:audit:fix": "npm audit fix"
   },
   "dependencies": {
     "@vercel/analytics": "^1.5.0",
+    "@vercel/speed-insights": "^1.3.1",
     "clsx": "^2.1.1",
     "convex": "^1.31.7",
     "lucide-react": "^0.542.0",
@@ -51,7 +54,6 @@
     "tailwindcss": "^4.1.12",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.39.1",
-    "vercel": "^47.0.1",
     "vitest": "^4.0.18"
   }
 }

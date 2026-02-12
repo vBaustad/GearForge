@@ -925,6 +925,62 @@ select.input {
   }
 }
 
+/* Items List Grid - 2 columns on desktop, 1 on mobile */
+.items-list-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-xs);
+}
+
+@media (min-width: 768px) {
+  .items-list-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Design Page Layout - Image + Items 50/50 side by side */
+.design-main-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-xl);
+}
+
+@media (min-width: 900px) {
+  .design-main-grid {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+}
+
+/* Items sidebar - scrollable on desktop */
+.design-items-sidebar {
+  /* Remove default card margin since we're in a grid */
+}
+
+.design-items-sidebar .card {
+  margin-top: 0;
+}
+
+/* Single column in sidebar since space is limited */
+.design-items-sidebar .items-list-grid {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 1024px) {
+  .design-items-sidebar {
+    position: sticky;
+    top: var(--space-lg);
+    max-height: calc(100vh - var(--space-xl) * 2);
+    overflow-y: auto;
+  }
+}
+
+/* Design info section */
+.design-info-section {
+  max-width: 800px;
+}
+
 /* ============================================
    LANDING PAGE
    ============================================ */

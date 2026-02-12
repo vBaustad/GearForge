@@ -1,11 +1,11 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
-import { useMutation, useQuery } from "convex/react";
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
+import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 
-// Blizzard OAuth config - using NEXT_PUBLIC_ prefix for client-side access
+// Blizzard OAuth config
 const BLIZZARD_CLIENT_ID = process.env.NEXT_PUBLIC_BLIZZARD_CLIENT_ID;
 const BLIZZARD_REDIRECT_URI =
   process.env.NEXT_PUBLIC_BLIZZARD_REDIRECT_URI ||
@@ -27,44 +27,55 @@ interface AuthContextType {
   login: () => void;
   logout: () => Promise<void>;
   handleOAuthCallback: (code: string) => Promise<void>;
+  refreshSession: () => Promise<void>;
+  rotateSession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-const SESSION_TOKEN_KEY = "gearforge_session";
-
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
   const [sessionToken, setSessionToken] = useState<string | null>(null);
-  const [isProcessingOAuth, setIsProcessingOAuth] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
 
-  // Initialize session from localStorage after mount (client-side only)
-  useEffect(() => {
-    setMounted(true);
-    const stored = localStorage.getItem(SESSION_TOKEN_KEY);
-    if (stored) {
-      setSessionToken(stored);
+  const loginWithBlizzard = useMutation(api.auth.loginWithBlizzard);
+  const rotateSessionMutation = useMutation(api.auth.rotateSession);
+
+  // Fetch session from server (uses httpOnly cookie)
+  const refreshSession = useCallback(async () => {
+    try {
+      const response = await fetch("/api/auth/session", {
+        credentials: "include",
+      });
+      const data = await response.json();
+
+      if (data.user && data.token) {
+        setUser({
+          id: data.user.id,
+          battleTag: data.user.battleTag,
+          avatarUrl: data.user.avatarUrl,
+          role: data.user.role,
+        });
+        setSessionToken(data.token);
+      } else {
+        setUser(null);
+        setSessionToken(null);
+      }
+    } catch (error) {
+      console.error("Failed to refresh session:", error);
+      setUser(null);
+      setSessionToken(null);
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
-  const currentUser = useQuery(
-    api.auth.getCurrentUser,
-    sessionToken ? { sessionToken } : "skip"
-  );
-
-  const loginWithBlizzard = useMutation(api.auth.loginWithBlizzard);
-  const logoutMutation = useMutation(api.auth.logout);
-
-  // Determine loading state
-  const isLoading = !mounted || (sessionToken !== null && currentUser === undefined);
-
-  // Clear invalid session
+  // Initialize on mount
   useEffect(() => {
-    if (mounted && sessionToken && currentUser === null && !isLoading) {
-      localStorage.removeItem(SESSION_TOKEN_KEY);
-      setSessionToken(null);
-    }
-  }, [mounted, sessionToken, currentUser, isLoading]);
+    setMounted(true);
+    refreshSession();
+  }, [refreshSession]);
 
   // Initiate Blizzard OAuth login
   const login = () => {
@@ -89,9 +100,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.location.href = `${BLIZZARD_AUTH_URL}?${params}`;
   };
 
-  // Handle OAuth callback - now calls server-side API route
+  // Handle OAuth callback
   const handleOAuthCallback = async (code: string) => {
-    setIsProcessingOAuth(true);
+    setIsLoading(true);
 
     try {
       // Call our API route to securely exchange the code
@@ -117,34 +128,91 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         avatarUrl: undefined,
       });
 
-      // Store session token
-      localStorage.setItem(SESSION_TOKEN_KEY, result.token);
       setSessionToken(result.token);
+
+      // Set httpOnly cookie via API
+      await fetch("/api/auth/session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ token: result.token }),
+      });
+
+      // Refresh to get user data
+      await refreshSession();
     } catch (error) {
       console.error("OAuth error:", error);
       throw error;
     } finally {
-      setIsProcessingOAuth(false);
+      setIsLoading(false);
     }
   };
 
   // Logout
   const logout = async () => {
-    if (sessionToken) {
-      await logoutMutation({ sessionToken });
-      localStorage.removeItem(SESSION_TOKEN_KEY);
+    try {
+      // Clear cookie via API (also invalidates session in DB)
+      await fetch("/api/auth/session", {
+        method: "DELETE",
+        credentials: "include",
+      });
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      // Clear local state
       setSessionToken(null);
+      setUser(null);
+    }
+  };
+
+  // Rotate session token (call on sensitive actions like connecting social accounts)
+  const rotateSession = async () => {
+    if (!sessionToken) {
+      throw new Error("No session to rotate");
+    }
+
+    try {
+      const result = await rotateSessionMutation({ sessionToken });
+
+      setSessionToken(result.token);
+
+      // Update httpOnly cookie
+      await fetch("/api/auth/session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ token: result.token }),
+      });
+
+      // Update user state
+      setUser({
+        id: result.user.id,
+        battleTag: result.user.battleTag,
+        avatarUrl: result.user.avatarUrl,
+        role: result.user.role,
+      });
+    } catch (error) {
+      console.error("Session rotation failed:", error);
+      // If rotation fails, the session might be invalid - log out
+      await logout();
+      throw error;
     }
   };
 
   const value: AuthContextType = {
-    user: currentUser || null,
+    user,
     sessionToken,
-    isLoading: isLoading || isProcessingOAuth,
-    isAuthenticated: !!currentUser,
+    isLoading: !mounted || isLoading,
+    isAuthenticated: !!user,
     login,
     logout,
     handleOAuthCallback,
+    refreshSession,
+    rotateSession,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

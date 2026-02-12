@@ -1,6 +1,8 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { enforceRateLimit } from "./rateLimit";
+import { createNotification } from "./notifications";
+import { checkLikeBadges } from "./badges";
 
 // Check if user has liked a creation
 export const hasLiked = query({
@@ -63,6 +65,15 @@ export const toggle = mutation({
       await ctx.db.patch(args.creationId, {
         likeCount: Math.max(0, creation.likeCount - 1),
       });
+
+      // Update creator's total likes received
+      const creator = await ctx.db.get(creation.creatorId);
+      if (creator) {
+        await ctx.db.patch(creation.creatorId, {
+          totalLikesReceived: Math.max(0, (creator.totalLikesReceived ?? 1) - 1),
+        });
+      }
+
       return { liked: false, likeCount: Math.max(0, creation.likeCount - 1) };
     } else {
       // Like: add the like and increment count
@@ -74,6 +85,26 @@ export const toggle = mutation({
       await ctx.db.patch(args.creationId, {
         likeCount: creation.likeCount + 1,
       });
+
+      // Update creator's total likes received
+      const creator = await ctx.db.get(creation.creatorId);
+      if (creator) {
+        await ctx.db.patch(creation.creatorId, {
+          totalLikesReceived: (creator.totalLikesReceived ?? 0) + 1,
+        });
+      }
+
+      // Notify the creation owner
+      await createNotification(ctx, {
+        recipientId: creation.creatorId,
+        type: "like",
+        actorId: user._id,
+        creationId: args.creationId,
+      });
+
+      // Check for like-related badges
+      await checkLikeBadges(ctx, creation.creatorId, args.creationId);
+
       return { liked: true, likeCount: creation.likeCount + 1 };
     }
   },

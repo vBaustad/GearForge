@@ -1,11 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Upload, Copy, Search, Heart } from "lucide-react";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 export const metadata: Metadata = {
-  title: "Help",
+  title: "Help - How to Use GearForge",
   description:
-    "Learn how to use GearForge to browse, upload, and share WoW housing designs. Step-by-step guide for World of Warcraft player housing.",
+    "Learn how to use GearForge to browse, upload, and share WoW housing designs. Step-by-step guide for importing and exporting World of Warcraft player housing layouts.",
+  keywords: [
+    "WoW housing help",
+    "how to import WoW housing",
+    "WoW housing guide",
+    "GearForge tutorial",
+    "player housing tutorial",
+  ],
 };
 
 export default function HelpPage() {
@@ -45,6 +53,7 @@ export default function HelpPage() {
         }}
       />
       <div className="container page-section">
+        <Breadcrumbs items={[{ label: "Help" }]} />
         <div className="content-page">
           <h1 className="font-display" style={{ fontSize: "2rem", marginBottom: "var(--space-lg)" }}>
             How to Use GearForge

@@ -12,6 +12,14 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params;
 
+  // Validate ID before making query
+  if (!id || id === "undefined" || id === "null" || id.length === 0) {
+    return {
+      title: "User Not Found",
+      description: "This user profile doesn't exist on GearForge.",
+    };
+  }
+
   try {
     const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
     if (!convexUrl) {

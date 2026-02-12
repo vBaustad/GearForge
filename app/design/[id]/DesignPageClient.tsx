@@ -1,15 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
-import { Heart, Eye, Copy, Check, ArrowLeft, User, ChevronLeft, ChevronRight, Bookmark, Flag, X, AlertCircle, Trash2, Edit, Youtube, ExternalLink } from "lucide-react";
+import { Heart, Eye, Copy, Check, ArrowLeft, Bookmark, Flag, X, AlertCircle, Trash2, Edit, Youtube, ExternalLink, Package, User } from "lucide-react";
+import { CommentSection } from "@/components/comments/CommentSection";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ItemsList } from "@/components/design/ItemsList";
+import { BuildCosts } from "@/components/design/BuildCosts";
+import { RelatedBuilds } from "@/components/design/RelatedBuilds";
+import { ShareButtons } from "@/components/design/ShareButtons";
+import { ImageGallery } from "@/components/design/ImageGallery";
+import { InspiredBy } from "@/components/design/InspiredBy";
+import { RemixesSection } from "@/components/design/RemixesSection";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { CATEGORY_LABELS, type Category } from "@/types/creation";
 import Script from "next/script";
+import { reportSchema, validateInput } from "@/lib/validation";
+import { getErrorMessage } from "@/lib/errorMessages";
+import { trackDesignView, trackDesignLike, trackDesignSave, trackImportStringCopy } from "@/lib/analytics";
 
 interface DesignPageClientProps {
   id: string;
@@ -17,7 +31,6 @@ interface DesignPageClientProps {
 
 export function DesignPageClient({ id }: DesignPageClientProps) {
   const [copied, setCopied] = useState(false);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isLiking, setIsLiking] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
@@ -29,36 +42,100 @@ export function DesignPageClient({ id }: DesignPageClientProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Track gallery height to sync items list
+  const galleryRef = useRef<HTMLDivElement>(null);
+  const [galleryHeight, setGalleryHeight] = useState<number | null>(null);
+
+  const updateGalleryHeight = useCallback(() => {
+    if (galleryRef.current) {
+      setGalleryHeight(galleryRef.current.offsetHeight);
+    }
+  }, []);
+
+  // Update height on mount, resize, and when images load
+  useEffect(() => {
+    updateGalleryHeight();
+    window.addEventListener("resize", updateGalleryHeight);
+
+    // Listen for image loads within the gallery
+    const gallery = galleryRef.current;
+    if (gallery) {
+      const images = gallery.querySelectorAll("img");
+      images.forEach((img) => {
+        if (img.complete) {
+          updateGalleryHeight();
+        } else {
+          img.addEventListener("load", updateGalleryHeight);
+        }
+      });
+    }
+
+    // Also update after a delay as fallback
+    const timer = setTimeout(updateGalleryHeight, 300);
+    const timer2 = setTimeout(updateGalleryHeight, 1000);
+
+    return () => {
+      window.removeEventListener("resize", updateGalleryHeight);
+      clearTimeout(timer);
+      clearTimeout(timer2);
+      if (gallery) {
+        const images = gallery.querySelectorAll("img");
+        images.forEach((img) => {
+          img.removeEventListener("load", updateGalleryHeight);
+        });
+      }
+    };
+  }, [updateGalleryHeight]);
+
   const router = useRouter();
-  const design = useQuery(api.creations.getById, { id: id as Id<"creations"> });
+  const { user, isAuthenticated, sessionToken } = useAuth();
+
+  // Validate ID before making queries
+  const isValidId = id && id !== "undefined" && id !== "null" && id.length > 0;
+
+  const design = useQuery(
+    api.creations.getById,
+    isValidId ? { id: id as Id<"creations"> } : "skip"
+  );
   const incrementViews = useMutation(api.creations.incrementViews);
   const toggleLike = useMutation(api.likes.toggle);
   const toggleSave = useMutation(api.saves.toggle);
   const submitReport = useMutation(api.reports.submit);
   const deleteDesign = useMutation(api.creations.remove);
-  const { user, isAuthenticated, sessionToken } = useAuth();
 
   // Check if user has liked/saved/reported this design
   const hasLiked = useQuery(
     api.likes.hasLiked,
-    user ? { userId: user.id, creationId: id as Id<"creations"> } : "skip"
+    user && isValidId ? { userId: user.id, creationId: id as Id<"creations"> } : "skip"
   );
   const hasSaved = useQuery(
     api.saves.hasSaved,
-    user ? { userId: user.id, creationId: id as Id<"creations"> } : "skip"
+    user && isValidId ? { userId: user.id, creationId: id as Id<"creations"> } : "skip"
   );
   const hasReported = useQuery(
     api.reports.hasReported,
-    user ? { userId: user.id, creationId: id as Id<"creations"> } : "skip"
+    user && isValidId ? { userId: user.id, creationId: id as Id<"creations"> } : "skip"
   );
 
-  // Increment views on mount
+  // Get user's linked character data for achievement/quest completion tracking
+  const linkedCharacterData = useQuery(
+    api.users.getLinkedCharacter,
+    sessionToken ? { sessionToken } : "skip"
+  );
+
+  // Scroll to top on mount
   useEffect(() => {
-    if (design && id) {
+    window.scrollTo(0, 0);
+  }, [id]);
+
+  // Increment views on mount and track analytics
+  useEffect(() => {
+    if (design && isValidId) {
       incrementViews({ id: id as Id<"creations"> });
+      trackDesignView(id, design.category);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [id, isValidId]);
 
   const handleCopyImportString = async () => {
     if (!design?.importString) return;
@@ -66,6 +143,7 @@ export function DesignPageClient({ id }: DesignPageClientProps) {
     try {
       await navigator.clipboard.writeText(design.importString);
       setCopied(true);
+      trackImportStringCopy(id);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error("Failed to copy:", err);
@@ -80,6 +158,10 @@ export function DesignPageClient({ id }: DesignPageClientProps) {
         sessionToken,
         creationId: id as Id<"creations">,
       });
+      // Only track if user is liking (not unliking)
+      if (!hasLiked) {
+        trackDesignLike(id);
+      }
     } catch (err) {
       console.error("Failed to toggle like:", err);
     } finally {
@@ -95,6 +177,10 @@ export function DesignPageClient({ id }: DesignPageClientProps) {
         sessionToken,
         creationId: id as Id<"creations">,
       });
+      // Only track if user is saving (not unsaving)
+      if (!hasSaved) {
+        trackDesignSave(id);
+      }
     } catch (err) {
       console.error("Failed to toggle save:", err);
     } finally {
@@ -104,15 +190,27 @@ export function DesignPageClient({ id }: DesignPageClientProps) {
 
   const handleSubmitReport = async () => {
     if (!sessionToken || isReporting) return;
-    setIsReporting(true);
     setReportError(null);
+
+    // Validate report data
+    const validation = validateInput(reportSchema, {
+      reason: reportReason,
+      details: reportDetails.trim() || undefined,
+    });
+
+    if (!validation.success) {
+      setReportError(validation.error);
+      return;
+    }
+
+    setIsReporting(true);
 
     try {
       await submitReport({
         sessionToken,
         creationId: id as Id<"creations">,
-        reason: reportReason,
-        details: reportDetails.trim() || undefined,
+        reason: validation.data.reason,
+        details: validation.data.details,
       });
       setReportSuccess(true);
       setTimeout(() => {
@@ -123,7 +221,7 @@ export function DesignPageClient({ id }: DesignPageClientProps) {
       }, 2000);
     } catch (err) {
       console.error("Failed to submit report:", err);
-      setReportError(err instanceof Error ? err.message : "Failed to submit report");
+      setReportError(getErrorMessage(err));
     } finally {
       setIsReporting(false);
     }
@@ -141,7 +239,7 @@ export function DesignPageClient({ id }: DesignPageClientProps) {
       router.push("/browse");
     } catch (err) {
       console.error("Failed to delete design:", err);
-      alert(err instanceof Error ? err.message : "Failed to delete design");
+      alert(getErrorMessage(err));
     } finally {
       setIsDeleting(false);
       setShowDeleteModal(false);
@@ -150,6 +248,25 @@ export function DesignPageClient({ id }: DesignPageClientProps) {
 
   // Check if current user is the owner
   const isOwner = user && design?.creatorId === user.id;
+
+  // Invalid ID - show not found immediately
+  if (!isValidId) {
+    return (
+      <div className="container page-section">
+        <div className="placeholder-page">
+          <h2 className="font-display" style={{ marginBottom: "var(--space-md)" }}>
+            Design Not Found
+          </h2>
+          <p className="text-secondary" style={{ marginBottom: "var(--space-xl)" }}>
+            This design doesn&apos;t exist.
+          </p>
+          <Link href="/browse" className="btn btn-primary">
+            Browse Designs
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   if (design === undefined) {
     return (
@@ -178,7 +295,6 @@ export function DesignPageClient({ id }: DesignPageClientProps) {
   }
 
   const images = design.imageUrls || [];
-  const hasMultipleImages = images.length > 1;
 
   // JSON-LD for this specific design (CreativeWork schema)
   const jsonLd = {
@@ -221,235 +337,283 @@ export function DesignPageClient({ id }: DesignPageClientProps) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <div className="container page-section">
-      {/* Back link */}
-      <Link href="/browse" className="design-back-link">
-        <ArrowLeft size={18} />
-        Back to Browse
-      </Link>
+      {/* Breadcrumbs for SEO and navigation */}
+      <Breadcrumbs
+        items={[
+          { label: "Browse", href: "/browse" },
+          { label: CATEGORY_LABELS[design.category as Category], href: `/browse?category=${design.category}` },
+          { label: design.title },
+        ]}
+      />
 
-      <div className="design-layout">
-        {/* Left: Images */}
-        <div className="design-images">
-          {images.length > 0 ? (
-            <div className="design-image-gallery">
-              <div className="design-main-image">
-                <img src={images[currentImageIndex]} alt={design.title} />
-                {hasMultipleImages && (
-                  <>
-                    <button
-                      className="gallery-nav gallery-nav-prev"
-                      onClick={() => setCurrentImageIndex((i) => (i === 0 ? images.length - 1 : i - 1))}
-                    >
-                      <ChevronLeft size={24} />
-                    </button>
-                    <button
-                      className="gallery-nav gallery-nav-next"
-                      onClick={() => setCurrentImageIndex((i) => (i === images.length - 1 ? 0 : i + 1))}
-                    >
-                      <ChevronRight size={24} />
-                    </button>
-                  </>
-                )}
-              </div>
-              {hasMultipleImages && (
-                <div className="design-thumbnails">
-                  {images.map((url, i) => (
-                    <button
-                      key={i}
-                      className={`design-thumbnail ${i === currentImageIndex ? "active" : ""}`}
-                      onClick={() => setCurrentImageIndex(i)}
-                    >
-                      <img src={url} alt={`View ${i + 1}`} />
-                    </button>
-                  ))}
+      {/* Main content area: Image + Items side by side */}
+      <div className="design-main-grid">
+        {/* Left: Image gallery with title overlay */}
+        <div className="design-gallery-column" ref={galleryRef}>
+          <ImageGallery
+            images={images}
+            title={design.title}
+            overlayContent={
+              <div>
+                <span className="badge" style={{ marginBottom: "var(--space-sm)", display: "inline-block" }}>
+                  {CATEGORY_LABELS[design.category as Category]}
+                </span>
+                <h1
+                  className="font-display"
+                  style={{
+                    fontSize: "clamp(1.25rem, 3vw, 1.75rem)",
+                    fontWeight: 600,
+                    color: "white",
+                    margin: 0,
+                    marginBottom: "var(--space-sm)",
+                    textShadow: "0 2px 4px rgba(0,0,0,0.3)",
+                  }}
+                >
+                  {design.title}
+                </h1>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-md)", fontSize: "0.8125rem", color: "rgba(255,255,255,0.8)" }}>
+                  <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                    <Eye size={14} />
+                    {design.viewCount.toLocaleString()}
+                  </span>
+                  <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                    <Heart size={14} />
+                    {design.likeCount.toLocaleString()}
+                  </span>
+                  {design.totalItems > 0 && (
+                    <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                      <Package size={14} />
+                      {design.totalItems} items
+                    </span>
+                  )}
+                  <span>
+                    {new Date(design._creationTime).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                  </span>
                 </div>
-              )}
-            </div>
-          ) : (
-            <div className="design-image-placeholder">
-              <img src="/gearforge_logo_new.png" alt="" className="placeholder-logo" />
-            </div>
-          )}
+              </div>
+            }
+          />
         </div>
 
-        {/* Right: Info */}
-        <div className="design-info">
-          <div className="design-header">
-            <span className="badge">{CATEGORY_LABELS[design.category as Category]}</span>
-            <h1 className="design-title font-display">{design.title}</h1>
+        {/* Right: Items List - height synced to gallery */}
+        {design.enrichedItems && design.enrichedItems.length > 0 && (
+          <div
+            className="design-items-sidebar"
+            style={galleryHeight ? { maxHeight: galleryHeight, height: galleryHeight } : undefined}
+          >
+            <ItemsList
+              items={design.enrichedItems}
+              itemsByCategory={design.itemsByCategory || {}}
+              totalItems={design.totalItems || 0}
+              uniqueItems={design.uniqueItems || 0}
+              creationId={id as Id<"creations">}
+              sessionToken={sessionToken ?? undefined}
+            />
           </div>
+        )}
+      </div>
 
+      {/* Inspired By Section (if this is a remix) */}
+      {design.inspiredByInfo && (
+        <InspiredBy original={design.inspiredByInfo} />
+      )}
+
+      {/* Unified Details Section: Creator + Actions + Description + Tags */}
+      <div className="design-details-section">
+        {/* Header: Creator info + Action buttons */}
+        <div className="design-details-header">
           {/* Creator */}
-          <Link href={`/user/${design.creatorId}`} className="design-creator">
-            <div className="design-creator-avatar">
-              <User size={20} />
+          <div className="design-details-creator">
+            <Link href={`/user/${design.creatorId}`} className="design-details-creator-avatar">
+              {design.creatorAvatarUrl ? (
+                <img src={design.creatorAvatarUrl} alt={design.creatorName} />
+              ) : (
+                <User size={20} style={{ color: "var(--text-muted)" }} />
+              )}
+            </Link>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "var(--space-xs)" }}>
+                <Link
+                  href={`/user/${design.creatorId}`}
+                  style={{ color: "var(--text-primary)", textDecoration: "none", fontWeight: 600, fontSize: "1rem" }}
+                >
+                  {design.creatorName.split("#")[0]}
+                </Link>
+                {design.creatorIsVerified && <VerifiedBadge size={16} />}
+              </div>
+              <p className="text-muted" style={{ fontSize: "0.8125rem", margin: 0 }}>Creator</p>
             </div>
-            <span>by {design.creatorName}</span>
-          </Link>
-
-          {/* Stats & Actions */}
-          <div className="design-stats">
-            <span className="design-stat">
-              <Eye size={16} />
-              {design.viewCount} views
-            </span>
           </div>
 
           {/* Action buttons */}
-          <div className="design-actions" style={{ display: "flex", gap: "var(--space-sm)", marginTop: "var(--space-md)" }}>
+          <div className="design-details-actions">
             <button
-              className={`btn ${hasLiked ? "btn-primary" : "btn-secondary"}`}
+              className={`btn btn-sm ${hasLiked ? "btn-primary" : "btn-secondary"}`}
               onClick={handleToggleLike}
               disabled={!isAuthenticated || isLiking}
-              style={{ flex: 1 }}
             >
-              <Heart size={18} fill={hasLiked ? "currentColor" : "none"} />
-              {design.likeCount} {design.likeCount === 1 ? "Like" : "Likes"}
+              <Heart size={16} fill={hasLiked ? "currentColor" : "none"} />
+              {hasLiked ? "Liked" : "Like"}
             </button>
             <button
-              className={`btn ${hasSaved ? "btn-primary" : "btn-secondary"}`}
+              className={`btn btn-sm ${hasSaved ? "btn-primary" : "btn-secondary"}`}
               onClick={handleToggleSave}
               disabled={!isAuthenticated || isSaving}
-              style={{ flex: 1 }}
             >
-              <Bookmark size={18} fill={hasSaved ? "currentColor" : "none"} />
+              <Bookmark size={16} fill={hasSaved ? "currentColor" : "none"} />
               {hasSaved ? "Saved" : "Save"}
             </button>
+            <ShareButtons designId={id} title={design.title} creatorName={design.creatorName} />
           </div>
-          {!isAuthenticated && (
-            <p className="text-muted" style={{ fontSize: "0.875rem", marginTop: "var(--space-xs)" }}>
-              Log in to like and save designs
-            </p>
-          )}
-
-          {/* Description */}
-          {design.description && (
-            <div className="design-description">
-              <p>{design.description}</p>
-            </div>
-          )}
-
-          {/* Tags */}
-          {design.tags && design.tags.length > 0 && (
-            <div className="design-tags">
-              {design.tags.map((tag) => (
-                <span key={tag} className="badge badge-outline">
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* Import String */}
-          {design.importString && (
-            <div className="design-import">
-              <h3>Import String</h3>
-              <div className="design-import-box">
-                <code className="design-import-preview">
-                  {design.importString.slice(0, 100)}...
-                </code>
-                <button
-                  className={`btn ${copied ? "btn-primary" : "btn-secondary"}`}
-                  onClick={handleCopyImportString}
-                >
-                  {copied ? <Check size={18} /> : <Copy size={18} />}
-                  {copied ? "Copied!" : "Copy String"}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* YouTube Video */}
-          {design.youtubeVideoId && (
-            <div style={{ marginTop: "var(--space-xl)" }}>
-              <h3 style={{ display: "flex", alignItems: "center", gap: "var(--space-sm)", marginBottom: "var(--space-md)" }}>
-                <Youtube size={20} style={{ color: "#FF0000" }} />
-                Video Showcase
-              </h3>
-              <div
-                style={{
-                  position: "relative",
-                  paddingBottom: "56.25%",
-                  height: 0,
-                  overflow: "hidden",
-                  borderRadius: "var(--radius-md)",
-                  background: "var(--bg-deep)",
-                }}
-              >
-                <iframe
-                  src={`https://www.youtube.com/embed/${design.youtubeVideoId}`}
-                  title="Design showcase video"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    width: "100%",
-                    height: "100%",
-                    border: "none",
-                  }}
-                />
-              </div>
-              <a
-                href={`https://youtube.com/watch?v=${design.youtubeVideoId}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-secondary"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "var(--space-xs)",
-                  marginTop: "var(--space-sm)",
-                  fontSize: "0.875rem",
-                }}
-              >
-                <ExternalLink size={14} />
-                Watch on YouTube
-              </a>
-            </div>
-          )}
-
-          {/* Owner Actions */}
-          {isOwner && (
-            <div style={{ marginTop: "var(--space-lg)", paddingTop: "var(--space-lg)", borderTop: "1px solid var(--border)" }}>
-              <div style={{ display: "flex", gap: "var(--space-sm)" }}>
-                <Link
-                  href={`/design/${id}/edit`}
-                  className="btn btn-secondary"
-                  style={{ flex: 1 }}
-                >
-                  <Edit size={16} />
-                  Edit Design
-                </Link>
-                <button
-                  className="btn btn-ghost"
-                  onClick={() => setShowDeleteModal(true)}
-                  style={{ color: "#ef4444" }}
-                >
-                  <Trash2 size={16} />
-                  Delete
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Report Button */}
-          {isAuthenticated && user?.id !== design.creatorId && (
-            <div style={{ marginTop: "var(--space-lg)", paddingTop: "var(--space-lg)", borderTop: "1px solid var(--border)" }}>
-              <button
-                className="btn btn-ghost"
-                onClick={() => setShowReportModal(true)}
-                disabled={hasReported === true}
-                style={{ color: hasReported ? "var(--text-muted)" : "var(--text-secondary)", fontSize: "0.875rem" }}
-              >
-                <Flag size={16} />
-                {hasReported ? "Reported" : "Report Design"}
-              </button>
-            </div>
-          )}
         </div>
+
+        {/* Body: Description, Tags, Import, etc. */}
+        {(design.description || (design.tags && design.tags.length > 0) || design.importString) && (
+          <div className="design-details-body">
+            {design.description && (
+              <div className="design-description">
+                <p style={{ margin: 0 }}>{design.description}</p>
+              </div>
+            )}
+
+            {design.tags && design.tags.length > 0 && (
+              <div className="design-tags">
+                {design.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    style={{
+                      display: "inline-block",
+                      padding: "4px 10px",
+                      fontSize: "0.75rem",
+                      borderRadius: "var(--radius)",
+                      background: "rgba(96, 165, 250, 0.15)",
+                      color: "rgb(147, 197, 253)",
+                      border: "1px solid rgba(96, 165, 250, 0.3)",
+                    }}
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {design.importString && design.importString.trim().length > 0 && (
+              <div className="design-import">
+                <h3 style={{ fontSize: "0.875rem", marginBottom: "var(--space-sm)" }}>Import String</h3>
+                <div className="design-import-box">
+                  <code className="design-import-preview">{design.importString.slice(0, 100)}...</code>
+                  <button className={`btn btn-sm ${copied ? "btn-primary" : "btn-secondary"}`} onClick={handleCopyImportString}>
+                    {copied ? <Check size={16} /> : <Copy size={16} />}
+                    {copied ? "Copied!" : "Copy"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* YouTube Video */}
+        {design.youtubeVideoId && (
+          <div style={{ marginTop: "var(--space-lg)", paddingTop: "var(--space-lg)", borderTop: "1px solid var(--border)" }}>
+            <h3 style={{ display: "flex", alignItems: "center", gap: "var(--space-sm)", marginBottom: "var(--space-md)", fontSize: "0.875rem" }}>
+              <Youtube size={18} style={{ color: "#FF0000" }} />
+              Video Showcase
+            </h3>
+            <div style={{ position: "relative", paddingBottom: "56.25%", height: 0, overflow: "hidden", borderRadius: "var(--radius-md)", background: "var(--bg-deep)" }}>
+              <iframe
+                src={`https://www.youtube.com/embed/${design.youtubeVideoId}`}
+                title="Design showcase video"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: "none" }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Owner Actions */}
+        {isOwner && (
+          <div style={{ marginTop: "var(--space-lg)", paddingTop: "var(--space-lg)", borderTop: "1px solid var(--border)", display: "flex", gap: "var(--space-sm)" }}>
+            <Link href={`/design/${id}/edit`} className="btn btn-secondary btn-sm" style={{ flex: 1 }}>
+              <Edit size={16} />
+              Edit Design
+            </Link>
+            <button className="btn btn-ghost btn-sm" onClick={() => setShowDeleteModal(true)} style={{ color: "#ef4444" }}>
+              <Trash2 size={16} />
+              Delete
+            </button>
+          </div>
+        )}
+
+        {/* Report Button - subtle, bottom right */}
+        {isAuthenticated && user?.id !== design.creatorId && (
+          <div style={{ marginTop: "var(--space-md)", display: "flex", justifyContent: "flex-end" }}>
+            <button
+              onClick={() => setShowReportModal(true)}
+              disabled={hasReported === true}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+                padding: "4px 8px",
+                fontSize: "0.75rem",
+                color: hasReported ? "var(--text-muted)" : "rgba(239, 68, 68, 0.7)",
+                background: "transparent",
+                border: "none",
+                borderRadius: "var(--radius-sm)",
+                cursor: hasReported ? "default" : "pointer",
+                opacity: hasReported ? 0.5 : 0.6,
+                transition: "opacity 0.15s",
+              }}
+              onMouseEnter={(e) => !hasReported && (e.currentTarget.style.opacity = "1")}
+              onMouseLeave={(e) => !hasReported && (e.currentTarget.style.opacity = "0.6")}
+            >
+              <Flag size={12} />
+              {hasReported ? "Reported" : "Report"}
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* Build Costs & Requirements */}
+      {design.buildCosts && (
+        <BuildCosts
+          buildCosts={design.buildCosts}
+          completedAchievements={linkedCharacterData?.completedAchievements}
+          completedQuests={linkedCharacterData?.completedQuests}
+        />
+      )}
+
+      {/* Comments Section */}
+      <ErrorBoundary
+        compact
+        title="Unable to load comments"
+        description="Something went wrong while loading comments. Please try again."
+      >
+        <CommentSection
+          creationId={id as Id<"creations">}
+          sessionToken={sessionToken ?? undefined}
+          currentUserId={user?.id}
+        />
+      </ErrorBoundary>
+
+      {/* Related Builds */}
+      {design.creatorId && (
+        <RelatedBuilds
+          currentDesignId={id as Id<"creations">}
+          creatorId={design.creatorId}
+          category={design.category}
+          creatorName={design.creatorName}
+        />
+      )}
+
+      {/* Remixes Section (designs inspired by this one) */}
+      {design.remixCount > 0 && (
+        <RemixesSection
+          creationId={id as Id<"creations">}
+          remixCount={design.remixCount}
+        />
+      )}
 
       {/* Report Modal */}
       {showReportModal && (

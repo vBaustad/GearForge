@@ -3,14 +3,18 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery, useAction, useConvex } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
-import { Upload, Image, X, Plus, AlertCircle, CheckCircle, AlertTriangle, Lock } from "lucide-react";
+import { Upload, Image, X, Plus, AlertCircle, CheckCircle, AlertTriangle, Lock, Info } from "lucide-react";
 import { CATEGORIES, CATEGORY_LABELS, type Category } from "@/types/creation";
 import { useAuth } from "@/lib/auth";
 import { BlizzardLoginButton } from "@/components/BlizzardLoginButton";
 import { YouTubeVideoPicker } from "@/components/YouTubeVideoPicker";
+import { ItemPicker, type SelectedItem } from "@/components/ItemPicker";
+import { validateImages, IMAGE_LIMITS } from "@/lib/imageValidation";
+import { creationSchema, validateInput } from "@/lib/validation";
+import { getErrorMessage } from "@/lib/errorMessages";
 
 export function UploadPageClient() {
   const router = useRouter();
@@ -22,15 +26,19 @@ export function UploadPageClient() {
   const [importString, setImportString] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
+  const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [youtubeVideoId, setYoutubeVideoId] = useState<string | undefined>();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
+  const [isValidatingImages, setIsValidatingImages] = useState(false);
 
+  const convex = useConvex();
   const createCreation = useMutation(api.creations.create);
   const generateUploadUrl = useMutation(api.creations.generateUploadUrl);
+  const moderateImages = useAction(api.moderation.moderateImages);
 
   // Debounce import string for duplicate check
   const [debouncedImportString, setDebouncedImportString] = useState("");
@@ -77,20 +85,42 @@ export function UploadPageClient() {
     );
   }
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    if (files.length + images.length > 5) {
-      setError("Maximum 5 images allowed");
+    if (files.length === 0) return;
+
+    if (files.length + images.length > IMAGE_LIMITS.maxImages) {
+      setError(`Maximum ${IMAGE_LIMITS.maxImages} images allowed`);
       return;
     }
 
-    const newImages = [...images, ...files].slice(0, 5);
-    setImages(newImages);
-
-    // Generate previews
-    const newPreviews = newImages.map((file) => URL.createObjectURL(file));
-    setImagePreviews(newPreviews);
+    setIsValidatingImages(true);
     setError(null);
+
+    try {
+      // Validate all new files
+      const validation = await validateImages(files);
+
+      if (!validation.valid) {
+        // Show first error (most relevant)
+        setError(validation.errors[0]);
+        setIsValidatingImages(false);
+        return;
+      }
+
+      // All files valid - add them
+      const newImages = [...images, ...files].slice(0, IMAGE_LIMITS.maxImages);
+      setImages(newImages);
+
+      // Generate previews
+      const newPreviews = newImages.map((file) => URL.createObjectURL(file));
+      setImagePreviews(newPreviews);
+    } catch (err) {
+      console.error("Image validation error:", err);
+      setError("Failed to validate images. Please try again.");
+    } finally {
+      setIsValidatingImages(false);
+    }
   };
 
   const removeImage = (index: number) => {
@@ -128,15 +158,20 @@ export function UploadPageClient() {
       return;
     }
 
-    // Validation
-    if (!title.trim()) {
-      setError("Title is required");
+    // Validate form data with Zod
+    const validation = validateInput(creationSchema, {
+      title: title.trim(),
+      description: description.trim() || undefined,
+      importString: importString.trim(),
+      category,
+      tags: tags.length > 0 ? tags : undefined,
+    });
+
+    if (!validation.success) {
+      setError(validation.error);
       return;
     }
-    if (!importString.trim()) {
-      setError("Import string is required");
-      return;
-    }
+
     if (images.length === 0) {
       setError("At least one image is required");
       return;
@@ -164,6 +199,37 @@ export function UploadPageClient() {
         imageIds.push(storageId);
       }
 
+      // Get public URLs for uploaded images and run content moderation
+      try {
+        const storageUrls = await convex.query(api.creations.getStorageUrls, {
+          storageIds: imageIds as Id<"_storage">[]
+        });
+
+        const validUrls = storageUrls.filter((url): url is string => url !== null);
+
+        if (validUrls.length > 0) {
+          const moderationResult = await moderateImages({ imageUrls: validUrls });
+
+          if (!moderationResult.safe) {
+            const flagMessages: Record<string, string> = {
+              adult_content: "Adult/NSFW content detected",
+              graphic_violence: "Graphic violence detected",
+            };
+            const flagDescriptions = moderationResult.flags
+              .map((f: string) => flagMessages[f] || f)
+              .join(", ");
+            throw new Error(`Image rejected: ${flagDescriptions}. Please upload appropriate gaming screenshots.`);
+          }
+        }
+      } catch (moderationError) {
+        // If it's our rejection error, rethrow it
+        if (moderationError instanceof Error && moderationError.message.startsWith("Image rejected:")) {
+          throw moderationError;
+        }
+        // Otherwise log and continue (fail open if moderation service is down)
+        console.warn("Moderation check skipped:", moderationError);
+      }
+
       // Create the design with sessionToken (secured API)
       const creationId = await createCreation({
         sessionToken, // Session token for authentication
@@ -173,7 +239,10 @@ export function UploadPageClient() {
         imageIds: imageIds as Id<"_storage">[], // Type cast for Convex ID
         category,
         tags,
-        items: [], // No item picker in this simplified version
+        items: selectedItems.map((item) => ({
+          decorId: item.decorId,
+          quantity: item.quantity,
+        })),
         youtubeVideoId,
       });
 
@@ -184,7 +253,12 @@ export function UploadPageClient() {
       }, 1500);
     } catch (err) {
       console.error("Upload error:", err);
-      setError(err instanceof Error ? err.message : "Failed to upload. Please try again.");
+      // Keep specific rejection messages, use friendly message for others
+      if (err instanceof Error && err.message.startsWith("Image rejected:")) {
+        setError(err.message);
+      } else {
+        setError(getErrorMessage(err));
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -395,6 +469,23 @@ export function UploadPageClient() {
                 )}
               </div>
             </div>
+
+            {/* Items Used */}
+            <div className="card" style={{ padding: "var(--space-lg)", marginTop: "var(--space-lg)" }}>
+              <h3 style={{ marginBottom: "var(--space-sm)" }}>Items Used</h3>
+              <p className="text-muted" style={{ fontSize: "0.875rem", marginBottom: "var(--space-md)" }}>
+                Tag the decor items in your build to help others recreate it. Search our database of 2000+ housing items.
+              </p>
+              <ItemPicker
+                selectedItems={selectedItems}
+                onItemsChange={setSelectedItems}
+              />
+              {selectedItems.length > 0 && (
+                <div className="text-muted" style={{ fontSize: "0.875rem", marginTop: "var(--space-sm)" }}>
+                  {selectedItems.length} unique items • {selectedItems.reduce((sum, i) => sum + i.quantity, 0)} total
+                </div>
+              )}
+            </div>
           </div>
 
           {/* RIGHT COLUMN - Images & Preview */}
@@ -442,9 +533,13 @@ export function UploadPageClient() {
 
             {/* Screenshots */}
             <div className="card" style={{ padding: "var(--space-lg)", marginBottom: "var(--space-lg)" }}>
-              <h3 style={{ marginBottom: "var(--space-md)" }}>
+              <h3 style={{ marginBottom: "var(--space-sm)" }}>
                 Screenshots <span style={{ color: "var(--accent)" }}>*</span>
               </h3>
+              <p className="text-muted" style={{ fontSize: "0.75rem", marginBottom: "var(--space-md)", display: "flex", alignItems: "center", gap: "var(--space-xs)" }}>
+                <Info size={12} />
+                JPG, PNG, GIF, WebP. Max {IMAGE_LIMITS.maxFileSizeMB}MB per image, {IMAGE_LIMITS.maxWidth}x{IMAGE_LIMITS.maxHeight}px max.
+              </p>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "var(--space-sm)" }}>
                 {imagePreviews.map((preview, index) => (
                   <div key={index} style={{ position: "relative" }}>
@@ -492,7 +587,7 @@ export function UploadPageClient() {
                     )}
                   </div>
                 ))}
-                {images.length < 5 && (
+                {images.length < IMAGE_LIMITS.maxImages && (
                   <label
                     style={{
                       display: "flex",
@@ -502,19 +597,29 @@ export function UploadPageClient() {
                       height: 80,
                       border: "2px dashed var(--border)",
                       borderRadius: "var(--radius)",
-                      cursor: "pointer",
+                      cursor: isValidatingImages ? "wait" : "pointer",
                       color: "var(--foreground-muted)",
+                      opacity: isValidatingImages ? 0.6 : 1,
                     }}
                   >
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/jpeg,image/png,image/gif,image/webp"
                       multiple
                       onChange={handleImageChange}
+                      disabled={isValidatingImages}
                       style={{ display: "none" }}
                     />
-                    <Plus size={20} />
-                    <span style={{ fontSize: "0.75rem" }}>{images.length}/5</span>
+                    {isValidatingImages ? (
+                      <>
+                        <span style={{ fontSize: "0.75rem" }}>Validating...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Plus size={20} />
+                        <span style={{ fontSize: "0.75rem" }}>{images.length}/{IMAGE_LIMITS.maxImages}</span>
+                      </>
+                    )}
                   </label>
                 )}
               </div>

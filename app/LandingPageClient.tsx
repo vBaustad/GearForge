@@ -183,7 +183,7 @@ export function LandingPageClient() {
             </div>
 
             <div className="creators-grid">
-              {featuredCreators.filter((c): c is FeaturedCreator => c !== null).map((creator) => (
+              {featuredCreators.filter((c: FeaturedCreator | null): c is FeaturedCreator => c !== null).map((creator: FeaturedCreator) => (
                 <Link
                   key={creator._id}
                   href={`/user/${creator._id}`}

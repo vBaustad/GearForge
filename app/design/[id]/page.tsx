@@ -25,6 +25,14 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params;
 
+  // Validate ID before making query
+  if (!id || id === "undefined" || id === "null" || id.length === 0) {
+    return {
+      title: "Design Not Found",
+      description: "This WoW housing design doesn't exist.",
+    };
+  }
+
   try {
     const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
     if (!convexUrl) {
@@ -49,6 +57,19 @@ export async function generateMetadata({
       design.description ||
       `View this ${categoryLabel.toLowerCase()} housing design for World of Warcraft Midnight. Created by ${design.creatorName}. ${design.likeCount} likes. Copy the import string to recreate this layout in your WoW home.`;
 
+    // Build dynamic OG image URL
+    const ogImageParams = new URLSearchParams({
+      title: design.title,
+      creator: design.creatorName,
+      category: categoryLabel,
+      likes: String(design.likeCount),
+      views: String(design.viewCount || 0),
+    });
+    if (design.thumbnailUrl) {
+      ogImageParams.set("image", design.thumbnailUrl);
+    }
+    const ogImageUrl = `/api/og?${ogImageParams.toString()}`;
+
     return {
       title,
       description,
@@ -65,22 +86,20 @@ export async function generateMetadata({
         title,
         description,
         url: `/design/${id}`,
-        images: design.thumbnailUrl
-          ? [
-              {
-                url: design.thumbnailUrl,
-                width: 800,
-                height: 600,
-                alt: `${design.title} - WoW Housing Design`,
-              },
-            ]
-          : undefined,
+        images: [
+          {
+            url: ogImageUrl,
+            width: 1200,
+            height: 630,
+            alt: `${design.title} - WoW Housing Design by ${design.creatorName}`,
+          },
+        ],
       },
       twitter: {
         card: "summary_large_image",
         title,
         description,
-        images: design.thumbnailUrl ? [design.thumbnailUrl] : undefined,
+        images: [ogImageUrl],
       },
     };
   } catch (error) {

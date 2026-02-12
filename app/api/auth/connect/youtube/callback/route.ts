@@ -1,9 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  checkIpRateLimit,
+  getClientIp,
+  createRateLimitHeaders,
+} from "@/lib/rateLimit";
 
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const YOUTUBE_CHANNELS_URL = "https://www.googleapis.com/youtube/v3/channels";
 
 export async function GET(request: NextRequest) {
+  // Apply IP-based rate limiting
+  const clientIp = getClientIp(request);
+  const rateLimitResult = checkIpRateLimit(clientIp, "oauthCallback");
+
+  if (!rateLimitResult.allowed) {
+    const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").trim();
+    return NextResponse.redirect(`${baseUrl}/settings?error=rate_limited`);
+  }
+
   try {
     const { searchParams } = request.nextUrl;
     const code = searchParams.get("code");
@@ -53,21 +67,17 @@ export async function GET(request: NextRequest) {
 
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
-      console.error("=== YouTube Token Exchange Failed ===");
-      console.error("Status:", tokenResponse.status);
-      console.error("Response:", errorText);
-      console.error("Client ID:", clientId);
-      console.error("Redirect URI:", redirectUri);
-      console.error("Code (first 20 chars):", code?.slice(0, 20));
-      console.error("=====================================");
+      // Only log non-sensitive error info
+      console.error("YouTube token exchange failed:", tokenResponse.status);
 
-      // Parse error for URL
-      let errorMsg = "unknown";
+      // Parse error for URL (don't expose internal details)
+      let errorMsg = "token_exchange_failed";
       try {
         const parsed = JSON.parse(errorText);
-        errorMsg = parsed.error_description || parsed.error || "unknown";
+        // Only use safe error codes, not descriptions that might leak info
+        errorMsg = parsed.error || "unknown";
       } catch {
-        errorMsg = errorText.slice(0, 100);
+        // Don't expose raw error text
       }
 
       return NextResponse.redirect(
@@ -116,7 +126,7 @@ export async function GET(request: NextRequest) {
       ? `https://youtube.com/${customUrl}`
       : `https://youtube.com/channel/${channelId}`;
 
-    // Encode connection data in URL params for client-side Convex mutation
+    // Store connection data in httpOnly cookie (more secure than URL params)
     const connectionData = {
       platform: "youtube",
       platformId: channelId,
@@ -129,11 +139,20 @@ export async function GET(request: NextRequest) {
       state,
     };
 
-    // Redirect to callback page with encoded data
+    // Redirect to callback page - data passed via secure cookie
     const callbackUrl = new URL(`${baseUrl}/auth/connect/callback`);
-    callbackUrl.searchParams.set("data", Buffer.from(JSON.stringify(connectionData)).toString("base64"));
+    const response = NextResponse.redirect(callbackUrl.toString());
 
-    return NextResponse.redirect(callbackUrl.toString());
+    // Set connection data in httpOnly cookie (5 min expiry for security)
+    response.cookies.set("oauth_connect_data", Buffer.from(JSON.stringify(connectionData)).toString("base64"), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 300, // 5 minutes
+      path: "/",
+    });
+
+    return response;
   } catch (error) {
     console.error("YouTube OAuth callback error:", error);
     const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").trim();

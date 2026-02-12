@@ -7,6 +7,8 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { useAuth } from "@/lib/auth";
 import { SocialConnections } from "@/components/SocialConnections";
+import { TipLinksEdit } from "@/components/TipLinksEdit";
+import { CharacterLink } from "@/components/CharacterLink";
 import {
   User,
   Settings,
@@ -20,9 +22,12 @@ import {
   AlertTriangle,
   X,
   Shield,
+  Swords,
 } from "lucide-react";
+import { bioSchema, validateInput } from "@/lib/validation";
+import { getErrorMessage } from "@/lib/errorMessages";
 
-type SettingsTab = "profile" | "connections" | "account";
+type SettingsTab = "profile" | "wow" | "connections" | "account";
 
 export function SettingsPageClient() {
   const { user, isLoading: authLoading, sessionToken, logout } = useAuth();
@@ -164,6 +169,13 @@ export function SettingsPageClient() {
       return;
     }
 
+    // Validate bio with Zod
+    const validation = validateInput(bioSchema, bio.trim() || undefined);
+    if (!validation.success) {
+      setError(validation.error);
+      return;
+    }
+
     setIsSaving(true);
     setError(null);
     setSuccess(false);
@@ -171,14 +183,14 @@ export function SettingsPageClient() {
     try {
       await updateProfile({
         sessionToken,
-        bio: bio.trim() || undefined,
+        bio: validation.data,
       });
 
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
       console.error("Failed to update profile:", err);
-      setError(err instanceof Error ? err.message : "Failed to save changes");
+      setError(getErrorMessage(err));
     } finally {
       setIsSaving(false);
     }
@@ -208,13 +220,14 @@ export function SettingsPageClient() {
       router.push("/?deleted=true");
     } catch (err) {
       console.error("Failed to delete account:", err);
-      setError(err instanceof Error ? err.message : "Failed to delete account");
+      setError(getErrorMessage(err));
       setIsDeleting(false);
     }
   };
 
   const tabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
-    { id: "profile", label: "Profile", icon: <User size={18} /> },
+    { id: "profile", label: "Public Profile", icon: <User size={18} /> },
+    { id: "wow", label: "Character", icon: <Swords size={18} /> },
     { id: "connections", label: "Connections", icon: <Link2 size={18} /> },
     { id: "account", label: "Account", icon: <Shield size={18} /> },
   ];
@@ -331,50 +344,65 @@ export function SettingsPageClient() {
         <div>
           {/* Profile Tab */}
           {activeTab === "profile" && (
-            <form onSubmit={handleSubmit}>
-              <div className="card" style={{ padding: "var(--space-lg)", marginBottom: "var(--space-lg)" }}>
-                <h2 style={{ marginBottom: "var(--space-lg)", display: "flex", alignItems: "center", gap: "var(--space-sm)" }}>
-                  <User size={20} />
-                  Public Profile
-                </h2>
+            <>
+              <form onSubmit={handleSubmit}>
+                <div className="card" style={{ padding: "var(--space-lg)", marginBottom: "var(--space-lg)" }}>
+                  <h2 style={{ marginBottom: "var(--space-lg)", display: "flex", alignItems: "center", gap: "var(--space-sm)" }}>
+                    <User size={20} />
+                    Public Profile
+                  </h2>
 
-                {/* Bio */}
-                <div>
-                  <label
-                    htmlFor="bio"
-                    style={{ display: "block", marginBottom: "var(--space-xs)", fontWeight: 500 }}
-                  >
-                    Bio
-                  </label>
-                  <p className="text-muted" style={{ fontSize: "0.875rem", marginBottom: "var(--space-sm)" }}>
-                    A brief description that appears on your public profile.
-                  </p>
-                  <textarea
-                    id="bio"
-                    value={bio}
-                    onChange={(e) => setBio(e.target.value)}
-                    placeholder="Tell others about yourself and your housing designs..."
-                    className="input"
-                    rows={4}
-                    maxLength={500}
-                    style={{ width: "100%", resize: "vertical" }}
-                  />
-                  <div className="text-muted" style={{ fontSize: "0.875rem", marginTop: "var(--space-xs)" }}>
-                    {bio.length}/500 characters
+                  {/* Bio */}
+                  <div>
+                    <label
+                      htmlFor="bio"
+                      style={{ display: "block", marginBottom: "var(--space-xs)", fontWeight: 500 }}
+                    >
+                      Bio
+                    </label>
+                    <p className="text-muted" style={{ fontSize: "0.875rem", marginBottom: "var(--space-sm)" }}>
+                      A brief description that appears on your public profile.
+                    </p>
+                    <textarea
+                      id="bio"
+                      value={bio}
+                      onChange={(e) => setBio(e.target.value)}
+                      placeholder="Tell others about yourself and your housing designs..."
+                      className="input"
+                      rows={4}
+                      maxLength={500}
+                      style={{ width: "100%", resize: "vertical" }}
+                    />
+                    <div className="text-muted" style={{ fontSize: "0.875rem", marginTop: "var(--space-xs)" }}>
+                      {bio.length}/500 characters
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={isSaving}
-                style={{ display: "flex", alignItems: "center", gap: "var(--space-xs)" }}
-              >
-                <Save size={18} />
-                {isSaving ? "Saving..." : "Save Changes"}
-              </button>
-            </form>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={isSaving}
+                  style={{ display: "flex", alignItems: "center", gap: "var(--space-xs)" }}
+                >
+                  <Save size={18} />
+                  {isSaving ? "Saving..." : "Save Changes"}
+                </button>
+              </form>
+
+              {/* Tip Links Section */}
+              <div style={{ marginTop: "var(--space-xl)" }}>
+                <TipLinksEdit
+                  sessionToken={sessionToken || ""}
+                  currentTipLinks={profile?.tipLinks}
+                />
+              </div>
+            </>
+          )}
+
+          {/* WoW Tab */}
+          {activeTab === "wow" && sessionToken && (
+            <CharacterLink sessionToken={sessionToken} />
           )}
 
           {/* Connections Tab */}

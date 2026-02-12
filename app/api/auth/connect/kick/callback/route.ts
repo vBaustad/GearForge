@@ -1,9 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  checkIpRateLimit,
+  getClientIp,
+  createRateLimitHeaders,
+} from "@/lib/rateLimit";
 
 const KICK_TOKEN_URL = "https://id.kick.com/oauth/token";
 const KICK_USER_URL = "https://api.kick.com/public/v1/users";
 
 export async function GET(request: NextRequest) {
+  // Apply IP-based rate limiting
+  const clientIp = getClientIp(request);
+  const rateLimitResult = checkIpRateLimit(clientIp, "oauthCallback");
+
+  if (!rateLimitResult.allowed) {
+    const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").trim();
+    return NextResponse.redirect(`${baseUrl}/settings?error=rate_limited`);
+  }
+
   try {
     const { searchParams } = request.nextUrl;
     const code = searchParams.get("code");
@@ -79,10 +93,11 @@ export async function GET(request: NextRequest) {
     });
 
     if (!userResponse.ok) {
+      // Log full error server-side only, don't expose to client
       const errorText = await userResponse.text();
       console.error("Failed to fetch Kick user info:", userResponse.status, errorText);
       return NextResponse.redirect(
-        `${baseUrl}/settings?error=kick_user_failed&details=${encodeURIComponent(errorText.slice(0, 100))}`
+        `${baseUrl}/settings?error=kick_user_failed`
       );
     }
 
@@ -97,8 +112,10 @@ export async function GET(request: NextRequest) {
     console.log("Parsed - username:", username, "userId:", userId);
 
     if (!username) {
+      // Log raw data server-side for debugging, don't expose to client
+      console.error("Kick user data missing username:", JSON.stringify(userData));
       return NextResponse.redirect(
-        `${baseUrl}/settings?error=kick_no_user&raw=${encodeURIComponent(JSON.stringify(userData).slice(0, 200))}`
+        `${baseUrl}/settings?error=kick_no_user`
       );
     }
 
@@ -110,7 +127,7 @@ export async function GET(request: NextRequest) {
     // Get avatar from various possible fields
     const avatarUrl = kickUser?.profile_pic || kickUser?.profile_picture || kickUser?.avatar || kickUser?.user?.profile_pic;
 
-    // Encode connection data in URL params for client-side Convex mutation
+    // Store connection data in httpOnly cookie (more secure than URL params)
     const connectionData = {
       platform: "kick",
       platformId: String(userId),
@@ -123,11 +140,23 @@ export async function GET(request: NextRequest) {
       state,
     };
 
-    // Redirect to callback page with encoded data
+    // Redirect to callback page - data passed via secure cookie
     const callbackUrl = new URL(`${baseUrl}/auth/connect/callback`);
-    callbackUrl.searchParams.set("data", Buffer.from(JSON.stringify(connectionData)).toString("base64"));
+    const response = NextResponse.redirect(callbackUrl.toString());
 
-    return NextResponse.redirect(callbackUrl.toString());
+    // Set connection data in httpOnly cookie (5 min expiry for security)
+    response.cookies.set("oauth_connect_data", Buffer.from(JSON.stringify(connectionData)).toString("base64"), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 300, // 5 minutes
+      path: "/",
+    });
+
+    // Clear PKCE verifier cookie
+    response.cookies.delete("kick_code_verifier");
+
+    return response;
   } catch (error) {
     console.error("Kick OAuth callback error:", error);
     const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").trim();

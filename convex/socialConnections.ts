@@ -1,5 +1,7 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { enforceRateLimit } from "./rateLimit";
+import { logAuditEvent } from "./auditLog";
 
 const platformValidator = v.union(
   v.literal("twitch"),
@@ -89,6 +91,9 @@ export const connect = mutation({
       throw new Error("Unauthorized: User not found or banned");
     }
 
+    // Rate limit: 10 social connections per hour per user
+    await enforceRateLimit(ctx, session.userId, "social_connect");
+
     const now = Date.now();
 
     // Check if this platform account is already connected to another user
@@ -125,6 +130,24 @@ export const connect = mutation({
         tokenExpiresAt: args.tokenExpiresAt,
         lastValidatedAt: now,
       });
+
+      // Log social connection update
+      await logAuditEvent(ctx, {
+        actorId: user._id,
+        actorRole: user.role,
+        actorIdentifier: user.battleTag,
+        action: "user.social_connected",
+        targetType: "user",
+        targetId: user._id,
+        targetIdentifier: user.battleTag,
+        details: JSON.stringify({
+          platform: args.platform,
+          platformUsername: args.platformUsername,
+          updated: true,
+        }),
+        severity: "info",
+      });
+
       return { success: true, updated: true };
     }
 
@@ -141,6 +164,23 @@ export const connect = mutation({
       tokenExpiresAt: args.tokenExpiresAt,
       connectedAt: now,
       lastValidatedAt: now,
+    });
+
+    // Log new social connection
+    await logAuditEvent(ctx, {
+      actorId: user._id,
+      actorRole: user.role,
+      actorIdentifier: user.battleTag,
+      action: "user.social_connected",
+      targetType: "user",
+      targetId: user._id,
+      targetIdentifier: user.battleTag,
+      details: JSON.stringify({
+        platform: args.platform,
+        platformUsername: args.platformUsername,
+        updated: false,
+      }),
+      severity: "info",
     });
 
     return { success: true, updated: false };
@@ -181,24 +221,58 @@ export const disconnect = mutation({
       throw new Error(`No ${args.platform} connection found`);
     }
 
+    const platformUsername = connection.platformUsername;
     await ctx.db.delete(connection._id);
+
+    // Log social disconnection
+    await logAuditEvent(ctx, {
+      actorId: user._id,
+      actorRole: user.role,
+      actorIdentifier: user.battleTag,
+      action: "user.social_disconnected",
+      targetType: "user",
+      targetId: user._id,
+      targetIdentifier: user.battleTag,
+      details: JSON.stringify({
+        platform: args.platform,
+        platformUsername,
+      }),
+      severity: "info",
+    });
 
     return { success: true };
   },
 });
 
 // Update token validation timestamp (called when tokens are refreshed)
+// SECURITY: Requires session verification and ownership check
 export const updateValidation = mutation({
   args: {
+    sessionToken: v.string(),
     connectionId: v.id("socialConnections"),
     accessToken: v.optional(v.string()),
     refreshToken: v.optional(v.string()),
     tokenExpiresAt: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    // Verify session
+    const session = await ctx.db
+      .query("sessions")
+      .withIndex("by_token", (q) => q.eq("token", args.sessionToken))
+      .first();
+
+    if (!session || session.expiresAt < Date.now()) {
+      throw new Error("Unauthorized: Invalid or expired session");
+    }
+
     const connection = await ctx.db.get(args.connectionId);
     if (!connection) {
       throw new Error("Connection not found");
+    }
+
+    // Verify ownership
+    if (connection.userId !== session.userId) {
+      throw new Error("Unauthorized: You do not own this connection");
     }
 
     const updates: {
@@ -221,6 +295,7 @@ export const updateValidation = mutation({
 });
 
 // Get connection with tokens (internal use only, for token refresh)
+// SECURITY: Only returns connections owned by the authenticated user
 export const getConnectionWithTokens = query({
   args: {
     sessionToken: v.string(),
@@ -237,12 +312,18 @@ export const getConnectionWithTokens = query({
       return null;
     }
 
+    // Only return connections owned by the authenticated user
     const connection = await ctx.db
       .query("socialConnections")
       .withIndex("by_user_platform", (q) =>
         q.eq("userId", session.userId).eq("platform", args.platform)
       )
       .first();
+
+    // Double-check ownership (defense in depth)
+    if (connection && connection.userId !== session.userId) {
+      return null;
+    }
 
     return connection;
   },

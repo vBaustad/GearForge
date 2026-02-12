@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { Loader, CheckCircle, XCircle } from "lucide-react";
@@ -19,7 +19,6 @@ type ConnectionData = {
 };
 
 export function ConnectCallbackClient() {
-  const searchParams = useSearchParams();
   const router = useRouter();
   const connect = useMutation(api.socialConnections.connect);
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
@@ -33,46 +32,58 @@ export function ConnectCallbackClient() {
       if (handledRef.current) return;
       handledRef.current = true;
 
-      const dataParam = searchParams?.get("data");
-
-      if (!dataParam) {
-        setStatus("error");
-        setMessage("Missing connection data. Please try again.");
-        return;
-      }
-
+      // Fetch connection data from secure httpOnly cookie via API
       let connectionData: ConnectionData;
       try {
-        connectionData = JSON.parse(atob(dataParam));
+        const response = await fetch("/api/auth/connect/data", {
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          setStatus("error");
+          setMessage("Missing connection data. Please try again.");
+          return;
+        }
+
+        const result = await response.json();
+        connectionData = result.data;
       } catch {
         setStatus("error");
-        setMessage("Invalid connection data. Please try again.");
+        setMessage("Failed to retrieve connection data. Please try again.");
         return;
       }
 
       setPlatform(connectionData.platform);
 
-      // Verify state parameter for CSRF protection
+      // Verify state parameter for CSRF protection (STRICT validation)
       const storedState = sessionStorage.getItem(`oauth_connect_state_${connectionData.platform}`);
 
-      // More lenient state check - if state exists, verify it; if not, warn but continue
-      // This handles cases where sessionStorage was cleared or user opened in different tab
-      if (connectionData.state && storedState && connectionData.state !== storedState) {
+      // Strict state validation - both must exist and match
+      if (!storedState || !connectionData.state || connectionData.state !== storedState) {
         setStatus("error");
         setMessage("Security check failed. Please try connecting again from the settings page.");
         return;
       }
 
       // Clear state to prevent reuse
-      if (storedState) {
-        sessionStorage.removeItem(`oauth_connect_state_${connectionData.platform}`);
-      }
+      sessionStorage.removeItem(`oauth_connect_state_${connectionData.platform}`);
 
-      // Get session token
-      const sessionToken = localStorage.getItem("gearforge_session");
-      if (!sessionToken) {
+      // Get session token from httpOnly cookie via API
+      let sessionToken: string;
+      try {
+        const sessionResponse = await fetch("/api/auth/session", {
+          credentials: "include",
+        });
+        const sessionData = await sessionResponse.json();
+        if (!sessionData.token) {
+          setStatus("error");
+          setMessage("You must be logged in to connect accounts.");
+          return;
+        }
+        sessionToken = sessionData.token;
+      } catch {
         setStatus("error");
-        setMessage("You must be logged in to connect accounts.");
+        setMessage("Failed to verify login. Please try again.");
         return;
       }
 
@@ -108,7 +119,7 @@ export function ConnectCallbackClient() {
     };
 
     handleCallback();
-  }, [searchParams, connect, router]);
+  }, [connect, router]);
 
   const getPlatformName = (platform: string) => {
     switch (platform) {
