@@ -4,6 +4,8 @@
 # build output
 /dist
 /.vite
+/.next
+/out
 
 # local env files
 .env
